@@ -25,9 +25,17 @@ namespace Mail
         {
             InitializeComponent();
 
-            var accnt = new AccountInfo();
+            var accnt = new AccountInfo
+            {
+                Host = "mister-j.dyndns.org",
+                Port = 143,
+
+            };
 
             server_ = new Imap(accnt);
+
+            folderList_.ItemsSource = server_.FolderList;
+            messageList_.ItemsSource = server_.MessageList;
         }
     }
 }

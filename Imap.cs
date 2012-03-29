@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-using System.Collections.ObjectModel;
 using System.IO;
 
 using System.Net;
@@ -19,7 +18,7 @@ namespace Mail
         Selected
     }
 
-    public class Imap
+    public class Imap: IAccount
     {
         private AccountInfo account_;
         private TcpClient client_;        
@@ -30,7 +29,8 @@ namespace Mail
         private int cmdId_ = 0;
         private Dictionary<string, string> pendingCommands_;
 
-        private ObservableCollection<string> folders_;
+        private ThreadedList<Folder> folders_;
+        private ThreadedList<MessageHeader> messages_;
 
         public Imap(AccountInfo account)
         {
@@ -38,7 +38,8 @@ namespace Mail
             state_ = ImapState.None;
             pendingCommands_ = new Dictionary<string, string>();
 
-            folders_ = new ObservableCollection<string>();
+            folders_ = new ThreadedList<Folder>();
+            messages_ = new ThreadedList<MessageHeader>();
 
             client_ = new TcpClient(account.Host, account.Port);
 
@@ -151,9 +152,17 @@ namespace Mail
                             break;
 
                         case ImapState.Selected:
-                            if (responseTo == "SEARCH")
+                            if (!commandComplete)
                             {
-                                AvailableMessages(resultData);
+
+                                if (responseTo == "SEARCH")
+                                {
+                                    AvailableMessages(resultData);
+                                }
+                                else if (responseTo == "FETCH")
+                                {
+                                    ProcessMessage(resultData);
+                                }
                             }
                             break;
                     }
@@ -214,22 +223,58 @@ namespace Mail
             string nameSpace = data[1];
             string folder = data[3];
 
-            folders_.Add(folder);
-        }
-
-        void SelectFolder(string folderName)
-        {
-            SendCommand("SELECT " + folderName);
+            folders_.Add(new Folder(folder));
         }
 
         void ListMessages()
         {
+            messages_.Clear();
             SendCommand("SEARCH ALL");
         }
 
         void AvailableMessages(string responseData)
         {
+            string[] messages = responseData.Split(new char[] { ' ' });
+
+            foreach (var msg in messages)
+            {
+                int msgId = -1;
+                if (Int32.TryParse(msg, out msgId))
+                {
+                    messages_.Add(new MessageHeader(msgId));
+
+                    FetchMessage(msgId);
+                }
+            }
+        }
+
+        void FetchMessage(int id)
+        {
+            //SendCommand("FETCH " + id + " ALL");
+        }
+
+        void ProcessMessage(string responseData)
+        {
             
         }
+
+        #region IAccount Members
+
+        public IEnumerable<Folder> FolderList
+        {
+            get { return folders_; }
+        }
+
+        public IEnumerable<MessageHeader> MessageList
+        {
+            get { return messages_; }
+        }
+
+        public void SelectFolder(Folder f)
+        {
+            SendCommand("SELECT " + f.FullName);
+        }
+
+        #endregion
     }
 }
