@@ -18,6 +18,23 @@ namespace Mail
         Selected
     }
 
+    internal class ImapRequest
+    {
+        string id_;
+        string commandName_;
+        string args_;
+        string response_;
+
+        public string Command { get { return commandName_; } }
+
+        public ImapRequest(string id, string commandName, string args)
+        {
+            id_ = id;
+            commandName_ = commandName;
+            args_ = args;
+        }
+    }
+
     public class Imap: IAccount
     {
         private AccountInfo account_;
@@ -27,7 +44,7 @@ namespace Mail
 
         private ImapState state_;
         private int cmdId_ = 0;
-        private Dictionary<string, string> pendingCommands_;
+        private Dictionary<string, ImapRequest> pendingCommands_;
 
         private ThreadedList<Folder> folders_;
         private ThreadedList<MessageHeader> messages_;
@@ -36,7 +53,7 @@ namespace Mail
         {
             account_ = account;
             state_ = ImapState.None;
-            pendingCommands_ = new Dictionary<string, string>();
+            pendingCommands_ = new Dictionary<string, ImapRequest>();
 
             folders_ = new ThreadedList<Folder>();
             messages_ = new ThreadedList<MessageHeader>();
@@ -73,105 +90,90 @@ namespace Mail
 
             string[] responses = responseText.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
 
+            List<string> commandResponse = new List<string>();
+
             foreach (var responseLine in responses)
             {
-                string responseTo = null;
-                string result = null;
-                string resultData = null;
-                bool commandComplete = false;
-
                 string[] responseData = responseLine.Split(new char[] { ' ' });
-                if (responseData[0] == "*")
+
+                // match it to the request command of this name.
+                ImapRequest request = null;
+                pendingCommands_.TryGetValue(responseData[0], out request);
+
+                if (request == null)
                 {
-                    if (state_ == ImapState.Connected)
+                    if (state_ == ImapState.Connected && responseData[1] == "OK")
                     {
-                        result = responseData[1];
+                        Login();
                     }
                     else
                     {
-                        responseTo = responseData[1];
-                        result = "OK";
+                        commandResponse.Add(responseLine);
                     }
 
-                    resultData = string.Join(" ", responseData, 2, responseData.Length - 2);
+                    continue;
                 }
                 else
                 {
-                    // match it to the request command of this name.
-                    string sentCommand = pendingCommands_[responseData[0]];
-                    string[] command = sentCommand.Split(new char[] { ' ' });
+                    string result = null;
+                    string resultData = null;
 
-                    responseTo = command[0];
                     int resultOffset = 2;
-                    if (responseData[resultOffset] != responseTo)
+                    if (responseData[resultOffset] != request.Command)
                     {
                         --resultOffset;
                     }
-                    
+
                     result = responseData[resultOffset];
                     resultData = string.Join(" ", responseData, resultOffset + 1, responseData.Length - resultOffset - 1);
-                    commandComplete = true;
 
                     pendingCommands_.Remove(responseData[0]);
-                }
 
-                if (result == "OK")
-                {
-                    switch (state_)
+                    if (result == "OK")
                     {
-                        case ImapState.Connected:
-                            if (responseTo == null)
-                            {
-                                Login();
-                            }
-                            else if (responseTo == "LOGIN")
-                            {
-                                state_ = ImapState.LoggedIn;
-
-                                ListFolders();
-                            }
-                            break;
-
-                        case ImapState.LoggedIn:
-                            if (responseTo == "LSUB")
-                            {
-                                if (commandComplete)
+                        switch (state_)
+                        {
+                            case ImapState.Connected:
+                                if (request.Command == "LOGIN")
                                 {
+                                    state_ = ImapState.LoggedIn;
+                                    ListFolders();
+                                }
+                                break;
+
+                            case ImapState.LoggedIn:
+                                if (request.Command == "LSUB")
+                                {
+                                    ListedFolder(commandResponse);
                                     SelectFolder(folders_[0]);
                                 }
-                                else
+                                else if (request.Command == "SELECT")
                                 {
-                                    ListedFolder(resultData);
+                                    state_ = ImapState.Selected;
+                                    ListMessages();
                                 }
-                            }
-                            else if (responseTo == "SELECT")
-                            {
-                                state_ = ImapState.Selected;
-                                ListMessages();
-                            }
-                            break;
+                                break;
 
-                        case ImapState.Selected:
-                            if (!commandComplete)
-                            {
-
-                                if (responseTo == "SEARCH")
+                            case ImapState.Selected:
+                                if (request.Command == "SEARCH")
                                 {
-                                    AvailableMessages(resultData);
+                                    AvailableMessages(commandResponse);
                                 }
-                                else if (responseTo == "FETCH")
+                                else if (request.Command == "FETCH")
                                 {
-                                    ProcessMessage(resultData);
+                                    ProcessMessage(commandResponse);
                                 }
-                            }
-                            break;
+                                break;
+                        }
                     }
-                }
-                else if (result == "NO")
-                {
-                }
-                else if (result == "BAD")
-                {
+                    else if (result == "NO")
+                    {
+                    }
+                    else if (result == "BAD")
+                    {
+                    }
+
+                    commandResponse.Clear();
                 }
             }
         }
@@ -182,16 +184,21 @@ namespace Mail
             {
                 ++cmdId_;
 
-                return string.Format("A{0:D4}", cmdId_);
+                return string.Format("__XX__X_{0:D4}", cmdId_);
             }
         }
 
-        void SendCommand(string command)
+        void SendCommand(string command, string args)
         {
             string commandId = NextCommand();
-            string cmd = commandId + " " + command + "\r\n";
+            string cmd = commandId + " " + command;
+            if (args != "")
+            {
+                cmd += " " + args;
+            }
+            cmd += "\r\n";
 
-            pendingCommands_[commandId] = command;
+            pendingCommands_[commandId] = new ImapRequest(commandId, command, args);
 
             byte[] bytes = UTF8Encoding.UTF8.GetBytes(cmd);
 
@@ -200,60 +207,69 @@ namespace Mail
 
         void Login()
         {
-            string command = "LOGIN " + account_.Username + " " + account_.Password;
-
-            SendCommand(command);
+            SendCommand("LOGIN", account_.Username + " " + account_.Password);
         }
 
         void ListFolders()
         {
             folders_.Clear();
-
-            string command = "LSUB " + "\"\" \"*\"";
-            SendCommand(command);
+            SendCommand("LSUB", "\"\" \"*\"");
         }
 
-        void ListedFolder(string responseData)
+        void ListedFolder(IEnumerable<string> responseData)
         {
-            string[] data = responseData.Split(new char[] { '\"' }, StringSplitOptions.RemoveEmptyEntries);
+            foreach (var response in responseData)
+            {
+                // each line looks like:
+                // * LSUB (<flags>) "<namespace>" "<folder name>"
 
-            string flags = data[0].Trim();
-            flags = flags.Substring(1, flags.Length - 2);
+                string responseBody = response.Substring(response.IndexOf('(') - 1);
+                string[] data = responseBody.Split(new char[] { '\"' }, StringSplitOptions.RemoveEmptyEntries);
 
-            string nameSpace = data[1];
-            string folder = data[3];
+                string flags = data[0].Trim();
+                flags = flags.Substring(1, flags.Length - 2);
 
-            folders_.Add(new Folder(folder));
+                string nameSpace = data[1];
+                string folder = data[3];
+
+                folders_.Add(new Folder(folder));
+            }
         }
 
         void ListMessages()
         {
             messages_.Clear();
-            SendCommand("SEARCH ALL");
+            SendCommand("SEARCH", "ALL");
         }
 
-        void AvailableMessages(string responseData)
+        void AvailableMessages(IEnumerable<string> responseData)
         {
-            string[] messages = responseData.Split(new char[] { ' ' });
-
-            foreach (var msg in messages)
+            foreach (var response in responseData)
             {
-                int msgId = -1;
-                if (Int32.TryParse(msg, out msgId))
-                {
-                    messages_.Add(new MessageHeader(msgId));
+                // Each line is of the form:
+                // * SEARCH <list of ids>
 
-                    FetchMessage(msgId);
+                string[] messages = response.Split(new char[] { ' ' });
+
+                foreach (var msg in messages)
+                {
+                    int msgId = -1;
+                    if (Int32.TryParse(msg, out msgId))
+                    {
+                        messages_.Add(new MessageHeader(msgId));
+
+                        FetchMessage(msgId);
+                    }
                 }
             }
         }
 
         void FetchMessage(int id)
         {
-            //SendCommand("FETCH " + id + " ALL");
+            SendCommand("FETCH", id + " (FLAGS BODY[HEADER.FIELDS (DATE FROM SUBJECT)])");
         }
 
-        void ProcessMessage(string responseData)
+        void ProcessMessage(IEnumerable<string> responseData)
         {
             
         }
@@ -272,7 +288,7 @@ namespace Mail
 
         public void SelectFolder(Folder f)
         {
-            SendCommand("SELECT " + f.FullName);
+            SendCommand("SELECT", f.FullName);
         }
 
         #endregion
