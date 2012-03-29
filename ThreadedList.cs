@@ -8,7 +8,7 @@ using System.Collections.Specialized;
 
 namespace Mail
 {
-    class ThreadedList<T>: IList<T>, INotifyCollectionChanged
+    public class ThreadedList<T>: IList<T>, INotifyCollectionChanged
     {
         delegate void VoidCall();
 

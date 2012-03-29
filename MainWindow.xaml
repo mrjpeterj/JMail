@@ -8,6 +8,14 @@
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
         <ListView Grid.Column="0" Name="folderList_" DisplayMemberPath="FullName"></ListView>
-        <ListView Grid.Column="1" Name="messageList_"></ListView>
+        <ListView Grid.Column="1" Name="messageList_">
+            <ListView.View>
+                <GridView>
+                <GridViewColumn DisplayMemberBinding="{Binding From}" />
+                <GridViewColumn DisplayMemberBinding="{Binding Subject}" />
+                <GridViewColumn DisplayMemberBinding="{Binding Date}" />
+            </GridView>
+</ListView.View>                
+        </ListView>
     </Grid>
 </Window>

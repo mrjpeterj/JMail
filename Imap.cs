@@ -47,7 +47,7 @@ namespace Mail
         private Dictionary<string, ImapRequest> pendingCommands_;
 
         private ThreadedList<Folder> folders_;
-        private ThreadedList<MessageHeader> messages_;
+        private MessageStore messages_;
 
         public Imap(AccountInfo account)
         {
@@ -56,7 +56,7 @@ namespace Mail
             pendingCommands_ = new Dictionary<string, ImapRequest>();
 
             folders_ = new ThreadedList<Folder>();
-            messages_ = new ThreadedList<MessageHeader>();
+            messages_ = new MessageStore();
 
             client_ = new TcpClient(account.Host, account.Port);
 
@@ -129,48 +129,52 @@ namespace Mail
 
                     pendingCommands_.Remove(responseData[0]);
 
+                    bool success = false;
                     if (result == "OK")
                     {
-                        switch (state_)
-                        {
-                            case ImapState.Connected:
-                                if (request.Command == "LOGIN")
-                                {
-                                    state_ = ImapState.LoggedIn;
-                                    ListFolders();
-                                }
-                                break;
-
-                            case ImapState.LoggedIn:
-                                if (request.Command == "LSUB")
-                                {
-                                    ListedFolder(commandResponse);
-                                    SelectFolder(folders_[0]);
-                                }
-                                else if (request.Command == "SELECT")
-                                {
-                                    state_ = ImapState.Selected;
-                                    ListMessages();
-                                }
-                                break;
-
-                            case ImapState.Selected:
-                                if (request.Command == "SEARCH")
-                                {
-                                    AvailableMessages(commandResponse);
-                                }
-                                else if (request.Command == "FETCH")
-                                {
-                                    ProcessMessage(commandResponse);
-                                }
-                                break;
-                        }
+                        success = true;
                     }
                     else if (result == "NO")
                     {
                     }
                     else if (result == "BAD")
                     {
+                    }
+
+
+                    switch (state_)
+                    {
+                        case ImapState.Connected:
+                            if (request.Command == "LOGIN")
+                            {
+                                state_ = ImapState.LoggedIn;
+                                ListFolders();
+                            }
+                            break;
+
+                        case ImapState.LoggedIn:
+                            if (request.Command == "LSUB")
+                            {
+                                ListedFolder(commandResponse);
+                                SelectFolder(folders_[0]);
+                            }
+                            else if (request.Command == "SELECT")
+                            {
+                                state_ = ImapState.Selected;
+                                ListMessages();
+                            }
+                            break;
+
+                        case ImapState.Selected:
+                            if (request.Command == "SEARCH")
+                            {
+                                AvailableMessages(commandResponse);
+                            }
+                            else if (request.Command == "FETCH")
+                            {
+                                ProcessMessage(commandResponse, success);
+                            }
+                            break;
                     }
 
                     commandResponse.Clear();
@@ -256,8 +260,6 @@ namespace Mail
                     int msgId = -1;
                     if (Int32.TryParse(msg, out msgId))
                     {
-                        messages_.Add(new MessageHeader(msgId));
-
                         FetchMessage(msgId);
                     }
                 }
@@ -266,12 +268,138 @@ namespace Mail
 
         void FetchMessage(int id)
         {
-            SendCommand("FETCH", id + " (FLAGS BODY[HEADER.FIELDS (DATE FROM SUBJECT)])");
+            if (!messages_.Contains(id))
+            {
+                messages_.Add(new MessageHeader(id));
+
+                SendCommand("FETCH", id + " (FLAGS BODY.PEEK[HEADER.FIELDS (DATE FROM SUBJECT)])");
+            }
         }
 
-        void ProcessMessage(IEnumerable<string> responseData)
+        void ProcessMessage(IEnumerable<string> responseData, bool success)
         {
-            
+            if (!success)
+            {
+                // Remove the message, but how do we know which one it is that failed ?
+            }
+
+            string info = string.Join(" \r\n", responseData);
+            // Format of this is:
+            // * {id} FETCH (<field> <field data> <field> <field data> ......
+
+            System.Text.RegularExpressions.Regex regex = new System.Text.RegularExpressions.Regex(@"\* (?<id>[0-9]+) FETCH ");
+
+            var match = regex.Match(info);
+
+            var idStr = match.Groups["id"].Value;
+            try
+            {
+                int id = Int32.Parse(idStr);
+
+                var data = info.Substring(match.Length + 1, info.Length - match.Length - 2);
+
+                MessageHeader msg = messages_.Message(id);
+                ExtractValues(msg, data);
+            }
+            catch (Exception) { }
+        }
+
+        int FindTokenEnd(string data)
+        {
+            int pos = 0;
+            Stack<char> toMatch = new Stack<char>();
+            toMatch.Push(' ');
+
+            while (pos != data.Length)
+            {
+                char current = data[pos];
+
+                if (toMatch.Peek() == current)
+                {
+                    toMatch.Pop();
+                    if (toMatch.Count == 0)
+                    {
+                        return pos;
+                    }
+                }
+
+                if (current == '[') toMatch.Push(']');
+                if (current == '(') toMatch.Push(')');
+                if (current == '{') toMatch.Push('}');
+                if (current == '<') toMatch.Push('>');
+
+                ++pos;
+            }
+
+            return -1;
+        }
+
+        void ExtractValues(MessageHeader msg, string data)
+        {
+            if (data == "")
+            {
+                return;
+            }
+
+            int nextCut = FindTokenEnd(data);
+            string key = data.Substring(0, nextCut);
+            string remaining = data.Substring(nextCut + 1, data.Length - nextCut - 1);
+
+            if (key == "FLAGS")
+            {
+                remaining = ExtractFlags(msg, remaining);
+                ExtractValues(msg, remaining);
+            } else if (key.StartsWith("BODY[")) {
+                remaining = ExtractBodyInfo(msg, remaining);
+                ExtractValues(msg, remaining);
+            }
+        }
+
+        string ExtractFlags(MessageHeader msg, string data)
+        {
+            // Flags are surrounded by ( ... )
+            int dataEnd = FindTokenEnd(data);
+            string flags = data.Substring(0, dataEnd);
+            string remaining = data.Substring(dataEnd + 1, data.Length - dataEnd - 1);
+
+            // Process flags here
+
+            return remaining;
+        }
+
+        string ExtractBodyInfo(MessageHeader msg, string data)
+        {
+            string remaining = data;
+
+            if (data[0] == '{')
+            {
+                // We don't need this info
+                int dataEnd = FindTokenEnd(data);
+                remaining = data.Substring(dataEnd + 1, data.Length - dataEnd - 1);
+            }
+
+            // Now we should have lines that look like email header lines.
+            int fieldStart = 0;
+
+            while (true)
+            {
+                int fieldEnd = remaining.IndexOf(": ", fieldStart);
+                if (fieldEnd == -1)
+                {
+                    break;
+                }
+
+                int valueEnd = remaining.IndexOf("\r\n", fieldEnd);
+
+                string field = remaining.Substring(fieldStart, fieldEnd - fieldStart);
+                string value = remaining.Substring(fieldEnd + 1, valueEnd - fieldEnd - 1);
+
+                fieldStart = valueEnd + 2;
+
+                msg.SetValue(field.Trim(), value.Trim());
+            }
+
+            return remaining.Substring(fieldStart, remaining.Length - fieldStart);
         }
 
         #region IAccount Members
