@@ -101,11 +101,19 @@ namespace Mail
             System.Diagnostics.Debug.Write(responseText);
 
             string[] responses = responseText.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
+            string lastResponse = responses.Last();
 
             List<string> commandResponse = new List<string>();
 
             foreach (var responseLine in responses)
             {
+                if (responseLine == lastResponse && !responseText.EndsWith("\r\n"))
+                {
+                    // Incomplete response.
+                    commandResponse.Add(responseLine);
+                    break;
+                }
+
                 string[] responseData = responseLine.Split(new char[] { ' ' });
 
                 // match it to the request command of this name.
