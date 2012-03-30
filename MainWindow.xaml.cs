@@ -29,6 +29,7 @@ namespace Mail
             {
                 Host = "mister-j.dyndns.org",
                 Port = 143,
+                Username = "peterj",
 
             };
 
@@ -37,5 +38,61 @@ namespace Mail
             folderList_.ItemsSource = server_.FolderList;
             messageList_.ItemsSource = server_.MessageList;
         }
+
+        private void SelectFolder(object sender, SelectionChangedEventArgs e)
+        {
+            Folder folder = folderList_.SelectedItem as Folder;
+
+            if (folder != null)
+            {
+                server_.SelectFolder(folder);
+            }
+        }
+    }
+
+    public class FontConverter : IValueConverter
+    {
+
+        #region IValueConverter Members
+
+        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            MessageHeader msg = value as MessageHeader;
+            if (msg == null) {
+                return value;
+            }
+            
+            if (targetType == typeof(FontWeight))
+            {
+                if (msg.UnRead)
+                {
+                    return FontWeights.Bold;
+                }
+                else
+                {
+                    return FontWeights.Normal;
+                }
+            }
+            else if (targetType == typeof(FontStyle))
+            {
+                if (msg.Deleted)
+                {
+                    return FontStyles.Oblique;
+                }
+                else
+                {
+                    return FontStyles.Normal;
+                }
+            }
+
+            return value;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+
+        #endregion
     }
 }

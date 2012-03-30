@@ -1,14 +1,25 @@
 ﻿<Window x:Class="Mail.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:Mail"
         Title="MainWindow" Height="350" Width="525">
+    <Window.Resources>
+        <local:FontConverter x:Key="fontDecider" />
+    </Window.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="200" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
-        <ListView Grid.Column="0" Name="folderList_" DisplayMemberPath="FullName"></ListView>
+        <ListView Grid.Column="0" Name="folderList_" DisplayMemberPath="FullName" SelectionMode="Single" SelectionChanged="SelectFolder">            
+        </ListView>
         <ListView Grid.Column="1" Name="messageList_">
+            <ListView.ItemContainerStyle>
+                <Style TargetType="ListViewItem">
+                    <Setter Property="FontWeight" Value="{Binding Converter={StaticResource fontDecider}}" />
+                    <Setter Property="FontStyle"  Value="{Binding Converter={StaticResource fontDecider}}" />
+                </Style>
+            </ListView.ItemContainerStyle>
             <ListView.View>
                 <GridView AllowsColumnReorder="False">
                     <GridViewColumn DisplayMemberBinding="{Binding From}" />
