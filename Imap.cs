@@ -23,23 +23,33 @@ namespace Mail
         string id_;
         string commandName_;
         string args_;
-        string response_;
+        Imap.ResponseHandler response_;
 
         public string Command { get { return commandName_; } }
 
-        public ImapRequest(string id, string commandName, string args)
+        public ImapRequest(string id, string commandName, string args, Imap.ResponseHandler handler)
         {
             id_ = id;
             commandName_ = commandName;
             args_ = args;
+            response_ = handler;
+        }
+
+        public void Process(IEnumerable<string> resultData)
+        {
+            response_(resultData);
         }
     }
 
     public class Imap: IAccount
     {
-        private AccountInfo account_;
-        private TcpClient client_;        
+        public delegate void ResponseHandler(IEnumerable<string> data);
 
+        private AccountInfo account_;
+        private TcpClient client_;
+        private Stream stream_;
+
+        private int readStart_;
         private byte[] incoming_;
 
         private ImapState state_;
@@ -58,20 +68,23 @@ namespace Mail
             folders_ = new ThreadedList<Folder>();
             messages_ = new MessageStore();
 
-            client_ = new TcpClient(account.Host, account.Port);
+            client_ = new TcpClient(account.Host, account.Port);            
 
             if (client_.Connected)
             {
                 state_ = ImapState.Connected;
+                stream_ = client_.GetStream();
 
-                incoming_ = new byte[client_.Available];
-                client_.GetStream().BeginRead(incoming_, 0, incoming_.Length, HandleRead, null);
+                incoming_ = new byte[8 * 1024];
+                readStart_ = 0;
+
+                stream_.BeginRead(incoming_, readStart_, incoming_.Length, HandleRead, null);
             }
         }
 
         void HandleRead(IAsyncResult res)
         {
-            int bytesRead = client_.GetStream().EndRead(res);
+            int bytesRead = stream_.EndRead(res) + readStart_;
 
             if (bytesRead > 0)
             {
@@ -80,8 +93,7 @@ namespace Mail
                 ProcessResponse(response);
             }
 
-            incoming_ = new byte[client_.Available];
-            client_.GetStream().BeginRead(incoming_, 0, incoming_.Length, HandleRead, null);
+            stream_.BeginRead(incoming_, readStart_, incoming_.Length - readStart_, HandleRead, null);
         }
 
         void ProcessResponse(string responseText)
@@ -104,7 +116,7 @@ namespace Mail
                 {
                     if (state_ == ImapState.Connected && responseData[1] == "OK")
                     {
-                        Login();
+                        StartUp();
                     }
                     else
                     {
@@ -141,44 +153,22 @@ namespace Mail
                     {
                     }
 
-
-                    switch (state_)
-                    {
-                        case ImapState.Connected:
-                            if (request.Command == "LOGIN")
-                            {
-                                state_ = ImapState.LoggedIn;
-                                ListFolders();
-                            }
-                            break;
-
-                        case ImapState.LoggedIn:
-                            if (request.Command == "LSUB")
-                            {
-                                ListedFolder(commandResponse);
-                                SelectFolder(folders_[0]);
-                            }
-                            else if (request.Command == "SELECT")
-                            {
-                                state_ = ImapState.Selected;
-                                ListMessages();
-                            }
-                            break;
-
-                        case ImapState.Selected:
-                            if (request.Command == "SEARCH")
-                            {
-                                AvailableMessages(commandResponse);
-                            }
-                            else if (request.Command == "FETCH")
-                            {
-                                ProcessMessage(commandResponse, success);
-                            }
-                            break;
-                    }
+                    request.Process(commandResponse);
 
                     commandResponse.Clear();
                 }
+            }
+
+            if (commandResponse.Any())
+            {
+                // We need to store this text up and append the next read to it.
+                string leftOverResponse = string.Join("\r\n", commandResponse);
+
+                readStart_ = UTF8Encoding.UTF8.GetBytes(leftOverResponse, 0, leftOverResponse.Length, incoming_, 0);
+            }
+            else
+            {
+                readStart_ = 0;
             }
         }
 
@@ -192,7 +182,7 @@ namespace Mail
             }
         }
 
-        void SendCommand(string command, string args)
+        void SendCommand(string command, string args, ResponseHandler handler)
         {
             string commandId = NextCommand();
             string cmd = commandId + " " + command;
@@ -202,22 +192,77 @@ namespace Mail
             }
             cmd += "\r\n";
 
-            pendingCommands_[commandId] = new ImapRequest(commandId, command, args);
+            pendingCommands_[commandId] = new ImapRequest(commandId, command, args, handler);
 
             byte[] bytes = UTF8Encoding.UTF8.GetBytes(cmd);
 
-            client_.GetStream().Write(bytes, 0, bytes.Length);
+            stream_.Write(bytes, 0, bytes.Length);
+            stream_.Flush();
+        }
+
+        void StartUp()
+        {
+            Caps();
+        }
+
+        void Caps()
+        {
+            SendCommand("CAPABILITY", "", HandleCaps);
+        }
+
+        void HandleCaps(IEnumerable<string> resultData)
+        {
+            // Looks like 
+            // * CAPABILITY <cap1> <cap2> <cap3>
+            string[] caps = string.Join(" ", resultData).Split(' ');
+
+            if (caps.Contains("STARTTLS"))
+            {
+                StartTLS();
+            }
+            else
+            {
+                Login();
+            }
+        }
+
+        void StartTLS()
+        {
+            SendCommand("STARTTLS", "", HandleTLS);
+        }
+
+        void HandleTLS(IEnumerable<string> responseData)
+        {
+            var sslStream = new System.Net.Security.SslStream(client_.GetStream(), false,
+                new System.Net.Security.RemoteCertificateValidationCallback(GotRemoteCert));
+            sslStream.AuthenticateAsClient(account_.Host);
+
+            stream_ = sslStream;
+
+            Login();
+        }
+
+        bool GotRemoteCert(object sender, System.Security.Cryptography.X509Certificates.X509Certificate cert,
+            System.Security.Cryptography.X509Certificates.X509Chain chain, System.Net.Security.SslPolicyErrors errors)
+        {
+            return true;
         }
 
         void Login()
         {
-            SendCommand("LOGIN", account_.Username + " " + account_.Password);
+            SendCommand("LOGIN", account_.Username + " " + account_.Password, HandleLogin);
+        }
+
+        void HandleLogin(IEnumerable<string> resultData)
+        {
+            state_ = ImapState.LoggedIn;
+            ListFolders();
         }
 
         void ListFolders()
         {
             folders_.Clear();
-            SendCommand("LSUB", "\"\" \"*\"");
+            SendCommand("LSUB", "\"\" \"*\"", ListedFolder);
         }
 
         void ListedFolder(IEnumerable<string> responseData)
@@ -238,12 +283,16 @@ namespace Mail
 
                 folders_.Add(new Folder(folder));
             }
+
+            SelectFolder(folders_[0]);
         }
 
-        void ListMessages()
+        void ListMessages(IEnumerable<string> responseData)
         {
+            state_ = ImapState.Selected;
+
             messages_.Clear();
-            SendCommand("SEARCH", "ALL");
+            SendCommand("SEARCH", "ALL", AvailableMessages);
         }
 
         void AvailableMessages(IEnumerable<string> responseData)
@@ -272,13 +321,13 @@ namespace Mail
             {
                 messages_.Add(new MessageHeader(id));
 
-                SendCommand("FETCH", id + " (FLAGS BODY.PEEK[HEADER.FIELDS (DATE FROM SUBJECT)])");
+                SendCommand("FETCH", id + " (FLAGS BODY.PEEK[HEADER.FIELDS (DATE FROM SUBJECT)])", ProcessMessage);
             }
         }
 
-        void ProcessMessage(IEnumerable<string> responseData, bool success)
+        void ProcessMessage(IEnumerable<string> responseData)
         {
-            if (!success)
+            if (false)
             {
                 // Remove the message, but how do we know which one it is that failed ?
             }
@@ -416,7 +465,7 @@ namespace Mail
 
         public void SelectFolder(Folder f)
         {
-            SendCommand("SELECT", f.FullName);
+            SendCommand("SELECT", f.FullName, ListMessages);
         }
 
         #endregion
