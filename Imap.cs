@@ -408,10 +408,24 @@ namespace Mail
         {
             // Flags are surrounded by ( ... )
             int dataEnd = FindTokenEnd(data);
-            string flags = data.Substring(0, dataEnd);
+            string flagString = data.Substring(1, dataEnd - 2);
             string remaining = data.Substring(dataEnd + 1, data.Length - dataEnd - 1);
 
             // Process flags here
+            msg.ClearFlags();
+
+            if (flagString != "")
+            {
+                string[] flags = flagString.Split(' ');
+                foreach (var flag in flags)
+                {
+                    if (flag[0] == '\\')
+                    {
+                        // Standard flag
+                        msg.SetFlag(flag.Substring(1));
+                    }
+                }
+            }
 
             return remaining;
         }
