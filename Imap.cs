@@ -511,10 +511,104 @@ namespace Mail
 
                 fieldStart = valueEnd + 2;
 
-                msg.SetValue(field.Trim(), value.Trim());
+                value = Decode(value.Trim());
+
+                msg.SetValue(field.Trim(), value);
             }
 
             return remaining.Substring(fieldStart, remaining.Length - fieldStart);
+        }
+
+        string Decode(string input)
+        {
+            while (true)
+            {
+                int encodingStart = input.IndexOf("=?");
+                if (encodingStart < 0) 
+                {
+                    break;
+                }
+
+                int encodingEnd = input.IndexOf("?=", encodingStart);
+                if (encodingEnd < 0)
+                {
+                    break;
+                }
+                else
+                {
+                    // Move it to point after the close of the encoding tag
+                    encodingEnd += 2;                    
+                }
+
+                string encoded = input.Substring(encodingStart, encodingEnd - encodingStart);
+                
+
+                string[] pieces = encoded.Split(new char[] { '?' });
+                string charset = pieces[1];
+                string encoding = pieces[2];
+                
+                string rest = string.Join("?", pieces.ToList().GetRange(3, pieces.Length - 4));
+                byte[] data;
+
+                if (encoding == "B")
+                {
+                    data = Convert.FromBase64String(rest);
+                }
+                else
+                {
+                    data = QuottedPrintableDecode(rest);
+                }
+
+                Encoding enc = Encoding.GetEncoding(charset);
+                string res = enc.GetString(data);
+
+                input = input.Substring(0, encodingStart) + res + input.Substring(encodingEnd, input.Length - encodingEnd);
+            }
+
+            return input;
+        }
+
+        byte[] QuottedPrintableDecode(string input)
+        {
+            List<byte> res = new List<byte>();
+            bool encoding = false;
+            char[] encodeVal = new char[2];
+            int encodingPos = 0;
+
+            foreach (var c in input)
+            {
+                if (encoding)
+                {
+                    encodeVal[encodingPos] = c;
+                    ++encodingPos;
+
+                    if (encodingPos == 2)
+                    {
+                        int charVal = Convert.ToInt32(new string(encodeVal), 16);
+                        res.Add((byte)charVal);
+
+                        encoding = false;
+                    }
+                }
+                else
+                {
+                    if (c == '=')
+                    {
+                        encoding = true;
+                        encodingPos = 0;
+                    }
+                    else if (c == '_')
+                    {
+                        res.Add(32);
+                    }
+                    else
+                    {
+                        res.Add((byte)c);
+                    }
+                }
+            }
+
+            return res.ToArray();
         }
 
         #region IAccount Members
