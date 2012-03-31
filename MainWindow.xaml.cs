@@ -30,7 +30,7 @@ namespace Mail
                 Host = "mister-j.dyndns.org",
                 Port = 143,
                 Username = "peterj",
-
+                Password = "Cherub_r"
             };
 
             server_ = new Imap(accnt);

@@ -11,9 +11,17 @@
             <ColumnDefinition Width="200" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
-        <ListView Grid.Column="0" Name="folderList_" DisplayMemberPath="FullName" SelectionMode="Single" SelectionChanged="SelectFolder">            
+        <ListView Grid.Column="0" Name="folderList_" SelectionMode="Single" SelectionChanged="SelectFolder">
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Orientation="Horizontal">
+                        <Label Content="{Binding FullName}" Padding="2" />
+                        <Label Content="{Binding UnseenText}" Padding="2" FontWeight="Bold" Foreground="RoyalBlue" />
+                    </StackPanel>
+                </DataTemplate>
+            </ListView.ItemTemplate>
         </ListView>
-        <ListView Grid.Column="1" Name="messageList_">
+        <ListView Grid.Column="1" Name="messageList_" Foreground="Black">
             <ListView.ItemContainerStyle>
                 <Style TargetType="ListViewItem">
                     <Setter Property="FontWeight" Value="Regular" />

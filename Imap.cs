@@ -20,14 +20,17 @@ namespace Mail
 
     internal class ImapRequest
     {
+        internal delegate void ResponseHandler(ImapRequest request, IEnumerable<string> data);
+
         string id_;
         string commandName_;
         string args_;
-        Imap.ResponseHandler response_;
+        ResponseHandler response_;
 
         public string Command { get { return commandName_; } }
+        public string Args { get { return args_; } }
 
-        public ImapRequest(string id, string commandName, string args, Imap.ResponseHandler handler)
+        public ImapRequest(string id, string commandName, string args, ResponseHandler handler)
         {
             id_ = id;
             commandName_ = commandName;
@@ -37,14 +40,12 @@ namespace Mail
 
         public void Process(IEnumerable<string> resultData)
         {
-            response_(resultData);
+            response_(this, resultData);
         }
     }
 
     public class Imap: IAccount
     {
-        public delegate void ResponseHandler(IEnumerable<string> data);
-
         private AccountInfo account_;
         private TcpClient client_;
         private Stream stream_;
@@ -190,7 +191,7 @@ namespace Mail
             }
         }
 
-        void SendCommand(string command, string args, ResponseHandler handler)
+        void SendCommand(string command, string args, ImapRequest.ResponseHandler handler)
         {
             string commandId = NextCommand();
             string cmd = commandId + " " + command;
@@ -218,7 +219,7 @@ namespace Mail
             SendCommand("CAPABILITY", "", HandleCaps);
         }
 
-        void HandleCaps(IEnumerable<string> resultData)
+        void HandleCaps(ImapRequest request, IEnumerable<string> resultData)
         {
             // Looks like 
             // * CAPABILITY <cap1> <cap2> <cap3>
@@ -239,7 +240,7 @@ namespace Mail
             SendCommand("STARTTLS", "", HandleTLS);
         }
 
-        void HandleTLS(IEnumerable<string> responseData)
+        void HandleTLS(ImapRequest request, IEnumerable<string> responseData)
         {
             var sslStream = new System.Net.Security.SslStream(client_.GetStream(), false,
                 new System.Net.Security.RemoteCertificateValidationCallback(GotRemoteCert));
@@ -261,7 +262,7 @@ namespace Mail
             SendCommand("LOGIN", account_.Username + " " + account_.Password, HandleLogin);
         }
 
-        void HandleLogin(IEnumerable<string> resultData)
+        void HandleLogin(ImapRequest request, IEnumerable<string> resultData)
         {
             state_ = ImapState.LoggedIn;
             ListFolders();
@@ -273,7 +274,7 @@ namespace Mail
             SendCommand("LSUB", "\"\" \"*\"", ListedFolder);
         }
 
-        void ListedFolder(IEnumerable<string> responseData)
+        void ListedFolder(ImapRequest request, IEnumerable<string> responseData)
         {
             foreach (var response in responseData)
             {
@@ -295,15 +296,50 @@ namespace Mail
             SelectFolder(folders_[0]);
         }
 
-        void ListMessages(IEnumerable<string> responseData)
+        void ListMessages(ImapRequest request, IEnumerable<string> responseData)
         {
             state_ = ImapState.Selected;
+
+            Folder folder = (from f in folders_
+                             where f.FullName == request.Args
+                             select f).FirstOrDefault();
+
+            if (folder != null)
+            {
+                foreach (var responseLine in responseData)
+                {
+                    string[] responseSplit = responseLine.Split(new char[] { ' ' });
+                    if (responseSplit[2] == "EXISTS")
+                    {
+                        folder.Exists = Int32.Parse(responseSplit[1]);
+                    }
+                    else if (responseSplit[2] == "RECENT")
+                    {
+                        folder.Recent = Int32.Parse(responseSplit[1]);
+                    }
+                    else if (responseSplit[1] == "OK")
+                    {
+                        string responseLineRest = string.Join(" ", responseSplit.ToList().GetRange(2, responseSplit.Length - 2));
+
+                        int infoEnd = FindTokenEnd(responseLineRest);
+                        string info = responseLineRest.Substring(1, infoEnd - 2);
+
+                        int keywordEnd = FindTokenEnd(info);
+                        string keyword = info.Substring(0, keywordEnd);
+
+                        if (keyword == "UNSEEN")
+                        {
+                            folder.UnseenStart = Int32.Parse(info.Substring(keywordEnd + 1));
+                        }
+                    }
+                }
+            }
 
             messages_.Clear();
             SendCommand("SEARCH", "ALL", AvailableMessages);
         }
 
-        void AvailableMessages(IEnumerable<string> responseData)
+        void AvailableMessages(ImapRequest request, IEnumerable<string> responseData)
         {
             foreach (var response in responseData)
             {
@@ -333,7 +369,7 @@ namespace Mail
             }
         }
 
-        void ProcessMessage(IEnumerable<string> responseData)
+        void ProcessMessage(ImapRequest request, IEnumerable<string> responseData)
         {
             if (false)
             {
