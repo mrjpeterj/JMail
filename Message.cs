@@ -45,9 +45,26 @@ namespace Mail
 
         public int id { get { return id_; } }
 
-        public string From { get; private set; }
-        public string Subject { get; private set; }
-        public string Date { get; private set; }
+        public string From
+        {
+            get;
+            private set;
+        }
+        public string Subject
+        {
+            get;
+            private set;
+        }
+        public DateTime Sent
+        {
+            get;
+            private set;
+        }
+        public DateTime Date
+        {
+            get;
+            private set;
+        }
 
         public bool UnRead
         {
@@ -79,7 +96,13 @@ namespace Mail
             }
             else if (field.Equals("date", StringComparison.CurrentCultureIgnoreCase))
             {
-                Date = value;
+                Sent = ParseDate(value);
+                field = "sent";
+            }
+            else if (field.Equals("received", StringComparison.CurrentCultureIgnoreCase))
+            {
+                Date = ParseDate(value);
+                field = "date";
             }
             else if (field.Equals("from", StringComparison.CurrentCultureIgnoreCase))
             {
@@ -138,6 +161,34 @@ namespace Mail
                     PropertyChanged(this, new PropertyChangedEventArgs("UnRead"));
                 }
             }
+        }
+
+        DateTime ParseDate(string value)
+        {
+            try
+            {
+                return DateTime.Parse(value);
+            }
+            catch (Exception e)
+            {
+            }
+
+            if (value.EndsWith(")"))
+            {
+                // strip off this trailing tz annotation.
+                int newEndPos = value.LastIndexOf("(");
+                value = value.Substring(0, newEndPos);
+
+                try
+                {
+                    return DateTime.Parse(value);
+                }
+                catch (Exception e)
+                {
+                }
+            }
+
+            return DateTime.UtcNow;
         }
 
         string CamelCase(string label)

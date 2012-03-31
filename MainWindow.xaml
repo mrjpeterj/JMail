@@ -32,7 +32,7 @@
                 <GridView AllowsColumnReorder="False">
                     <GridViewColumn DisplayMemberBinding="{Binding From}" />
                     <GridViewColumn DisplayMemberBinding="{Binding Subject}" />
-                    <GridViewColumn DisplayMemberBinding="{Binding Date}" />
+                    <GridViewColumn DisplayMemberBinding="{Binding Sent}" />
                 </GridView>
             </ListView.View>
         </ListView>

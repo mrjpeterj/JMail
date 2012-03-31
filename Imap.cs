@@ -98,7 +98,7 @@ namespace Mail
 
         void ProcessResponse(string responseText)
         {
-            System.Diagnostics.Debug.Write(responseText);
+            //System.Diagnostics.Debug.Write(responseText);
 
             string[] responses = responseText.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
             string lastResponse = responses.Last();
@@ -329,7 +329,7 @@ namespace Mail
             {
                 messages_.Add(new MessageHeader(id));
 
-                SendCommand("FETCH", id + " (FLAGS BODY.PEEK[HEADER.FIELDS (DATE FROM SUBJECT)])", ProcessMessage);
+                SendCommand("FETCH", id + " (FLAGS INTERNALDATE BODY.PEEK[HEADER.FIELDS (DATE FROM SUBJECT)])", ProcessMessage);
             }
         }
 
@@ -373,6 +373,10 @@ namespace Mail
 
                 if (toMatch.Peek() == current)
                 {
+                    // This is an end token, so make sure that it
+                    // isn't picked up as a start token.
+                    current = '\0';
+
                     toMatch.Pop();
                     if (toMatch.Count == 0)
                     {
@@ -384,6 +388,7 @@ namespace Mail
                 if (current == '(') toMatch.Push(')');
                 if (current == '{') toMatch.Push('}');
                 if (current == '<') toMatch.Push('>');
+                if (current == '\"') toMatch.Push('\"');
 
                 ++pos;
             }
@@ -393,22 +398,30 @@ namespace Mail
 
         void ExtractValues(MessageHeader msg, string data)
         {
-            if (data == "")
-            {
-                return;
-            }
+            string remaining = data;
 
-            int nextCut = FindTokenEnd(data);
-            string key = data.Substring(0, nextCut);
-            string remaining = data.Substring(nextCut + 1, data.Length - nextCut - 1);
-
-            if (key == "FLAGS")
+            while (remaining.Length > 0)
             {
-                remaining = ExtractFlags(msg, remaining);
-                ExtractValues(msg, remaining);
-            } else if (key.StartsWith("BODY[")) {
-                remaining = ExtractBodyInfo(msg, remaining);
-                ExtractValues(msg, remaining);
+                int nextCut = FindTokenEnd(remaining);
+                string key = remaining.Substring(0, nextCut);
+                remaining = remaining.Substring(nextCut + 1, remaining.Length - nextCut - 1);
+
+                if (key == "FLAGS")
+                {
+                    remaining = ExtractFlags(msg, remaining);
+                }
+                else if (key.StartsWith("BODY["))
+                {
+                    remaining = ExtractBodyInfo(msg, remaining);
+                }
+                else if (key == "INTERNALDATE")
+                {
+                    remaining = ExtractDate(msg, remaining);
+                }
+                else
+                {
+                    break;
+                }
             }
         }
 
@@ -434,6 +447,18 @@ namespace Mail
                     }
                 }
             }
+
+            return remaining;
+        }
+
+        string ExtractDate(MessageHeader msg, string data)
+        {
+            // Date is surrounded by " ... "
+            int dataEnd = FindTokenEnd(data);
+            string dateString = data.Substring(1, dataEnd - 2);
+            string remaining = data.Substring(dataEnd + 1, data.Length - dataEnd - 1);
+
+            msg.SetValue("Received", dateString);
 
             return remaining;
         }
