@@ -30,9 +30,10 @@
             </ListView.ItemContainerStyle>
             <ListView.View>
                 <GridView AllowsColumnReorder="False">
-                    <GridViewColumn DisplayMemberBinding="{Binding From}" />
-                    <GridViewColumn DisplayMemberBinding="{Binding Subject}" />
-                    <GridViewColumn DisplayMemberBinding="{Binding Sent}" />
+                    <GridViewColumn DisplayMemberBinding="{Binding From}" Header="From" />
+                    <GridViewColumn DisplayMemberBinding="{Binding Subject}" Header="Subject" />
+                    <GridViewColumn DisplayMemberBinding="{Binding Sent}" Header="Sent" />
+                    <GridViewColumn DisplayMemberBinding="{Binding Date}" Header="Date" />
                 </GridView>
             </ListView.View>
         </ListView>
