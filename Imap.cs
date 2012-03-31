@@ -329,7 +329,7 @@ namespace Mail
             {
                 messages_.Add(new MessageHeader(id));
 
-                SendCommand("FETCH", id + " (FLAGS INTERNALDATE BODY.PEEK[HEADER.FIELDS (DATE FROM SUBJECT)])", ProcessMessage);
+                SendCommand("FETCH", id + " (FLAGS INTERNALDATE UID RFC822.SIZE BODY.PEEK[HEADER.FIELDS (DATE FROM SUBJECT)])", ProcessMessage);
             }
         }
 
@@ -418,11 +418,30 @@ namespace Mail
                 {
                     remaining = ExtractDate(msg, remaining);
                 }
+                else if (key == "UID")
+                {
+                    remaining = ExtractSingle(msg, remaining, "UID");
+                }
+                else if (key == "RFC822.SIZE")
+                {
+                    remaining = ExtractSingle(msg, remaining, "SIZE");
+                }
                 else
                 {
                     break;
                 }
             }
+        }
+
+        string ExtractSingle(MessageHeader msg, string data, string key)
+        {
+            int dataEnd = FindTokenEnd(data);
+            string value = data.Substring(0, dataEnd - 1);
+            string remaining = data.Substring(dataEnd + 1, data.Length - dataEnd - 1);
+
+            msg.SetValue(key, value);
+
+            return remaining;
         }
 
         string ExtractFlags(MessageHeader msg, string data)

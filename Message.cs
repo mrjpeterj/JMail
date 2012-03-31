@@ -45,26 +45,12 @@ namespace Mail
 
         public int id { get { return id_; } }
 
-        public string From
-        {
-            get;
-            private set;
-        }
-        public string Subject
-        {
-            get;
-            private set;
-        }
-        public DateTime Sent
-        {
-            get;
-            private set;
-        }
-        public DateTime Date
-        {
-            get;
-            private set;
-        }
+        public string From { get; private set; }
+        public string Subject { get; private set; }
+        public DateTime Sent { get; private set; }
+        public DateTime Date { get; private set; }
+        public string Uid { get; private set; }
+        public int Size { get; private set; }
 
         public bool UnRead
         {
@@ -108,6 +94,15 @@ namespace Mail
             {
                 From = value;
             }
+            else if (field.Equals("uid", StringComparison.CurrentCultureIgnoreCase))
+            {
+                Uid = value;
+            }
+            else if (field.Equals("size", StringComparison.CurrentCultureIgnoreCase))
+            {
+                Size = Int32.Parse(value);
+            }
+
 
             if (PropertyChanged != null)
             {

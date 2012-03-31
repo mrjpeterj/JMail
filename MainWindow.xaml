@@ -34,6 +34,7 @@
                     <GridViewColumn DisplayMemberBinding="{Binding Subject}" Header="Subject" />
                     <GridViewColumn DisplayMemberBinding="{Binding Sent}" Header="Sent" />
                     <GridViewColumn DisplayMemberBinding="{Binding Date}" Header="Date" />
+                    <GridViewColumn DisplayMemberBinding="{Binding Size}" Header="Size" />
                 </GridView>
             </ListView.View>
         </ListView>
