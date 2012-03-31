@@ -95,6 +95,12 @@ namespace Mail
         public void ClearFlags()
         {
             flags_.Clear();
+
+            if (PropertyChanged != null)
+            {
+                PropertyChanged(this, new PropertyChangedEventArgs("UnRead"));
+                PropertyChanged(this, new PropertyChangedEventArgs("Deleted"));
+            }
         }
 
         public void SetFlag(string flag)
@@ -106,6 +112,10 @@ namespace Mail
             else if (flag.Equals(MessageFlags.Deleted.ToString(), StringComparison.CurrentCultureIgnoreCase))
             {
                 flags_.Add(MessageFlags.Deleted);
+                if (PropertyChanged != null)
+                {
+                    PropertyChanged(this, new PropertyChangedEventArgs("Deleted"));
+                }
             }
             else if (flag.Equals(MessageFlags.Draft.ToString(), StringComparison.CurrentCultureIgnoreCase))
             {
@@ -122,6 +132,11 @@ namespace Mail
             else if (flag.Equals(MessageFlags.Seen.ToString(), StringComparison.CurrentCultureIgnoreCase))
             {
                 flags_.Add(MessageFlags.Seen);
+
+                if (PropertyChanged != null)
+                {
+                    PropertyChanged(this, new PropertyChangedEventArgs("UnRead"));
+                }
             }
         }
 

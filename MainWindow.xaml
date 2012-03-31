@@ -4,7 +4,7 @@
         xmlns:local="clr-namespace:Mail"
         Title="MainWindow" Height="350" Width="525">
     <Window.Resources>
-        <local:FontConverter x:Key="fontDecider" />
+
     </Window.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
@@ -16,8 +16,16 @@
         <ListView Grid.Column="1" Name="messageList_">
             <ListView.ItemContainerStyle>
                 <Style TargetType="ListViewItem">
-                    <Setter Property="FontWeight" Value="{Binding Converter={StaticResource fontDecider}}" />
-                    <Setter Property="FontStyle"  Value="{Binding Converter={StaticResource fontDecider}}" />
+                    <Setter Property="FontWeight" Value="Regular" />
+                    <Setter Property="FontStyle"  Value="Normal" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding UnRead}" Value="true">
+                            <Setter Property="FontWeight" Value="Bold" />
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding Deleted}" Value="true">
+                            <Setter Property="FontStyle" Value="Italic" />
+                        </DataTrigger>
+                    </Style.Triggers>
                 </Style>
             </ListView.ItemContainerStyle>
             <ListView.View>
