@@ -18,15 +18,29 @@ namespace Mail
     /// </summary>
     public partial class AddAccount: Window
     {
+        AccountInfo account_;
+
         public AddAccount()
         {
+            account_ = new AccountInfo();
+            DataContext = account_;
+
             InitializeComponent();
         }
 
-        public void spam()
+        private void Ok_Clicked(object sender, RoutedEventArgs e)
         {
-            byte[] password = null;
-            System.Security.Cryptography.ProtectedData.Protect(password);
+            account_.SecurePassword = passwordBox_.SecurePassword;
+            account_.Save();
+
+            DialogResult = true;
+            Close();
+        }
+
+        private void Cancel_Clicked(object sender, RoutedEventArgs e)
+        {
+            DialogResult = false;
+            Close();
         }
     }
 }

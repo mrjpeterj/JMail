@@ -7,11 +7,20 @@
 
     </Window.Resources>
     <Grid>
-        <Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
             <ColumnDefinition Width="200" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
-        <ListView Grid.Column="0" Name="folderList_" SelectionMode="Single" SelectionChanged="SelectFolder">
+        <Menu Grid.ColumnSpan="2">
+            <MenuItem Header="Accounts">
+                <MenuItem Header="Create" Click="Account_Create"/>
+            </MenuItem>
+        </Menu>
+        <ListView Grid.Column="0" Grid.Row="1" Name="folderList_" SelectionMode="Single" SelectionChanged="SelectFolder">
             <ListView.ItemTemplate>
                 <DataTemplate>
                     <StackPanel Orientation="Horizontal">
@@ -21,7 +30,7 @@
                 </DataTemplate>
             </ListView.ItemTemplate>
         </ListView>
-        <ListView Grid.Column="1" Name="messageList_" Foreground="Black">
+        <ListView Grid.Column="1" Grid.Row="1" Name="messageList_" Foreground="Black">
             <ListView.ItemContainerStyle>
                 <Style TargetType="ListViewItem">
                     <Setter Property="FontWeight" Value="Regular" />

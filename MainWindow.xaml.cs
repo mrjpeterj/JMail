@@ -19,24 +19,25 @@ namespace Mail
     /// </summary>
     public partial class MainWindow: Window
     {
-        Imap server_;
+        IAccount server_;
 
         public MainWindow()
         {
             InitializeComponent();
 
+#if false
             var accnt = new AccountInfo
             {
                 Host = "mister-j.dyndns.org",
                 Port = 143,
                 Username = "peterj",
-                Password = "Cherub_r"
             };
 
             server_ = new Imap(accnt);
 
             folderList_.ItemsSource = server_.FolderList;
             messageList_.ItemsSource = server_.MessageList;
+#endif
         }
 
         private void SelectFolder(object sender, SelectionChangedEventArgs e)
@@ -47,6 +48,13 @@ namespace Mail
             {
                 server_.SelectFolder(folder);
             }
+        }
+
+        private void Account_Create(object sender, RoutedEventArgs e)
+        {
+            var dialog = new AddAccount();
+            dialog.Owner = this;
+            dialog.Show();
         }
     }
 }
