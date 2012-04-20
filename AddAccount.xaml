@@ -1,0 +1,42 @@
+﻿<Window x:Class="Mail.AddAccount"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="AddAccount" Height="300" Width="300">
+    <Window.Resources>
+        <Style TargetType="TextBlock">
+            <Setter Property="Padding" Value="5" />
+        </Style>
+    </Window.Resources>
+    <StackPanel Orientation="Vertical">
+        <DockPanel>
+            <TextBlock DockPanel.Dock="Left">Name</TextBlock>
+            <TextBox DockPanel.Dock="Right" />
+        </DockPanel>
+        <DockPanel>
+            <TextBlock DockPanel.Dock="Left">Server</TextBlock>
+            <TextBox DockPanel.Dock="Right" />
+        </DockPanel>
+        <DockPanel>
+            <TextBlock DockPanel.Dock="Left">Username</TextBlock>
+            <TextBox DockPanel.Dock="Right" />
+        </DockPanel>
+        <DockPanel>
+            <TextBlock DockPanel.Dock="Left">Password</TextBlock>
+            <PasswordBox DockPanel.Dock="Right" />
+        </DockPanel>
+        <DockPanel>
+            <TextBlock DockPanel.Dock="Left">Protocol</TextBlock>
+            <ComboBox>
+                <TextBlock>IMAP</TextBlock>
+            </ComboBox>
+        </DockPanel>
+        <DockPanel>
+            <TextBlock DockPanel.Dock="Left">Port</TextBlock>            
+            <TextBox DockPanel.Dock="Right"></TextBox>
+        </DockPanel>
+        <DockPanel>
+            <TextBlock DockPanel.Dock="Left">Requires Encryption</TextBlock>            
+            <CheckBox DockPanel.Dock="Right" VerticalAlignment="Center" />
+        </DockPanel>
+    </StackPanel>
+</Window>
