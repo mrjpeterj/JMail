@@ -164,7 +164,7 @@ namespace Mail
             {
                 return DateTime.Parse(value);
             }
-            catch (Exception e)
+            catch (Exception)
             {
             }
 
@@ -178,7 +178,7 @@ namespace Mail
                 {
                     return DateTime.Parse(value);
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                 }
             }
