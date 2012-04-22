@@ -79,6 +79,15 @@ namespace Mail
                 incoming_ = new byte[8 * 1024];
                 readStart_ = 0;
 
+                if (account.Encrypt)
+                {
+                    var sslStream = new System.Net.Security.SslStream(client_.GetStream(), false,
+                        new System.Net.Security.RemoteCertificateValidationCallback(GotRemoteCert));
+                    sslStream.AuthenticateAsClient(account_.Host);
+
+                    stream_ = sslStream;
+                }
+
                 stream_.BeginRead(incoming_, readStart_, incoming_.Length, HandleRead, null);
             }
         }
@@ -99,7 +108,7 @@ namespace Mail
 
         void ProcessResponse(string responseText)
         {
-            //System.Diagnostics.Debug.Write(responseText);
+            System.Diagnostics.Debug.Write(responseText);
 
             string[] responses = responseText.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
             string lastResponse = responses.Last();
@@ -259,7 +268,7 @@ namespace Mail
 
         void Login()
         {
-            SendCommand("LOGIN", account_.Username + " " + account_.Password, HandleLogin);
+            SendCommand("LOGIN", account_.Username + " " + account_.GetPassword(), HandleLogin);
         }
 
         void HandleLogin(ImapRequest request, IEnumerable<string> resultData)
@@ -290,10 +299,10 @@ namespace Mail
                 string nameSpace = data[1];
                 string folder = data[3];
 
-                folders_.Add(new Folder(folder));
+                folders_.Add(new Folder(this, folder));
             }
 
-            SelectFolder(folders_[0]);
+            //SelectFolder(folders_[0]);
         }
 
         void ListMessages(ImapRequest request, IEnumerable<string> responseData)
@@ -429,7 +438,7 @@ namespace Mail
                 ++pos;
             }
 
-            return -1;
+            return data.Length;
         }
 
         void ExtractValues(MessageHeader msg, string data)
