@@ -9,6 +9,7 @@ namespace Mail
 {
     public class Folder: INotifyPropertyChanged
     {
+        IAccount server_;
         string name_;
         List<Folder> subFolders_;
 
@@ -92,14 +93,22 @@ namespace Mail
             }
         }
 
-        public Folder(string name, Folder parent = null)
+        public IAccount Server { get { return server_; } }
+
+        public Folder(IAccount server, string name, Folder parent = null)
         {
+            server_ = server;
             name_ = name;
         }
 
         public override string ToString()
         {
             return name_;
+        }
+
+        public void Select()
+        {
+            server_.SelectFolder(this);
         }
 
         #region INotifyPropertyChanged Members
