@@ -26,14 +26,17 @@ namespace Mail
             DataContext = account_;
 
             InitializeComponent();
+
+            proto_.ItemsSource = Enum.GetNames(typeof(Protocol));
         }
 
         private void Ok_Clicked(object sender, RoutedEventArgs e)
         {
+            DialogResult = true;
+
             account_.SecurePassword = passwordBox_.SecurePassword;
             account_.Save();
 
-            DialogResult = true;
             Close();
         }
 

@@ -59,6 +59,7 @@
     <Compile Include="AddAccount.xaml.cs">
       <DependentUpon>AddAccount.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Settings.cs" />
     <Compile Include="ThreadedList.cs" />
     <Page Include="AddAccount.xaml">
       <SubType>Designer</SubType>
