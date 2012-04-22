@@ -98,7 +98,7 @@ namespace Mail
 
             if (bytesRead > 0)
             {
-                string response = UTF8Encoding.UTF8.GetString(incoming_, 0, bytesRead);
+                string response = Encoding.UTF8.GetString(incoming_, 0, bytesRead);
 
                 ProcessResponse(response);
             }
@@ -108,7 +108,7 @@ namespace Mail
 
         void ProcessResponse(string responseText)
         {
-            System.Diagnostics.Debug.Write(responseText);
+            //System.Diagnostics.Debug.Write(responseText);
 
             string[] responses = responseText.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
             string lastResponse = responses.Last();
@@ -182,7 +182,7 @@ namespace Mail
                 // We need to store this text up and append the next read to it.
                 string leftOverResponse = string.Join("\r\n", commandResponse);
 
-                readStart_ = UTF8Encoding.UTF8.GetBytes(leftOverResponse, 0, leftOverResponse.Length, incoming_, 0);
+                readStart_ = Encoding.UTF8.GetBytes(leftOverResponse, 0, leftOverResponse.Length, incoming_, 0);
             }
             else
             {
@@ -212,7 +212,7 @@ namespace Mail
 
             pendingCommands_[commandId] = new ImapRequest(commandId, command, args, handler);
 
-            byte[] bytes = UTF8Encoding.UTF8.GetBytes(cmd);
+            byte[] bytes = Encoding.UTF8.GetBytes(cmd);
 
             stream_.Write(bytes, 0, bytes.Length);
             stream_.Flush();
@@ -604,8 +604,7 @@ namespace Mail
                     data = QuottedPrintableDecode(rest);
                 }
 
-                Encoding enc = Encoding.GetEncoding(charset);
-                string res = enc.GetString(data);
+                string res = Encoding.GetEncoding(charset).GetString(data);
 
                 input = input.Substring(0, encodingStart) + res + input.Substring(encodingEnd, input.Length - encodingEnd);
             }
@@ -670,7 +669,7 @@ namespace Mail
 
         public void SelectFolder(Folder f)
         {
-            SendCommand("SELECT", f.FullName, ListMessages);
+            SendCommand("SELECT", "\"" + f.FullName + "\"", ListMessages);
         }
 
         #endregion
