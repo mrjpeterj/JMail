@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -19,34 +20,34 @@ namespace Mail
     /// </summary>
     public partial class MainWindow: Window
     {
-        IAccount server_;
+        public IList<AccountInfo> Servers { get; private set; }
 
         public MainWindow()
         {
+            Servers = Properties.Settings.Default.Accounts;
+
+            DataContext = this;
             InitializeComponent();
 
-#if false
-            var accnt = new AccountInfo
+            if (Servers != null)
             {
-                Host = "mister-j.dyndns.org",
-                Port = 143,
-                Username = "peterj",
-            };
-
-            server_ = new Imap(accnt);
-
-            folderList_.ItemsSource = server_.FolderList;
-            messageList_.ItemsSource = server_.MessageList;
-#endif
+                foreach (var s in Servers)
+                {
+                    s.Connect();
+                }
+            }
         }
 
-        private void SelectFolder(object sender, SelectionChangedEventArgs e)
+        private void SelectFolder(object sender, RoutedEventArgs e)
         {
-            Folder folder = folderList_.SelectedItem as Folder;
+            var item = e.OriginalSource as TreeViewItem;
+            var folder = item.DataContext as Folder;
 
             if (folder != null)
             {
-                server_.SelectFolder(folder);
+                folder.Select();
+
+                messageList_.ItemsSource = folder.Server.MessageList;
             }
         }
 
@@ -54,7 +55,7 @@ namespace Mail
         {
             var dialog = new AddAccount();
             dialog.Owner = this;
-            dialog.Show();
+            dialog.ShowDialog();
         }
     }
 }

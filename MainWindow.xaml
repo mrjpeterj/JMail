@@ -11,7 +11,7 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-            <Grid.ColumnDefinitions>
+        <Grid.ColumnDefinitions>
             <ColumnDefinition Width="200" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
@@ -20,16 +20,28 @@
                 <MenuItem Header="Create" Click="Account_Create"/>
             </MenuItem>
         </Menu>
-        <ListView Grid.Column="0" Grid.Row="1" Name="folderList_" SelectionMode="Single" SelectionChanged="SelectFolder">
-            <ListView.ItemTemplate>
-                <DataTemplate>
-                    <StackPanel Orientation="Horizontal">
-                        <Label Content="{Binding FullName}" Padding="2" />
-                        <Label Content="{Binding UnseenText}" Padding="2" FontWeight="Bold" Foreground="RoyalBlue" />
-                    </StackPanel>
-                </DataTemplate>
-            </ListView.ItemTemplate>
-        </ListView>
+        <TreeView Grid.Column="0" Grid.Row="1" ItemsSource="{Binding Servers}" TreeViewItem.Selected="SelectFolder">
+            <TreeView.ItemContainerStyle>
+                <Style TargetType="TreeViewItem">
+                    <Setter Property="IsExpanded" Value="True" />
+                </Style>
+            </TreeView.ItemContainerStyle>
+            <TreeView.ItemTemplate>
+                <HierarchicalDataTemplate DataType="local:AccountInfo" ItemsSource="{Binding Connection.FolderList}">
+                    <TextBlock Text="{Binding Host}" />
+
+                    <HierarchicalDataTemplate.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <Label Content="{Binding FullName}" Padding="2" />
+                                <Label Content="{Binding UnseenText}" Padding="2" FontWeight="Bold" Foreground="RoyalBlue" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </HierarchicalDataTemplate.ItemTemplate>
+                </HierarchicalDataTemplate>
+            </TreeView.ItemTemplate>
+        </TreeView>
+
         <ListView Grid.Column="1" Grid.Row="1" Name="messageList_" Foreground="Black">
             <ListView.ItemContainerStyle>
                 <Style TargetType="ListViewItem">
