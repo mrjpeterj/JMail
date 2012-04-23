@@ -307,10 +307,12 @@ namespace Mail
 
         void ListMessages(ImapRequest request, IEnumerable<string> responseData)
         {
+            string folderName = request.Args.Substring(1, request.Args.Length - 2);
+
             state_ = ImapState.Selected;
 
             Folder folder = (from f in folders_
-                             where f.FullName == request.Args
+                             where f.FullName == folderName
                              select f).FirstOrDefault();
 
             if (folder != null)
@@ -345,7 +347,7 @@ namespace Mail
             }
 
             messages_.Clear();
-            SendCommand("SEARCH", "ALL", AvailableMessages);
+            SendCommand("SEARCH", "UNDELETED", AvailableMessages);
         }
 
         void AvailableMessages(ImapRequest request, IEnumerable<string> responseData)
@@ -481,7 +483,7 @@ namespace Mail
         string ExtractSingle(MessageHeader msg, string data, string key)
         {
             int dataEnd = FindTokenEnd(data);
-            string value = data.Substring(0, dataEnd - 1);
+            string value = data.Substring(0, dataEnd);
             string remaining = data.Substring(dataEnd + 1, data.Length - dataEnd - 1);
 
             msg.SetValue(key, value);
