@@ -15,7 +15,7 @@ namespace Mail
 
         int exists_;
         int recent_;
-        int unseenStart_;
+        int unseen_;
 
         public string FullName
         {
@@ -36,8 +36,6 @@ namespace Mail
                 {
                     PropertyChanged(this, new PropertyChangedEventArgs("Exists"));
                 }
-
-                UnseenStart = value + 1;
             }
         }
 
@@ -47,34 +45,22 @@ namespace Mail
             set { recent_ = value; }
         }
 
-        public int UnseenStart
-        {
-            get { return unseenStart_; }
-            set
-            {
-                unseenStart_ = value;
-
-                if (PropertyChanged != null)
-                {
-                    PropertyChanged(this, new PropertyChangedEventArgs("UnseenStart"));
-                    PropertyChanged(this, new PropertyChangedEventArgs("Unseen"));
-                    PropertyChanged(this, new PropertyChangedEventArgs("UnseenText"));
-                }
-            }
-        }
-
         public int Unseen
         {
             get
             {
-                if (exists_ == 0)
+                return unseen_;
+            }
+
+            set
+            {
+                unseen_ = value;
+
+                if (PropertyChanged != null)
                 {
-                    return 0;
-                }
-                else
-                {
-                    return exists_ - unseenStart_ + 1;
-                }
+                    PropertyChanged(this, new PropertyChangedEventArgs("Unseen"));
+                    PropertyChanged(this, new PropertyChangedEventArgs("UnseenText"));
+                }                
             }
         }
 

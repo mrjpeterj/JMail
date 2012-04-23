@@ -297,12 +297,22 @@ namespace Mail
                 flags = flags.Substring(1, flags.Length - 2);
 
                 string nameSpace = data[1];
-                string folder = data[3];
+                string folderName = data[3];
 
-                folders_.Add(new Folder(this, folder));
+                Folder folder = new Folder(this, folderName);
+
+                folders_.Add(folder);
+
+                CheckUnseen(folder);
             }
+        }
 
-            //SelectFolder(folders_[0]);
+        void SelectedFolder(ImapRequest request, IEnumerable<string> responseData)
+        {
+            ListMessages(request, responseData);
+
+            messages_.Clear();
+            SendCommand("SEARCH", "UNDELETED", AvailableMessages);       
         }
 
         void ListMessages(ImapRequest request, IEnumerable<string> responseData)
@@ -337,18 +347,80 @@ namespace Mail
 
                         int keywordEnd = FindTokenEnd(info);
                         string keyword = info.Substring(0, keywordEnd);
-
-                        if (keyword == "UNSEEN")
-                        {
-                            folder.UnseenStart = Int32.Parse(info.Substring(keywordEnd + 1));
-                        }
                     }
                 }
             }
-
-            messages_.Clear();
-            SendCommand("SEARCH", "UNDELETED", AvailableMessages);
         }
+
+        void CheckUnseen(Folder f)
+        {
+            SendCommand("STATUS", "\"" + f.FullName + "\"" + " (MESSAGES UNSEEN RECENT)", UnreadCount);
+        }
+
+        void UnreadCount(ImapRequest request, IEnumerable<string> responseData)
+        {
+            int folderNameEnd = FindTokenEnd(request.Args);
+            string folderName = request.Args.Substring(1, folderNameEnd - 2);
+
+            Folder folder = (from f in folders_
+                             where f.FullName == folderName
+                             select f).FirstOrDefault();
+
+            if (folder != null)
+            {
+                string responseLine = responseData.First();
+
+                for (int i = 0; i < 3; ++i)
+                {
+                    // Walk the first args.
+                    int responseStart = FindTokenEnd(responseLine);
+                    responseLine = responseLine.Substring(responseStart + 1, responseLine.Length - responseStart - 1);
+
+                }
+
+                string remaining = responseLine.Substring(1, responseLine.Length - 2);
+
+                while (remaining.Length > 0)
+                {
+
+                    int nextCut = FindTokenEnd(remaining);
+                    string key = remaining.Substring(0, nextCut);
+                    remaining = remaining.Substring(nextCut + 1, remaining.Length - nextCut - 1);
+
+                    nextCut = FindTokenEnd(remaining);
+                    string valueStr = remaining.Substring(0, nextCut);
+
+                    if (nextCut == remaining.Length)
+                    {
+                        remaining = "";
+                    }
+                    else
+                    {
+                        remaining = remaining.Substring(nextCut + 1, remaining.Length - nextCut - 1);
+                    }
+
+                    try
+                    {
+                        int value = Int32.Parse(valueStr);
+
+                        if (key == "UNSEEN")
+                        {
+                            folder.Unseen = value;
+                        }
+                        else if (key == "MESSAGES")
+                        {
+                            folder.Exists = value;
+                        }
+                        else if (key == "RECENT")
+                        {
+                            folder.Recent = value;
+                        }
+                    }
+                    catch (FormatException) { }
+                }
+            }            
+        }
+
 
         void AvailableMessages(ImapRequest request, IEnumerable<string> responseData)
         {
@@ -671,7 +743,7 @@ namespace Mail
 
         public void SelectFolder(Folder f)
         {
-            SendCommand("SELECT", "\"" + f.FullName + "\"", ListMessages);
+            SendCommand("SELECT", "\"" + f.FullName + "\"", SelectedFolder);
         }
 
         #endregion
