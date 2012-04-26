@@ -12,7 +12,10 @@ namespace Mail
         IAccount server_;
         string name_;
         string shortName_;
-        List<Folder> subFolders_;
+        
+        ThreadedList<Folder> subFolders_;
+
+        bool canHaveMessages_;
 
         int exists_;
         int recent_;
@@ -91,7 +94,7 @@ namespace Mail
         public IAccount Server { get { return server_; } }
         public IList<Folder> Children { get { return subFolders_; } }
 
-        public Folder(IAccount server, string name, string shortName, bool hasChildren)
+        public Folder(IAccount server, string name, string shortName, bool hasChildren, bool canHaveMessages)
         {
             server_ = server;
             name_ = name;
@@ -99,8 +102,10 @@ namespace Mail
 
             if (hasChildren)
             {
-                subFolders_ = new List<Folder>();
+                subFolders_ = new ThreadedList<Folder>();
             }
+
+            canHaveMessages_ = canHaveMessages;
         }
 
         public override string ToString()
@@ -110,7 +115,10 @@ namespace Mail
 
         public void Select()
         {
-            server_.SelectFolder(this);
+            if (canHaveMessages_)
+            {
+                server_.SelectFolder(this);
+            }
         }
 
         #region INotifyPropertyChanged Members

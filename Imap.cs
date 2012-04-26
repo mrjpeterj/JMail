@@ -300,10 +300,15 @@ namespace Mail
                 string flags = data[0].Trim();
                 flags = flags.Substring(1, flags.Length - 2);
                 bool hasChildren = false;
+                bool realFolder = true;
 
                 if (flags.Contains("\\HasChildren"))
                 {
                     hasChildren = true;
+                }
+                if (flags.Contains("\\Noselect"))
+                {
+                    realFolder = false;
                 }
 
                 string nameSpace = data[1];
@@ -326,7 +331,7 @@ namespace Mail
                     folderShortName = folderName.Replace(currentParent.FullName, "").Substring(1);
                 }
 
-                Folder folder = new Folder(this, folderName, folderShortName, hasChildren);
+                Folder folder = new Folder(this, folderName, folderShortName, hasChildren, realFolder);
 
                 if (currentParent != null) 
                 {
@@ -344,7 +349,10 @@ namespace Mail
                     currentParent = folder;
                 }
 
-                CheckUnseen(folder);
+                if (realFolder)
+                {
+                    CheckUnseen(folder);
+                }
             }
         }
 
