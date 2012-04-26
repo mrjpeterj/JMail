@@ -4,7 +4,16 @@
         xmlns:local="clr-namespace:Mail"
         Title="MainWindow" Height="350" Width="525">
     <Window.Resources>
+        <HierarchicalDataTemplate DataType="{x:Type local:AccountInfo}" ItemsSource="{Binding Connection.FolderList}">
+            <TextBlock Text="{Binding Host}" />
+        </HierarchicalDataTemplate>
 
+        <HierarchicalDataTemplate DataType="{x:Type local:Folder}" ItemsSource="{Binding Children}" >
+            <StackPanel Orientation="Horizontal">
+                <Label Content="{Binding Name}" Padding="2" />
+                <Label Content="{Binding UnseenText}" Padding="2" FontWeight="Bold" Foreground="RoyalBlue" />
+            </StackPanel>
+        </HierarchicalDataTemplate>
     </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
@@ -26,20 +35,6 @@
                     <Setter Property="IsExpanded" Value="True" />
                 </Style>
             </TreeView.ItemContainerStyle>
-            <TreeView.ItemTemplate>
-                <HierarchicalDataTemplate DataType="local:AccountInfo" ItemsSource="{Binding Connection.FolderList}">
-                    <TextBlock Text="{Binding Host}" />
-
-                    <HierarchicalDataTemplate.ItemTemplate>
-                        <DataTemplate>
-                            <StackPanel Orientation="Horizontal">
-                                <Label Content="{Binding FullName}" Padding="2" />
-                                <Label Content="{Binding UnseenText}" Padding="2" FontWeight="Bold" Foreground="RoyalBlue" />
-                            </StackPanel>
-                        </DataTemplate>
-                    </HierarchicalDataTemplate.ItemTemplate>
-                </HierarchicalDataTemplate>
-            </TreeView.ItemTemplate>
         </TreeView>
 
         <ListView Grid.Column="1" Grid.Row="1" Name="messageList_" Foreground="Black">

@@ -57,6 +57,7 @@ namespace Mail
         private int cmdId_ = 0;
         private Dictionary<string, ImapRequest> pendingCommands_;
 
+        private ThreadedList<Folder> allFolders_;
         private ThreadedList<Folder> folders_;
         private MessageStore messages_;
 
@@ -66,6 +67,7 @@ namespace Mail
             state_ = ImapState.None;
             pendingCommands_ = new Dictionary<string, ImapRequest>();
 
+            allFolders_ = new ThreadedList<Folder>();
             folders_ = new ThreadedList<Folder>();
             messages_ = new MessageStore();
 
@@ -285,6 +287,8 @@ namespace Mail
 
         void ListedFolder(ImapRequest request, IEnumerable<string> responseData)
         {
+            Folder currentParent = null;
+
             foreach (var response in responseData)
             {
                 // each line looks like:
@@ -295,13 +299,50 @@ namespace Mail
 
                 string flags = data[0].Trim();
                 flags = flags.Substring(1, flags.Length - 2);
+                bool hasChildren = false;
+
+                if (flags.Contains("\\HasChildren"))
+                {
+                    hasChildren = true;
+                }
 
                 string nameSpace = data[1];
                 string folderName = data[3];
+                string folderShortName = folderName;
 
-                Folder folder = new Folder(this, folderName);
+                if (currentParent != null)
+                {
+                    if (!folderName.Contains(currentParent.FullName))
+                    {
+                        // No longer a parent of current parent, look for a new one.
+                        currentParent = (from f in allFolders_
+                                         where f.Children != null && f.Children.Contains(currentParent)
+                                         select f).FirstOrDefault();
+                    }
+                }
 
-                folders_.Add(folder);
+                if (currentParent != null)
+                {
+                    folderShortName = folderName.Replace(currentParent.FullName, "").Substring(1);
+                }
+
+                Folder folder = new Folder(this, folderName, folderShortName, hasChildren);
+
+                if (currentParent != null) 
+                {
+                    currentParent.Children.Add(folder);
+                }
+                else
+                {
+                    folders_.Add(folder);
+                }
+
+                allFolders_.Add(folder);
+
+                if (hasChildren)
+                {
+                    currentParent = folder;
+                }
 
                 CheckUnseen(folder);
             }
@@ -321,7 +362,7 @@ namespace Mail
 
             state_ = ImapState.Selected;
 
-            Folder folder = (from f in folders_
+            Folder folder = (from f in AllFolders
                              where f.FullName == folderName
                              select f).FirstOrDefault();
 
@@ -362,7 +403,7 @@ namespace Mail
             int folderNameEnd = FindTokenEnd(request.Args);
             string folderName = request.Args.Substring(1, folderNameEnd - 2);
 
-            Folder folder = (from f in folders_
+            Folder folder = (from f in AllFolders
                              where f.FullName == folderName
                              select f).FirstOrDefault();
 
@@ -734,6 +775,11 @@ namespace Mail
         public IEnumerable<Folder> FolderList
         {
             get { return folders_; }
+        }
+
+        public IEnumerable<Folder> AllFolders
+        {
+            get { return allFolders_; }
         }
 
         public IEnumerable<MessageHeader> MessageList

@@ -11,6 +11,7 @@ namespace Mail
     {
         IAccount server_;
         string name_;
+        string shortName_;
         List<Folder> subFolders_;
 
         int exists_;
@@ -22,6 +23,14 @@ namespace Mail
             get
             {
                 return name_;
+            }
+        }
+
+        public string Name
+        {
+            get
+            {
+                return shortName_;
             }
         }
 
@@ -80,11 +89,18 @@ namespace Mail
         }
 
         public IAccount Server { get { return server_; } }
+        public IList<Folder> Children { get { return subFolders_; } }
 
-        public Folder(IAccount server, string name, Folder parent = null)
+        public Folder(IAccount server, string name, string shortName, bool hasChildren)
         {
             server_ = server;
             name_ = name;
+            shortName_ = shortName;
+
+            if (hasChildren)
+            {
+                subFolders_ = new List<Folder>();
+            }
         }
 
         public override string ToString()
