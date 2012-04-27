@@ -24,6 +24,11 @@ namespace Mail
 
         public MainWindow()
         {
+            if (Properties.Settings.Default.Accounts == null)
+            {
+                Properties.Settings.Default.Accounts = new AccountList();
+            }
+            
             Servers = Properties.Settings.Default.Accounts;
 
             DataContext = this;
@@ -53,9 +58,31 @@ namespace Mail
 
         private void Account_Create(object sender, RoutedEventArgs e)
         {
-            var dialog = new AddAccount();
+            var dialog = new AccountProps();
             dialog.Owner = this;
-            dialog.ShowDialog();
+            if (dialog.ShowDialog() == true)
+            {
+                Servers.Add(dialog.Account);
+
+                Properties.Settings.Default.Save();
+
+                dialog.Account.Connect();
+            }
+        }
+
+        private void Account_Delete(object sender, RoutedEventArgs e)
+        {
+            FrameworkElement ele = sender as FrameworkElement;
+            AccountInfo acnt = ele.DataContext as AccountInfo;
+
+            Servers.Remove(acnt);
+
+            Properties.Settings.Default.Save();
+        }
+
+        private void Account_Edit(object sender, RoutedEventArgs e)
+        {
+
         }
     }
 }

@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
+using System.Collections.Specialized;
+
 using System.Security;
 using System.Security.Cryptography;
 
@@ -14,7 +16,7 @@ namespace Mail
     /// Used for serializing the settings
     /// </summary>
     [XmlInclude(typeof(AccountInfo))]
-    public class AccountList: System.Collections.ArrayList, IList<AccountInfo>
+    public class AccountList: System.Collections.ArrayList, IList<AccountInfo>, INotifyCollectionChanged
     {
         #region IList<AccountInfo> Members
         public int IndexOf(AccountInfo item)
@@ -25,6 +27,10 @@ namespace Mail
         public void Insert(int index, AccountInfo item)
         {
             base.Insert(index, item);
+
+            if (CollectionChanged != null) {
+                CollectionChanged(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
+            }
         }
 
         public new AccountInfo this[int index]
@@ -35,7 +41,14 @@ namespace Mail
             }
             set
             {
+                var oldItem = base[index];
                 base[index] = value;
+
+                if (CollectionChanged != null)
+                {
+                    CollectionChanged(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Replace, 
+                                                                                 value, oldItem));
+                }
             }
         }
 
@@ -46,6 +59,11 @@ namespace Mail
         public void Add(AccountInfo item)
         {
             base.Add(item);
+
+            if (CollectionChanged != null)
+            {
+                CollectionChanged(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, item));
+            }
         }
 
         public bool Contains(AccountInfo item)
@@ -64,6 +82,11 @@ namespace Mail
 
             base.Remove(item);
 
+            if (exists && CollectionChanged != null)
+            {
+                CollectionChanged(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, item));
+            }
+
             return exists;
         }
 
@@ -81,6 +104,12 @@ namespace Mail
 
             return accounts.GetEnumerator();
         }
+
+        #endregion
+
+        #region INotifyCollectionChanged Members
+
+        public event NotifyCollectionChangedEventHandler CollectionChanged;
 
         #endregion
     }
@@ -169,19 +198,7 @@ namespace Mail
             Protocol = Protocol.IMAP4;
             Port = 143;
         }
-
-        public void Save()
-        {
-
-            if (Properties.Settings.Default.Accounts == null)
-            {
-                Properties.Settings.Default.Accounts = new AccountList();
-            }
-            
-            Properties.Settings.Default.Accounts.Add(this);
-            Properties.Settings.Default.Save();
-        }
-
+       
         public string GetPassword()
         {
             IntPtr bPwd = System.Runtime.InteropServices.Marshal.SecureStringToBSTR(SecurePassword);

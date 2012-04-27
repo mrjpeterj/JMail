@@ -56,12 +56,12 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="AddAccount.xaml.cs">
-      <DependentUpon>AddAccount.xaml</DependentUpon>
+    <Compile Include="AccountProps.xaml.cs">
+      <DependentUpon>AccountProps.xaml</DependentUpon>
     </Compile>
     <Compile Include="Settings.cs" />
     <Compile Include="ThreadedList.cs" />
-    <Page Include="AddAccount.xaml">
+    <Page Include="AccountProps.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

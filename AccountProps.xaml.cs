@@ -14,20 +14,27 @@ using System.Windows.Shapes;
 namespace Mail
 {
     /// <summary>
-    /// Interaction logic for AddAccount.xaml
+    /// Interaction logic for AccountProps.xaml
     /// </summary>
-    public partial class AddAccount: Window
+    public partial class AccountProps: Window
     {
         AccountInfo account_;
 
-        public AddAccount()
+        public AccountInfo Account { get { return account_; } }
+
+        public AccountProps()
+            : this(new AccountInfo())
         {
-            account_ = new AccountInfo();
+        }
+
+        public AccountProps(AccountInfo account)
+        {
+            account_ = account;
             DataContext = account_;
 
             InitializeComponent();
 
-            proto_.ItemsSource = Enum.GetNames(typeof(Protocol));
+            proto_.ItemsSource = Enum.GetNames(typeof(Protocol));            
         }
 
         private void Ok_Clicked(object sender, RoutedEventArgs e)
@@ -35,7 +42,6 @@ namespace Mail
             DialogResult = true;
 
             account_.SecurePassword = passwordBox_.SecurePassword;
-            account_.Save();
 
             Close();
         }

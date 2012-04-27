@@ -5,7 +5,14 @@
         Title="MainWindow" Height="350" Width="525">
     <Window.Resources>
         <HierarchicalDataTemplate DataType="{x:Type local:AccountInfo}" ItemsSource="{Binding Connection.FolderList}">
-            <TextBlock Text="{Binding Host}" />
+          <TextBlock Text="{Binding Host}">
+            <TextBlock.ContextMenu>
+              <ContextMenu>
+                <MenuItem Header="Delete" Click="Account_Delete" />
+                <MenuItem Header="Edit" Click="Account_Edit"/>
+              </ContextMenu>        
+            </TextBlock.ContextMenu>
+          </TextBlock>
         </HierarchicalDataTemplate>
 
         <HierarchicalDataTemplate DataType="{x:Type local:Folder}" ItemsSource="{Binding Children}" >
