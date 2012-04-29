@@ -105,21 +105,46 @@ namespace Mail
                 ProcessResponse(response);
             }
 
-            stream_.BeginRead(incoming_, readStart_, incoming_.Length - readStart_, HandleRead, null);
+            int readLen = incoming_.Length - readStart_;
+            if (readLen < 1024)
+            {
+                // incoming needs expanding
+                var oldIncoming = incoming_;
+                float upscaleSize = 2.0f;
+                if (oldIncoming.Length > 64 * 1024)
+                {
+                    upscaleSize = 1.5f;
+                }
+                if (oldIncoming.Length > 1024 * 1024)
+                {
+                    upscaleSize = 1.1f;
+                }
+
+                incoming_ = new byte[(int)(oldIncoming.Length * upscaleSize)];
+                Array.Copy(oldIncoming, incoming_, oldIncoming.Length);
+
+                readLen = incoming_.Length - readStart_;
+            }
+
+            stream_.BeginRead(incoming_, readStart_, readLen, HandleRead, null);
         }
 
         void ProcessResponse(string responseText)
         {
+            //System.Diagnostics.Debug.WriteLine(">>>>>>>>");
             //System.Diagnostics.Debug.Write(responseText);
+            //System.Diagnostics.Debug.WriteLine("<<<<<<<<");
 
             string[] responses = responseText.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
             string lastResponse = responses.Last();
 
             List<string> commandResponse = new List<string>();
 
-            foreach (var responseLine in responses)
+            for (int i = 0; i < responses.Length; ++i)
             {
-                if (responseLine == lastResponse && !responseText.EndsWith("\r\n"))
+                string responseLine = responses[i];
+
+                if (i == (responses.Length - 1) && !responseText.EndsWith("\r\n"))
                 {
                     // Incomplete response.
                     commandResponse.Add(responseLine);
@@ -183,6 +208,11 @@ namespace Mail
             {
                 // We need to store this text up and append the next read to it.
                 string leftOverResponse = string.Join("\r\n", commandResponse);
+                if (responseText.EndsWith("\r\n"))
+                {
+                    // Add a trailing end line that gets lots in the split/join process.
+                    leftOverResponse += "\r\n";
+                }
 
                 readStart_ = Encoding.UTF8.GetBytes(leftOverResponse, 0, leftOverResponse.Length, incoming_, 0);
             }
@@ -479,25 +509,56 @@ namespace Mail
                 // * SEARCH <list of ids>
 
                 string[] messages = response.Split(new char[] { ' ' });
+                List<int> msgIds = new List<int>();
 
                 foreach (var msg in messages)
                 {
                     int msgId = -1;
                     if (Int32.TryParse(msg, out msgId))
                     {
-                        FetchMessage(msgId);
+                        msgIds.Add(msgId);
                     }
+                }
+
+                if (msgIds.Count > 0)
+                {
+                    FetchMessage(msgIds);
                 }
             }
         }
 
-        void FetchMessage(int id)
+        void FetchMessage(IList<int> ids)
         {
-            if (!messages_.Contains(id))
-            {
-                messages_.Add(new MessageHeader(id));
+            string idList = "";
 
-                SendCommand("FETCH", id + " (FLAGS INTERNALDATE UID RFC822.SIZE BODY.PEEK[HEADER.FIELDS (DATE FROM SUBJECT)])", ProcessMessage);
+            for (int i = 0; i < ids.Count; ++i)
+            {
+                int id = ids[i];
+
+                if (!messages_.Contains(id))
+                {
+                    messages_.Add(new MessageHeader(id));
+
+                    if (idList.Length > 0)
+                    {
+                        idList += ",";
+                    }
+                    idList += id;
+                }
+
+                if (i % 50 == 49)
+                {
+                    // Batch into 50's
+
+                    SendCommand("FETCH", idList + " (FLAGS INTERNALDATE UID RFC822.SIZE BODY.PEEK[HEADER.FIELDS (DATE FROM SUBJECT)])", ProcessMessage);
+
+                    idList = "";
+                }
+            }
+
+            if (idList.Length > 0)
+            {
+                SendCommand("FETCH", idList + " (FLAGS INTERNALDATE UID RFC822.SIZE BODY.PEEK[HEADER.FIELDS (DATE FROM SUBJECT)])", ProcessMessage);
             }
         }
 
@@ -514,19 +575,30 @@ namespace Mail
 
             System.Text.RegularExpressions.Regex regex = new System.Text.RegularExpressions.Regex(@"\* (?<id>[0-9]+) FETCH ");
 
-            var match = regex.Match(info);
-
-            var idStr = match.Groups["id"].Value;
-            try
+            while (true)
             {
-                int id = Int32.Parse(idStr);
+                var match = regex.Match(info);
+                if (match.Success)
+                {
+                    var idStr = match.Groups["id"].Value;
+                    try
+                    {
+                        int id = Int32.Parse(idStr);
 
-                var data = info.Substring(match.Length + 1, info.Length - match.Length - 2);
+                        int msgOff = info.IndexOf(match.Value, 0);
+                        int dataOff = match.Length + 1 + msgOff;
+                        var data = info.Substring(dataOff, info.Length - dataOff);
 
-                MessageHeader msg = messages_.Message(id);
-                ExtractValues(msg, data);
+                        MessageHeader msg = messages_.Message(id);
+                        info = ExtractValues(msg, data);
+                    }
+                    catch (Exception) { }
+                }
+                else
+                {
+                    break;
+                }
             }
-            catch (Exception) { }
         }
 
         int FindTokenEnd(string data)
@@ -564,11 +636,11 @@ namespace Mail
             return data.Length;
         }
 
-        void ExtractValues(MessageHeader msg, string data)
+        string ExtractValues(MessageHeader msg, string data)
         {
             string remaining = data;
 
-            while (remaining.Length > 0)
+            while (remaining.Length > 1)
             {
                 int nextCut = FindTokenEnd(remaining);
                 string key = remaining.Substring(0, nextCut);
@@ -599,6 +671,8 @@ namespace Mail
                     break;
                 }
             }
+
+            return remaining;
         }
 
         string ExtractSingle(MessageHeader msg, string data, string key)
@@ -653,18 +727,22 @@ namespace Mail
         string ExtractBodyInfo(MessageHeader msg, string data)
         {
             string remaining = data;
+            string extra = "";
 
             if (data[0] == '{')
             {
-                // We don't need this info
                 int dataEnd = FindTokenEnd(data);
-                remaining = data.Substring(dataEnd + 1, data.Length - dataEnd - 1);
+                string contentLengthStr = data.Substring(1, dataEnd - 2);
+                int contentLength = Int32.Parse(contentLengthStr) + 1;
+
+                remaining = data.Substring(dataEnd + 3, contentLength);
+                extra = data.Substring(dataEnd + 3 + contentLength);
             }
 
             // Now we should have lines that look like email header lines.
             int fieldStart = 0;
 
-            while (true)
+            while (fieldStart < remaining.Length)
             {
                 int fieldEnd = remaining.IndexOf(": ", fieldStart);
                 if (fieldEnd == -1)
@@ -673,6 +751,11 @@ namespace Mail
                 }
 
                 int valueEnd = remaining.IndexOf("\r\n", fieldEnd);
+
+                if (valueEnd == -1)
+                {
+                    valueEnd = remaining.Length;
+                }
 
                 string field = remaining.Substring(fieldStart, fieldEnd - fieldStart);
                 string value = remaining.Substring(fieldEnd + 1, valueEnd - fieldEnd - 1);
@@ -684,7 +767,7 @@ namespace Mail
                 msg.SetValue(field.Trim(), value);
             }
 
-            return remaining.Substring(fieldStart, remaining.Length - fieldStart);
+            return extra;
         }
 
         string Decode(string input)
