@@ -76,6 +76,11 @@ namespace Mail
 
         public void SetValue(string field, string value)
         {
+            if (value == "NIL")
+            {
+                value = "";
+            }
+
             if (field.Equals("subject", StringComparison.CurrentCultureIgnoreCase))
             {
                 Subject = value;
