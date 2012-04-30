@@ -5,14 +5,14 @@
         Title="MainWindow" Height="350" Width="525">
     <Window.Resources>
         <HierarchicalDataTemplate DataType="{x:Type local:AccountInfo}" ItemsSource="{Binding Connection.FolderList}">
-          <TextBlock Text="{Binding Host}">
+            <TextBlock Text="{Binding Host}">
             <TextBlock.ContextMenu>
               <ContextMenu>
                 <MenuItem Header="Delete" Click="Account_Delete" />
                 <MenuItem Header="Edit" Click="Account_Edit"/>
               </ContextMenu>        
             </TextBlock.ContextMenu>
-          </TextBlock>
+            </TextBlock>
         </HierarchicalDataTemplate>
 
         <HierarchicalDataTemplate DataType="{x:Type local:Folder}" ItemsSource="{Binding Children}" >
@@ -47,6 +47,7 @@
         <ListView Grid.Column="1" Grid.Row="1" Name="messageList_" Foreground="Black">
             <ListView.ItemContainerStyle>
                 <Style TargetType="ListViewItem">
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                     <Setter Property="FontWeight" Value="Regular" />
                     <Setter Property="FontStyle"  Value="Normal" />
                     <Style.Triggers>
@@ -65,7 +66,13 @@
                     <GridViewColumn DisplayMemberBinding="{Binding Subject}" Header="Subject" />
                     <GridViewColumn DisplayMemberBinding="{Binding Sent}" Header="Sent" />
                     <GridViewColumn DisplayMemberBinding="{Binding Date}" Header="Date" />
-                    <GridViewColumn DisplayMemberBinding="{Binding Size}" Header="Size" />
+                    <GridViewColumn Header="Size">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock TextAlignment="Right" Text="{Binding Size}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
                 </GridView>
             </ListView.View>
         </ListView>
