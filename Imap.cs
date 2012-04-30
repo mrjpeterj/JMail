@@ -550,7 +550,7 @@ namespace Mail
                 {
                     // Batch into 50's
 
-                    SendCommand("FETCH", idList + " (FLAGS INTERNALDATE UID RFC822.SIZE BODY.PEEK[HEADER.FIELDS (DATE FROM SUBJECT)])", ProcessMessage);
+                    SendCommand("FETCH", idList + " (FLAGS INTERNALDATE UID RFC822.SIZE ENVELOPE)", ProcessMessage);
 
                     idList = "";
                 }
@@ -558,7 +558,7 @@ namespace Mail
 
             if (idList.Length > 0)
             {
-                SendCommand("FETCH", idList + " (FLAGS INTERNALDATE UID RFC822.SIZE BODY.PEEK[HEADER.FIELDS (DATE FROM SUBJECT)])", ProcessMessage);
+                SendCommand("FETCH", idList + " (FLAGS INTERNALDATE UID RFC822.SIZE ENVELOPE)", ProcessMessage);
             }
         }
 
@@ -601,9 +601,55 @@ namespace Mail
             }
         }
 
-        int FindTokenEnd(string data)
+        string StripQuotes(string data)
         {
-            int pos = 0;
+            if (data.StartsWith("\"") && data.EndsWith("\""))
+            {
+                return data.Substring(1, data.Length - 2);
+            }
+            else
+            {
+                return data;
+            }
+        }
+
+        string[] SplitToken(string token)
+        {
+            if (token == "NIL")
+            {
+                return null;
+            }
+            else
+            {
+                return SplitTokens(token.Substring(1, token.Length - 2));
+            }
+        }
+
+        string[] SplitTokens(string data)
+        {
+            List<string> tokens = new List<string>();
+
+            int token = 0;
+            while (true)
+            {
+                int nextToken = FindTokenEnd(data, token);
+
+                string tokenStr = data.Substring(token, nextToken - token);
+                tokens.Add(tokenStr);
+
+                token = nextToken + 1;
+                if (nextToken == data.Length)
+                {
+                    break;
+                }
+            }
+
+            return tokens.ToArray();
+        }
+
+        int FindTokenEnd(string data, int offset = 0)
+        {
+            int pos = offset;
             Stack<char> toMatch = new Stack<char>();
             toMatch.Push(' ');
 
@@ -644,27 +690,49 @@ namespace Mail
             {
                 int nextCut = FindTokenEnd(remaining);
                 string key = remaining.Substring(0, nextCut);
-                remaining = remaining.Substring(nextCut + 1, remaining.Length - nextCut - 1);
+
+                if (key.StartsWith("\r\n"))
+                {
+                    // This data is processed.
+                    break;
+                }
+
+                int valueCut = FindTokenEnd(remaining, nextCut + 1);
+                string value = remaining.Substring(nextCut + 1, valueCut - nextCut - 1);
+
+                if (valueCut != remaining.Length)
+                {
+                    ++valueCut;
+                    remaining = remaining.Substring(valueCut, remaining.Length - valueCut);
+                }
+                else
+                {
+                    remaining = "";
+                }
 
                 if (key == "FLAGS")
                 {
-                    remaining = ExtractFlags(msg, remaining);
+                    ExtractFlags(msg, value);
                 }
                 else if (key.StartsWith("BODY["))
                 {
-                    remaining = ExtractBodyInfo(msg, remaining);
+                    ExtractBodyInfo(msg, value);
                 }
                 else if (key == "INTERNALDATE")
                 {
-                    remaining = ExtractDate(msg, remaining);
+                    ExtractDate(msg, value);
                 }
                 else if (key == "UID")
                 {
-                    remaining = ExtractSingle(msg, remaining, "UID");
+                    ExtractSingle(msg, value, "UID");
                 }
                 else if (key == "RFC822.SIZE")
                 {
-                    remaining = ExtractSingle(msg, remaining, "SIZE");
+                    ExtractSingle(msg, value, "SIZE");
+                }
+                else if (key == "ENVELOPE")
+                {
+                    ParseEnvelope(msg, value);
                 }
                 else
                 {
@@ -675,23 +743,40 @@ namespace Mail
             return remaining;
         }
 
-        string ExtractSingle(MessageHeader msg, string data, string key)
+        void ParseEnvelope(MessageHeader msg, string envData)
         {
-            int dataEnd = FindTokenEnd(data);
-            string value = data.Substring(0, dataEnd);
-            string remaining = data.Substring(dataEnd + 1, data.Length - dataEnd - 1);
+            string[] envItems = SplitToken(envData);
 
-            msg.SetValue(key, value);
+            // Basic string fields
+            string dataStr = StripQuotes(envItems[0]);
+            string subject = StripQuotes(envItems[1]);
+            string inReplyTo = StripQuotes(envItems[8]);
+            string msgId = StripQuotes(envItems[9]);
 
-            return remaining;
+            msg.SetValue("Date", dataStr);
+            msg.SetValue("Subject", subject);
+            msg.SetValue("In-Reply-To", inReplyTo);
+            msg.SetValue("Message-Id", msgId);
+
+            string[] from = SplitToken(envItems[2]);
+            string[] sender = SplitToken(envItems[3]);
+            string[] replyTo = SplitToken(envItems[4]);
+            string[] to = SplitToken(envItems[5]);
+            string[] cc = SplitToken(envItems[6]);
+            string[] bcc = SplitToken(envItems[7]);
+
+            msg.SetValue("From", AddressBuilder(SplitToken(from[0])));
         }
 
-        string ExtractFlags(MessageHeader msg, string data)
+        void ExtractSingle(MessageHeader msg, string value, string key)
         {
-            // Flags are surrounded by ( ... )
-            int dataEnd = FindTokenEnd(data);
-            string flagString = data.Substring(1, dataEnd - 2);
-            string remaining = data.Substring(dataEnd + 1, data.Length - dataEnd - 1);
+            msg.SetValue(key, value);
+        }
+
+        void ExtractFlags(MessageHeader msg, string flagString)
+        {
+            // Clip off surrounding ( )
+            flagString = flagString.Substring(1, flagString.Length - 2);
 
             // Process flags here
             msg.ClearFlags();
@@ -708,26 +793,16 @@ namespace Mail
                     }
                 }
             }
-
-            return remaining;
         }
 
-        string ExtractDate(MessageHeader msg, string data)
+        void ExtractDate(MessageHeader msg, string dateString)
         {
-            // Date is surrounded by " ... "
-            int dataEnd = FindTokenEnd(data);
-            string dateString = data.Substring(1, dataEnd - 2);
-            string remaining = data.Substring(dataEnd + 1, data.Length - dataEnd - 1);
-
-            msg.SetValue("Received", dateString);
-
-            return remaining;
+            msg.SetValue("Received", dateString.Substring(1, dateString.Length - 2));
         }
 
-        string ExtractBodyInfo(MessageHeader msg, string data)
+        void ExtractBodyInfo(MessageHeader msg, string data)
         {
             string remaining = data;
-            string extra = "";
 
             if (data[0] == '{')
             {
@@ -736,7 +811,6 @@ namespace Mail
                 int contentLength = Int32.Parse(contentLengthStr) + 1;
 
                 remaining = data.Substring(dataEnd + 3, contentLength);
-                extra = data.Substring(dataEnd + 3 + contentLength);
             }
 
             // Now we should have lines that look like email header lines.
@@ -766,8 +840,6 @@ namespace Mail
 
                 msg.SetValue(field.Trim(), value);
             }
-
-            return extra;
         }
 
         string Decode(string input)
@@ -859,6 +931,21 @@ namespace Mail
             }
 
             return res.ToArray();
+        }
+
+        string AddressBuilder(string[] addressParts)
+        {
+            string address = "";
+            if (addressParts[0] != "NIL")
+            {
+                address = addressParts[0];
+            }
+            else
+            {
+                address = addressParts[2] + "@" + addressParts[3];
+            }
+
+            return address.Replace("\"", ""); 
         }
 
         #region IAccount Members
