@@ -59,6 +59,9 @@ namespace Mail
 
         private ThreadedList<Folder> allFolders_;
         private ThreadedList<Folder> folders_;
+
+        private Folder currentFolder_;
+        
         private MessageStore messages_;
 
         public Imap(AccountInfo account)
@@ -131,9 +134,9 @@ namespace Mail
 
         void ProcessResponse(string responseText)
         {
-            //System.Diagnostics.Debug.WriteLine(">>>>>>>>");
-            //System.Diagnostics.Debug.Write(responseText);
-            //System.Diagnostics.Debug.WriteLine("<<<<<<<<");
+            System.Diagnostics.Debug.WriteLine(">>>>>>>>");
+            System.Diagnostics.Debug.Write(responseText);
+            System.Diagnostics.Debug.WriteLine("<<<<<<<<");
 
             string[] responses = responseText.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
             string lastResponse = responses.Last();
@@ -240,6 +243,11 @@ namespace Mail
             {
                 cmd += " " + args;
             }
+            
+            System.Diagnostics.Debug.WriteLine("++++++++");
+            System.Diagnostics.Debug.Write(cmd);
+            System.Diagnostics.Debug.WriteLine("++++++++");            
+
             cmd += "\r\n";
 
             pendingCommands_[commandId] = new ImapRequest(commandId, command, args, handler);
@@ -537,7 +545,7 @@ namespace Mail
 
                 if (!messages_.Contains(id))
                 {
-                    messages_.Add(new MessageHeader(id));
+                    messages_.Add(new MessageHeader(id, currentFolder_));
 
                     if (idList.Length > 0)
                     {
@@ -586,11 +594,22 @@ namespace Mail
                         int id = Int32.Parse(idStr);
 
                         int msgOff = info.IndexOf(match.Value, 0);
-                        int dataOff = match.Length + 1 + msgOff;
-                        var data = info.Substring(dataOff, info.Length - dataOff);
+                        int dataOff = match.Length + msgOff;
+                        int dataEnd = FindTokenEnd(info, dataOff);
+
+                        // data is surrounded by ( ), so strip that off
+                        var data = info.Substring(dataOff + 1, dataEnd - dataOff - 2);
+                        if (dataEnd < info.Length)
+                        {
+                            info = info.Substring(dataEnd + 1);
+                        }
+                        else
+                        {
+                            info = "";
+                        }
 
                         MessageHeader msg = messages_.Message(id);
-                        info = ExtractValues(msg, data);
+                        ExtractValues(msg, data);
                     }
                     catch (Exception) { }
                 }
@@ -682,7 +701,7 @@ namespace Mail
             return data.Length;
         }
 
-        string ExtractValues(MessageHeader msg, string data)
+        void ExtractValues(MessageHeader msg, string data)
         {
             string remaining = data;
 
@@ -739,8 +758,6 @@ namespace Mail
                     break;
                 }
             }
-
-            return remaining;
         }
 
         void ParseEnvelope(MessageHeader msg, string envData)
@@ -967,8 +984,15 @@ namespace Mail
 
         public void SelectFolder(Folder f)
         {
+            currentFolder_ = f;
             SendCommand("SELECT", "\"" + f.FullName + "\"", SelectedFolder);
         }
+
+        public void FetchMessage(MessageHeader m)
+        {
+            SendCommand("FETCH", m.id + " (FLAGS BODYSTRUCTURE BODY.PEEK[TEXT])", ProcessMessage);
+        }
+
 
         #endregion
     }
