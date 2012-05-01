@@ -752,11 +752,7 @@ namespace Mail
                 else if (key == "ENVELOPE")
                 {
                     ParseEnvelope(msg, value);
-                }
-                else
-                {
-                    break;
-                }
+                }                
             }
         }
 
@@ -990,7 +986,7 @@ namespace Mail
 
         public void FetchMessage(MessageHeader m)
         {
-            SendCommand("FETCH", m.id + " (FLAGS BODYSTRUCTURE BODY.PEEK[TEXT])", ProcessMessage);
+            SendCommand("FETCH", m.id + " (FLAGS BODY.PEEK[1])", ProcessMessage);
         }
 
 
