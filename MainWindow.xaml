@@ -47,6 +47,7 @@
         <ListView Grid.Column="1" Grid.Row="1" Name="messageList_" Foreground="Black">
             <ListView.ItemContainerStyle>
                 <Style TargetType="ListViewItem">
+                    <EventSetter Event="MouseDoubleClick" Handler="OpenMessage" />
                     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                     <Setter Property="FontWeight" Value="Regular" />
                     <Setter Property="FontStyle"  Value="Normal" />

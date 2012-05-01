@@ -40,10 +40,32 @@ namespace Mail
 
     public class MessageHeader: INotifyPropertyChanged
     {
+        Folder folder_;
         int id_;
         List<MessageFlags> flags_;
 
+        string body_;
+
         public int id { get { return id_; } }
+
+        public string Body
+        {
+            get
+            {
+                if (body_ == null)
+                {
+                    body_ = "";
+                    FetchBody();
+                }
+
+                return body_;
+            }
+
+            set
+            {
+                body_ = value;
+            }
+        }
 
         public string From { get; private set; }
         public string Subject { get; private set; }
@@ -68,8 +90,9 @@ namespace Mail
             }
         }
 
-        public MessageHeader(int id)
+        public MessageHeader(int id, Folder f)
         {
+            folder_ = f;
             id_ = id;
             flags_ = new List<MessageFlags>();
         }
@@ -189,6 +212,11 @@ namespace Mail
             }
 
             return DateTime.UtcNow;
+        }
+
+        void FetchBody()
+        {
+            folder_.Server.FetchMessage(this);
         }
 
         string CamelCase(string label)

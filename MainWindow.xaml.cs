@@ -84,5 +84,13 @@ namespace Mail
         {
 
         }
+
+        private void OpenMessage(object sender, MouseButtonEventArgs e)
+        {
+            FrameworkElement ele = sender as FrameworkElement;
+            MessageHeader msg = ele.DataContext as MessageHeader;
+
+            string body = msg.Body;
+        }
     }
 }

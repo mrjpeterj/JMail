@@ -13,5 +13,6 @@ namespace Mail
         IEnumerable<MessageHeader> MessageList { get; }
 
         void SelectFolder(Folder f);
+        void FetchMessage(MessageHeader m);
     }
 }
