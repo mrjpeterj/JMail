@@ -1,13 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
 using System.Collections.Specialized;
-
+using System.ComponentModel;
+using System.Linq;
 using System.Security;
 using System.Security.Cryptography;
-
+using System.Text;
 using System.Xml.Serialization;
 
 namespace Mail
@@ -119,7 +117,7 @@ namespace Mail
         IMAP4
     }
 
-    public class AccountInfo
+    public class AccountInfo: INotifyPropertyChanged
     {
         private Protocol proto_;
         private bool encrypt_;
@@ -229,6 +227,18 @@ namespace Mail
         public void Connect()
         {
             Connection = new Imap(this);
+
+            if (PropertyChanged != null)
+            {
+                PropertyChanged(this, new PropertyChangedEventArgs("Connection"));
+            }
         }
+
+
+        #region INotifyPropertyChanged Members
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        #endregion
     }
 }
