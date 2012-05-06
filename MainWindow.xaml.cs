@@ -33,7 +33,10 @@ namespace Mail
 
             DataContext = this;
             InitializeComponent();
+        }
 
+        void OnLoaded(object sender, RoutedEventArgs e)
+        {
             if (Servers != null)
             {
                 foreach (var s in Servers)
