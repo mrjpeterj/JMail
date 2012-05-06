@@ -838,7 +838,7 @@ namespace Mail
 
         void ExtractBodyInfo(MessageHeader msg, string data)
         {
-            msg.Body = data;
+            msg.Body = Decode(data);
         }
 
         string Decode(string input)
