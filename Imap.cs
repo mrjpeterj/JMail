@@ -671,18 +671,30 @@ namespace Mail
 
                             char[] destination = new char[bytesLenLen];
                             output.CopyTo(byteCounterStart - start, destination, 0, bytesLenLen);
-                            output.Remove(byteCounterStart - start - 1, bytesLenLen + 1);
-
                             int bytesLen = Int32.Parse(new string(destination));
 
-                            string dataStr = data.Substring(pos + 3, bytesLen);
-                            output.Append('\"');
-                            output.Append(dataStr);
-                            output.Append('\"');
+                            if (bytesLen < data.Length - pos - 3)
+                            {
+                                output.Remove(byteCounterStart - start - 1, bytesLenLen + 1);
 
-                            pos += bytesLen + 2;
 
-                            current = '\0';
+                                string dataStr = data.Substring(pos + 3, bytesLen);
+                                output.Append('\"');
+                                output.Append(dataStr);
+                                output.Append('\"');
+
+                                pos += bytesLen + 2;
+
+                                current = '\0';
+                            }
+                            else
+                            {
+                                // Append all of the rest of input data, to return an incomplete token.
+                                output.Append(data.Substring(pos));
+
+                                end = -1;
+                                return output.ToString();
+                            }
                         }
                         break;
 
@@ -719,17 +731,26 @@ namespace Mail
                         return output.ToString();
                     }
                 }
-                else if (current == '[' ||
-                         current == '(' ||
-                         current == '<' ||
-                         current == '\"')
+                else if (current == '\"')
                 {
                     toMatch.Push(current);
                 }
+                else if (current == '[' ||
+                         current == '(' ||
+                         current == '<')
+                {
+                    if (!toMatch.Contains('\"'))
+                    {
+                        toMatch.Push(current);
+                    }
+                }
                 else if (current == '{')
                 {
-                    toMatch.Push(current);
-                    byteCounterStart = pos + 1;
+                    if (!toMatch.Contains('\"'))
+                    {
+                        toMatch.Push(current);
+                        byteCounterStart = pos + 1;
+                    }
                 }
 
                 ++pos;
