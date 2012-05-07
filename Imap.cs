@@ -808,7 +808,11 @@ namespace Mail
                 else if (key == "ENVELOPE")
                 {
                     ParseEnvelope(msg, value);
-                }                
+                }
+                else if (key == "BODYSTRUCTURE")
+                {
+                    ParseBodyStructure(msg, value);
+                }
             }
         }
 
@@ -835,6 +839,13 @@ namespace Mail
             string[] bcc = SplitToken(envItems[7]);
 
             msg.SetValue("From", AddressBuilder(SplitToken(from[0])));
+        }
+
+        void ParseBodyStructure(MessageHeader msg, string structData)
+        {
+            string[] dataPieces = SplitToken(structData);
+
+            int a = 0;
         }
 
         void ExtractSingle(MessageHeader msg, string value, string key)
@@ -1005,7 +1016,7 @@ namespace Mail
 
         public void FetchMessage(MessageHeader m)
         {
-            SendCommand("FETCH", m.id + " (FLAGS BODY.PEEK[1])", ProcessMessage);
+            SendCommand("FETCH", m.id + " (FLAGS BODYSTRUCTURE BODY.PEEK[1])", ProcessMessage);
         }
 
 
