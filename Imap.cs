@@ -673,19 +673,31 @@ namespace Mail
                             output.CopyTo(byteCounterStart - start, destination, 0, bytesLenLen);
                             int bytesLen = Int32.Parse(new string(destination));
 
-                            if (bytesLen < data.Length - pos - 3)
+                            if (bytesLen <= data.Length - pos - 3)
                             {
-                                output.Remove(byteCounterStart - start - 1, bytesLenLen + 1);
+                                if (toMatch.Count == 2)
+                                {
+                                    output.Remove(byteCounterStart - start - 1, bytesLenLen + 1);
 
+                                    string dataStr = data.Substring(pos + 3, bytesLen);
+                                    output.Append('\"');
+                                    output.Append(dataStr);
+                                    output.Append('\"');
 
-                                string dataStr = data.Substring(pos + 3, bytesLen);
-                                output.Append('\"');
-                                output.Append(dataStr);
-                                output.Append('\"');
+                                    end = pos + bytesLen + 2;
 
-                                pos += bytesLen + 2;
+                                    return output.ToString();
+                                }
+                                else
+                                {
+                                    // Add the string on, but don't remove the length
+                                    // identifier, until we are a top level token.
+                                    output.Append(data.Substring(pos, bytesLen + 3));
 
-                                current = '\0';
+                                    pos += bytesLen + 2;
+
+                                    current = '\0';
+                                }
                             }
                             else
                             {
