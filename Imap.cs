@@ -612,15 +612,16 @@ namespace Mail
             {
                 string tokenStr = NextToken(data, token, out token);
 
-                if (token == data.Length)
-                {
-                    lastIsComplete = true;
-                }
-                
                 if (tokenStr.Trim().Length != 0)
                 {
                     tokens.Add(tokenStr);
                 }
+
+                if (token == data.Length)
+                {
+                    lastIsComplete = true;
+                    break;
+                }               
 
                 if (token < 0)
                 {
@@ -641,16 +642,19 @@ namespace Mail
 
             StringBuilder output = new StringBuilder();
             int pos = start;
-            int byteCounterStart = 0; ;
+            int byteCounterStart = 0;
 
             Stack<char> toMatch = new Stack<char>();
-            toMatch.Push(' ');
 
             while (pos != data.Length)
             {
                 char current = data[pos];
 
-                char matchFor = toMatch.Peek();
+                char matchFor = '\0';
+                if (toMatch.Any())
+                {
+                    matchFor = toMatch.Peek();
+                }
                 bool foundMatch = false;
 
                 switch (matchFor)
@@ -738,7 +742,7 @@ namespace Mail
                         if (lastChar != ' ')
                         {
                             // If the closing token wasn't <space> then we want to include it.
-                            ++matchedLen;
+                            output.Append(current);
                         }
                         return output.ToString();
                     }
@@ -764,6 +768,17 @@ namespace Mail
                         byteCounterStart = pos + 1;
                     }
                 }
+                else if (!toMatch.Any())
+                {
+                    if (current == '\r' || current == '\n' || current == ' ')
+                    {
+                        // Don't put this in as the start char
+                        current = '\0';
+                    } else {
+                        // First character and wasn't another token character
+                        toMatch.Push(' ');
+                    }
+                }
 
                 ++pos;
                 if (current != '\0')
@@ -772,7 +787,15 @@ namespace Mail
                 }
             }
 
-            end = -1;
+            if (output.Length > 0)
+            {
+                end = -1;
+            }
+            else
+            {
+                end = pos;
+            }
+
             return output.ToString();
         }
 
@@ -845,7 +868,14 @@ namespace Mail
         {
             string[] dataPieces = SplitToken(structData);
 
-            int a = 0;
+            if (dataPieces.Length < 11)
+            {
+                ParseBodyStructure(msg, dataPieces[0]);
+            }
+            else
+            {
+                int a = 0;
+            }
         }
 
         void ExtractSingle(MessageHeader msg, string value, string key)
