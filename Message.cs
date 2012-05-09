@@ -223,16 +223,6 @@ namespace Mail
             folder_.Server.FetchMessage(this);
         }
 
-        public void AppendTextLocation(int idx)
-        {
-            if (TextLocation.Length > 0)
-            {
-                TextLocation += ".";
-            }
-
-            TextLocation += idx;
-        }
-
         string CamelCase(string label)
         {
             string lower = label.Substring(1).ToLower();

@@ -839,7 +839,7 @@ namespace Mail
                 }
                 else if (key == "BODYSTRUCTURE")
                 {
-                    ParseBodyStructure(msg, value, 1);
+                    ParseBodyStructure(msg, value, "");
                 }
             }
         }
@@ -869,7 +869,19 @@ namespace Mail
             msg.SetValue("From", AddressBuilder(SplitToken(from[0])));
         }
 
-        void ParseBodyStructure(MessageHeader msg, string structData, int idx)
+        string AppendTextLocation(string loc, int idx)
+        {
+            if (loc.Length > 0)
+            {
+                loc += ".";
+            }
+
+            loc += idx;
+
+            return loc;
+        }
+
+        void ParseBodyStructure(MessageHeader msg, string structData, string loc)
         {
             string[] dataPieces = SplitToken(structData);
 
@@ -882,14 +894,17 @@ namespace Mail
                 if (multiType == "MIXED")
                 {
                     msg.AttachementCount = dataPieces.Length - 5;
-                    
-                    ParseBodyStructure(msg, dataPieces[0], 1);
+                    loc = AppendTextLocation(loc, 1);
+
+                    ParseBodyStructure(msg, dataPieces[0], loc);
                 }
                 else if (multiType == "ALTERNATIVE")
                 {
                     for (int i = 0; i < typePos; ++i)
                     {
-                        ParseBodyStructure(msg, dataPieces[i], i + 1);
+                        string subLoc = AppendTextLocation(loc, i + 1);
+
+                        ParseBodyStructure(msg, dataPieces[i], subLoc);
                     }
                 }
             }
@@ -901,7 +916,14 @@ namespace Mail
 
                     if (textType == "PLAIN")
                     {
-                        msg.AppendTextLocation(idx);
+                        if (loc.Length == 0)
+                        {
+                            msg.TextLocation = "" + 1;
+                        }
+                        else
+                        {
+                            msg.TextLocation = loc;
+                        }
                     }
                 }
             }
@@ -1075,6 +1097,11 @@ namespace Mail
 
         public void FetchMessage(MessageHeader m)
         {
+            if (m.TextLocation == "")
+            {
+                int a = 0;
+            }
+
             SendCommand("FETCH", m.id + " (FLAGS BODY.PEEK[" + m.TextLocation + "])", ProcessMessage);
         }
 
