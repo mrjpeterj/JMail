@@ -73,6 +73,8 @@ namespace Mail
         public DateTime Date { get; private set; }
         public string Uid { get; private set; }
         public int Size { get; private set; }
+        public int AttachementCount { get; set; }
+        public string TextLocation { get; set; }
 
         public bool UnRead
         {
@@ -95,6 +97,8 @@ namespace Mail
             folder_ = f;
             id_ = id;
             flags_ = new List<MessageFlags>();
+
+            TextLocation = "";
         }
 
         public void SetValue(string field, string value)
@@ -217,6 +221,16 @@ namespace Mail
         void FetchBody()
         {
             folder_.Server.FetchMessage(this);
+        }
+
+        public void AppendTextLocation(int idx)
+        {
+            if (TextLocation.Length > 0)
+            {
+                TextLocation += ".";
+            }
+
+            TextLocation += idx;
         }
 
         string CamelCase(string label)

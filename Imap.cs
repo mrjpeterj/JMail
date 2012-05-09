@@ -528,7 +528,7 @@ namespace Mail
                 {
                     // Batch into 50's
 
-                    SendCommand("FETCH", idList + " (FLAGS INTERNALDATE UID RFC822.SIZE ENVELOPE)", ProcessMessage);
+                    SendCommand("FETCH", idList + " (FLAGS INTERNALDATE UID RFC822.SIZE ENVELOPE BODYSTRUCTURE)", ProcessMessage);
 
                     idList = "";
                 }
@@ -536,7 +536,7 @@ namespace Mail
 
             if (idList.Length > 0)
             {
-                SendCommand("FETCH", idList + " (FLAGS INTERNALDATE UID RFC822.SIZE ENVELOPE)", ProcessMessage);
+                SendCommand("FETCH", idList + " (FLAGS INTERNALDATE UID RFC822.SIZE ENVELOPE BODYSTRUCTURE)", ProcessMessage);
             }
         }
 
@@ -587,6 +587,11 @@ namespace Mail
             {
                 return data;
             }
+        }
+
+        bool IsArray(string data)
+        {
+            return data[0] == '(' && data.Last() == ')';
         }
 
         string[] SplitToken(string token)
@@ -834,7 +839,7 @@ namespace Mail
                 }
                 else if (key == "BODYSTRUCTURE")
                 {
-                    ParseBodyStructure(msg, value);
+                    ParseBodyStructure(msg, value, 1);
                 }
             }
         }
@@ -864,17 +869,41 @@ namespace Mail
             msg.SetValue("From", AddressBuilder(SplitToken(from[0])));
         }
 
-        void ParseBodyStructure(MessageHeader msg, string structData)
+        void ParseBodyStructure(MessageHeader msg, string structData, int idx)
         {
             string[] dataPieces = SplitToken(structData);
 
-            if (dataPieces.Length < 11)
+            if (IsArray(dataPieces[0]))
             {
-                ParseBodyStructure(msg, dataPieces[0]);
+                // Analyze multi-part type
+                int typePos = dataPieces.Length - 4;
+                string multiType = StripQuotes(dataPieces[typePos]);
+
+                if (multiType == "MIXED")
+                {
+                    msg.AttachementCount = dataPieces.Length - 5;
+                    
+                    ParseBodyStructure(msg, dataPieces[0], 1);
+                }
+                else if (multiType == "ALTERNATIVE")
+                {
+                    for (int i = 0; i < typePos; ++i)
+                    {
+                        ParseBodyStructure(msg, dataPieces[i], i + 1);
+                    }
+                }
             }
             else
             {
-                int a = 0;
+                if (StripQuotes(dataPieces[0]) == "TEXT")
+                {
+                    string textType = StripQuotes(dataPieces[1]);
+
+                    if (textType == "PLAIN")
+                    {
+                        msg.AppendTextLocation(idx);
+                    }
+                }
             }
         }
 
@@ -1046,7 +1075,7 @@ namespace Mail
 
         public void FetchMessage(MessageHeader m)
         {
-            SendCommand("FETCH", m.id + " (FLAGS BODYSTRUCTURE BODY.PEEK[1])", ProcessMessage);
+            SendCommand("FETCH", m.id + " (FLAGS BODY.PEEK[" + m.TextLocation + "])", ProcessMessage);
         }
 
 
