@@ -44,28 +44,9 @@ namespace Mail
         int id_;
         List<MessageFlags> flags_;
 
-        string body_;
-
         public int id { get { return id_; } }
 
-        public string Body
-        {
-            get
-            {
-                if (body_ == null)
-                {
-                    body_ = "";
-                    FetchBody();
-                }
-
-                return body_;
-            }
-
-            set
-            {
-                body_ = value;
-            }
-        }
+        public BodyPart Body { get; set; }
 
         public string From { get; private set; }
         public string Subject { get; private set; }
@@ -74,7 +55,6 @@ namespace Mail
         public string Uid { get; private set; }
         public int Size { get; private set; }
         public int AttachementCount { get; set; }
-        public string TextLocation { get; set; }
 
         public bool UnRead
         {
@@ -97,8 +77,6 @@ namespace Mail
             folder_ = f;
             id_ = id;
             flags_ = new List<MessageFlags>();
-
-            TextLocation = "";
         }
 
         public void SetValue(string field, string value)
@@ -138,7 +116,7 @@ namespace Mail
 
             if (PropertyChanged != null)
             {
-                PropertyChanged(this, new PropertyChangedEventArgs(CamelCase(field)));
+                PropertyChanged(this, new PropertyChangedEventArgs(TextProcessing.CamelCase(field)));
             }
         }
 
@@ -218,17 +196,12 @@ namespace Mail
             return DateTime.UtcNow;
         }
 
-        void FetchBody()
+        public void Fetch()
         {
-            folder_.Server.FetchMessage(this);
-        }
-
-        string CamelCase(string label)
-        {
-            string lower = label.Substring(1).ToLower();
-            string first = label[0].ToString().ToUpper();
-
-            return first + lower;
+            if (Body.Text == null)
+            {
+                folder_.Server.FetchMessage(this, Body);
+            }
         }
 
         #region INotifyPropertyChanged Members

@@ -59,7 +59,9 @@
     <Compile Include="AccountProps.xaml.cs">
       <DependentUpon>AccountProps.xaml</DependentUpon>
     </Compile>
+    <Compile Include="BodyPart.cs" />
     <Compile Include="Settings.cs" />
+    <Compile Include="TextProcess.cs" />
     <Compile Include="ThreadedList.cs" />
     <Page Include="AccountProps.xaml">
       <SubType>Designer</SubType>

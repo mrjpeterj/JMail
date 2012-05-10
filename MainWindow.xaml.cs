@@ -93,7 +93,7 @@ namespace Mail
             FrameworkElement ele = sender as FrameworkElement;
             MessageHeader msg = ele.DataContext as MessageHeader;
 
-            string body = msg.Body;
+            msg.Fetch();
         }
     }
 }

@@ -132,7 +132,7 @@ namespace Mail
             }
 
             List<string> responses = new List<string>();
-            bool lastIsComplete = SplitTokens(responseText, responses);
+            bool lastIsComplete = ImapData.SplitTokens(responseText, responses);
 
             ImapRequest request = null;
             string result = null;
@@ -338,8 +338,8 @@ namespace Mail
                     realFolder = false;
                 }
 
-                string nameSpace = StripQuotes(responseLine[3]);
-                string folderName = StripQuotes(responseLine[4]);
+                string nameSpace = ImapData.StripQuotes(responseLine[3]);
+                string folderName = ImapData.StripQuotes(responseLine[4]);
                 string folderShortName = folderName;
 
                 if (currentParent != null)
@@ -413,7 +413,7 @@ namespace Mail
                 {
                     if (subProcessNext)
                     {
-                        string[] responseInfo = SplitToken(response);
+                        string[] responseInfo = ImapData.SplitToken(response);
 
                         subProcessNext = false;
                     }
@@ -453,7 +453,7 @@ namespace Mail
             if (folder != null)
             {
                 string info = responseData[3];
-                var infoData = SplitToken(info);
+                var infoData = ImapData.SplitToken(info);
 
                 for (int i = 0; i < infoData.Length; i = i + 2) 
                 {
@@ -577,236 +577,9 @@ namespace Mail
             }
         }
 
-        string StripQuotes(string data)
-        {
-            if (data.StartsWith("\"") && data.EndsWith("\""))
-            {
-                return data.Substring(1, data.Length - 2);
-            }
-            else
-            {
-                return data;
-            }
-        }
-
-        bool IsArray(string data)
-        {
-            return data[0] == '(' && data.Last() == ')';
-        }
-
-        string[] SplitToken(string token)
-        {
-            if (token == "NIL")
-            {
-                return null;
-            }
-            else
-            {
-                List<string> tokens = new List<string>();
-                SplitTokens(token.Substring(1, token.Length - 2), tokens);
-
-                return tokens.ToArray();
-            }
-        }
-
-        bool SplitTokens(string data, IList<string> tokens)
-        {
-            bool lastIsComplete = false;
-            int token = 0;
-            while (true)
-            {
-                string tokenStr = NextToken(data, token, out token);
-
-                if (tokenStr.Trim().Length != 0)
-                {
-                    tokens.Add(tokenStr);
-                }
-
-                if (token == data.Length)
-                {
-                    lastIsComplete = true;
-                    break;
-                }               
-
-                if (token < 0)
-                {
-                    break;
-                }
-            }
-
-            return lastIsComplete;
-        }
-
-        string NextToken(string data, int start, out int end)
-        {
-            if (start < 0)
-            {
-                end = -1;
-                return null;
-            }
-
-            StringBuilder output = new StringBuilder();
-            int pos = start;
-            int byteCounterStart = 0;
-
-            Stack<char> toMatch = new Stack<char>();
-
-            while (pos != data.Length)
-            {
-                char current = data[pos];
-
-                char matchFor = '\0';
-                if (toMatch.Any())
-                {
-                    matchFor = toMatch.Peek();
-                }
-                bool foundMatch = false;
-
-                switch (matchFor)
-                {
-                    case '[':
-                        foundMatch = (current == ']');
-                        break;
-
-                    case '(':
-                        foundMatch = (current == ')');
-                        break;
-
-                    case '{':
-                        foundMatch = (current == '}');
-                        if (foundMatch)
-                        {
-                            int bytesLenLen = pos - byteCounterStart;
-
-                            char[] destination = new char[bytesLenLen];
-                            output.CopyTo(byteCounterStart - start, destination, 0, bytesLenLen);
-                            int bytesLen = Int32.Parse(new string(destination));
-
-                            if (bytesLen <= data.Length - pos - 3)
-                            {
-                                if (toMatch.Count == 2)
-                                {
-                                    output.Remove(byteCounterStart - start - 1, bytesLenLen + 1);
-
-                                    string dataStr = data.Substring(pos + 3, bytesLen);
-                                    output.Append('\"');
-                                    output.Append(dataStr);
-                                    output.Append('\"');
-
-                                    end = pos + bytesLen + 2;
-
-                                    return output.ToString();
-                                }
-                                else
-                                {
-                                    // Add the string on, but don't remove the length
-                                    // identifier, until we are a top level token.
-                                    output.Append(data.Substring(pos, bytesLen + 3));
-
-                                    pos += bytesLen + 2;
-
-                                    current = '\0';
-                                }
-                            }
-                            else
-                            {
-                                // Append all of the rest of input data, to return an incomplete token.
-                                output.Append(data.Substring(pos));
-
-                                end = -1;
-                                return output.ToString();
-                            }
-                        }
-                        break;
-
-                    case '<':
-                        foundMatch = (current == '>');
-                        break;
-
-                    case '\"':
-                        foundMatch = (current == '\"');
-                        break;
-
-                    case ' ':
-                        foundMatch = (current == ' ' || current == '\r' || current == '\n');
-                        break;
-
-                    default:
-                        foundMatch = false;
-                        break;
-                }
-
-                if (foundMatch)
-                {
-                    char lastChar = toMatch.Pop();
-                    if (toMatch.Count == 0)
-                    {
-                        end = pos + 1;
-
-                        int matchedLen = pos - start;
-                        if (lastChar != ' ')
-                        {
-                            // If the closing token wasn't <space> then we want to include it.
-                            output.Append(current);
-                        }
-                        return output.ToString();
-                    }
-                }
-                else if (current == '\"')
-                {
-                    toMatch.Push(current);
-                }
-                else if (current == '[' ||
-                         current == '(' ||
-                         current == '<')
-                {
-                    if (!toMatch.Contains('\"'))
-                    {
-                        toMatch.Push(current);
-                    }
-                }
-                else if (current == '{')
-                {
-                    if (!toMatch.Contains('\"'))
-                    {
-                        toMatch.Push(current);
-                        byteCounterStart = pos + 1;
-                    }
-                }
-                else if (!toMatch.Any())
-                {
-                    if (current == '\r' || current == '\n' || current == ' ')
-                    {
-                        // Don't put this in as the start char
-                        current = '\0';
-                    } else {
-                        // First character and wasn't another token character
-                        toMatch.Push(' ');
-                    }
-                }
-
-                ++pos;
-                if (current != '\0')
-                {
-                    output.Append(current);
-                }
-            }
-
-            if (output.Length > 0)
-            {
-                end = -1;
-            }
-            else
-            {
-                end = pos;
-            }
-
-            return output.ToString();
-        }
-
         void ExtractValues(MessageHeader msg, string data)
         {
-            string[] values = SplitToken(data);
+            string[] values = ImapData.SplitToken(data);
 
             for (int i = 0; i < values.Length; i = i + 2)
             {
@@ -846,27 +619,27 @@ namespace Mail
 
         void ParseEnvelope(MessageHeader msg, string envData)
         {
-            string[] envItems = SplitToken(envData);
+            string[] envItems = ImapData.SplitToken(envData);
 
             // Basic string fields
-            string dataStr = StripQuotes(envItems[0]);
-            string subject = StripQuotes(envItems[1]);
-            string inReplyTo = StripQuotes(envItems[8]);
-            string msgId = StripQuotes(envItems[9]);
+            string dataStr = ImapData.StripQuotes(envItems[0]);
+            string subject = ImapData.StripQuotes(envItems[1]);
+            string inReplyTo = ImapData.StripQuotes(envItems[8]);
+            string msgId = ImapData.StripQuotes(envItems[9]);
 
             msg.SetValue("Date", dataStr);
-            msg.SetValue("Subject", Decode(subject));
+            msg.SetValue("Subject", EncodedText.Decode(subject));
             msg.SetValue("In-Reply-To", inReplyTo);
             msg.SetValue("Message-Id", msgId);
 
-            string[] from = SplitToken(envItems[2]);
-            string[] sender = SplitToken(envItems[3]);
-            string[] replyTo = SplitToken(envItems[4]);
-            string[] to = SplitToken(envItems[5]);
-            string[] cc = SplitToken(envItems[6]);
-            string[] bcc = SplitToken(envItems[7]);
+            string[] from = ImapData.SplitToken(envItems[2]);
+            string[] sender = ImapData.SplitToken(envItems[3]);
+            string[] replyTo = ImapData.SplitToken(envItems[4]);
+            string[] to = ImapData.SplitToken(envItems[5]);
+            string[] cc = ImapData.SplitToken(envItems[6]);
+            string[] bcc = ImapData.SplitToken(envItems[7]);
 
-            msg.SetValue("From", AddressBuilder(SplitToken(from[0])));
+            msg.SetValue("From", AddressBuilder(ImapData.SplitToken(from[0])));
         }
 
         string AppendTextLocation(string loc, int idx)
@@ -883,20 +656,24 @@ namespace Mail
 
         void ParseBodyStructure(MessageHeader msg, string structData, string loc)
         {
-            string[] dataPieces = SplitToken(structData);
+            string[] dataPieces = ImapData.SplitToken(structData);
 
-            if (IsArray(dataPieces[0]))
+            if (ImapData.IsArray(dataPieces[0]))
             {
                 // Analyze multi-part type
                 int typePos = dataPieces.Length - 4;
-                string multiType = StripQuotes(dataPieces[typePos]);
+                string multiType = ImapData.StripQuotes(dataPieces[typePos]);
 
                 if (multiType == "MIXED")
                 {
                     msg.AttachementCount = dataPieces.Length - 5;
-                    loc = AppendTextLocation(loc, 1);
 
-                    ParseBodyStructure(msg, dataPieces[0], loc);
+                    for (int i = 0; i < typePos; ++i)
+                    {
+                        string subLoc = AppendTextLocation(loc, i + 1);
+
+                        ParseBodyStructure(msg, dataPieces[i], subLoc);
+                    }
                 }
                 else if (multiType == "ALTERNATIVE")
                 {
@@ -910,20 +687,21 @@ namespace Mail
             }
             else
             {
-                if (StripQuotes(dataPieces[0]) == "TEXT")
+                if (loc == "")
                 {
-                    string textType = StripQuotes(dataPieces[1]);
+                    loc += 1;
+                }
+
+                ImapBodyPart bodyPart = new ImapBodyPart(dataPieces);
+                bodyPart.PartNumber = loc;
+
+                if (ImapData.StripQuotes(dataPieces[0]) == "TEXT")
+                {
+                    string textType = ImapData.StripQuotes(dataPieces[1]);
 
                     if (textType == "PLAIN")
                     {
-                        if (loc.Length == 0)
-                        {
-                            msg.TextLocation = "" + 1;
-                        }
-                        else
-                        {
-                            msg.TextLocation = loc;
-                        }
+                        msg.Body = bodyPart;
                     }
                 }
             }
@@ -936,22 +714,17 @@ namespace Mail
 
         void ExtractFlags(MessageHeader msg, string flagString)
         {
-            // Clip off surrounding ( )
-            flagString = flagString.Substring(1, flagString.Length - 2);
-
             // Process flags here
             msg.ClearFlags();
 
-            if (flagString != "")
+            string[] flags = ImapData.SplitToken(flagString);
+
+            foreach (var flag in flags)
             {
-                string[] flags = flagString.Split(' ');
-                foreach (var flag in flags)
+                if (flag[0] == '\\')
                 {
-                    if (flag[0] == '\\')
-                    {
-                        // Standard flag
-                        msg.SetFlag(flag.Substring(1));
-                    }
+                    // Standard flag
+                    msg.SetFlag(flag.Substring(1));
                 }
             }
         }
@@ -963,98 +736,7 @@ namespace Mail
 
         void ExtractBodyInfo(MessageHeader msg, string data)
         {
-            msg.Body = Decode(data);
-        }
-
-        string Decode(string input)
-        {
-            while (true)
-            {
-                int encodingStart = input.IndexOf("=?");
-                if (encodingStart < 0) 
-                {
-                    break;
-                }
-
-                int encodingEnd = input.IndexOf("?=", encodingStart);
-                if (encodingEnd < 0)
-                {
-                    break;
-                }
-                else
-                {
-                    // Move it to point after the close of the encoding tag
-                    encodingEnd += 2;                    
-                }
-
-                string encoded = input.Substring(encodingStart, encodingEnd - encodingStart);
-                
-
-                string[] pieces = encoded.Split(new char[] { '?' });
-                string charset = pieces[1];
-                string encoding = pieces[2];
-                
-                string rest = string.Join("?", pieces.ToList().GetRange(3, pieces.Length - 4));
-                byte[] data;
-
-                if (encoding == "B")
-                {
-                    data = Convert.FromBase64String(rest);
-                }
-                else
-                {
-                    data = QuottedPrintableDecode(rest);
-                }
-
-                string res = Encoding.GetEncoding(charset).GetString(data);
-
-                input = input.Substring(0, encodingStart) + res + input.Substring(encodingEnd, input.Length - encodingEnd);
-            }
-
-            return input;
-        }
-
-        byte[] QuottedPrintableDecode(string input)
-        {
-            List<byte> res = new List<byte>();
-            bool encoding = false;
-            char[] encodeVal = new char[2];
-            int encodingPos = 0;
-
-            foreach (var c in input)
-            {
-                if (encoding)
-                {
-                    encodeVal[encodingPos] = c;
-                    ++encodingPos;
-
-                    if (encodingPos == 2)
-                    {
-                        int charVal = Convert.ToInt32(new string(encodeVal), 16);
-                        res.Add((byte)charVal);
-
-                        encoding = false;
-                    }
-                }
-                else
-                {
-                    if (c == '=')
-                    {
-                        encoding = true;
-                        encodingPos = 0;
-                    }
-                    else if (c == '_')
-                    {
-                        res.Add(32);
-                    }
-                    else
-                    {
-                        res.Add((byte)c);
-                    }
-                }
-            }
-
-            return res.ToArray();
+            msg.Body.Text = data;
         }
 
         string AddressBuilder(string[] addressParts)
@@ -1095,14 +777,9 @@ namespace Mail
             SendCommand("SELECT", "\"" + f.FullName + "\"", SelectedFolder);
         }
 
-        public void FetchMessage(MessageHeader m)
+        public void FetchMessage(MessageHeader m, BodyPart body)
         {
-            if (m.TextLocation == "")
-            {
-                int a = 0;
-            }
-
-            SendCommand("FETCH", m.id + " (FLAGS BODY.PEEK[" + m.TextLocation + "])", ProcessMessage);
+            SendCommand("FETCH", m.id + " (FLAGS BODY.PEEK[" + body.PartNumber + "])", ProcessMessage);
         }
 
 
