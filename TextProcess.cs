@@ -13,6 +13,10 @@ namespace Mail
             {
                 return data.Substring(1, data.Length - 2);
             }
+            else if (data == "NIL")
+            {
+                return "";
+            }
             else
             {
                 return data;
@@ -109,7 +113,7 @@ namespace Mail
                             int bytesLenLen = pos - byteCounterStart;
 
                             char[] destination = new char[bytesLenLen];
-                            output.CopyTo(byteCounterStart - start, destination, 0, bytesLenLen);
+                            data.CopyTo(byteCounterStart, destination, 0, bytesLenLen);
                             int bytesLen = Int32.Parse(new string(destination));
 
                             if (bytesLen <= data.Length - pos - 3)
