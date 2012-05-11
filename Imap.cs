@@ -695,6 +695,12 @@ namespace Mail
                 // Analyze multi-part type
                 int typePos = dataPieces.Length - 4;
                 string multiType = ImapData.StripQuotes(dataPieces[typePos]);
+                string[] paramSet = ImapData.SplitToken(dataPieces[typePos + 1]);
+                List<string> paramList = null;
+                if (paramSet != null)
+                {
+                    paramList = paramSet.ToList();
+                }
 
                 if (multiType == "MIXED")
                 {
@@ -715,6 +721,27 @@ namespace Mail
 
                         ParseBodyStructure(msg, dataPieces[i], subLoc);
                     }
+                }
+                else if (multiType == "RELATED")
+                {
+                    int relTypePos = paramList.IndexOf("TYPE");
+                    string relatedType = paramList[relTypePos + 1];
+
+                    int relStartPos = paramList.IndexOf("START");
+                    int start = 1;
+                    if (relStartPos >= 0)
+                    {
+                        string startStr = paramList[relStartPos + 1];
+                        start = Int32.Parse(startStr);
+                    }
+
+                    string subLoc = AppendTextLocation(loc, start);
+                    ParseBodyStructure(msg, dataPieces[start - 1], subLoc);
+                }
+                else
+                {
+                    string subLoc = AppendTextLocation(loc, 1);
+                    ParseBodyStructure(msg, dataPieces[0], subLoc);                    
                 }
             }
             else
