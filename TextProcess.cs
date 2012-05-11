@@ -118,7 +118,7 @@ namespace Mail
 
                             if (bytesLen <= data.Length - pos - 3)
                             {
-                                if (toMatch.Count == 2)
+                                if (toMatch.Count == 1)
                                 {
                                     output.Remove(byteCounterStart - start - 1, bytesLenLen + 1);
 
@@ -126,21 +126,16 @@ namespace Mail
                                     output.Append('\"');
                                     output.Append(dataStr);
                                     output.Append('\"');
-
-                                    end = pos + bytesLen + 2;
-
-                                    return output.ToString();
                                 }
                                 else
                                 {
                                     // Add the string on, but don't remove the length
                                     // identifier, until we are a top level token.
                                     output.Append(data.Substring(pos, bytesLen + 3));
-
-                                    pos += bytesLen + 2;
-
-                                    current = '\0';
                                 }
+
+                                pos += bytesLen + 2;
+                                current = '\0';
                             }
                             else
                             {
@@ -178,7 +173,7 @@ namespace Mail
                         end = pos + 1;
 
                         int matchedLen = pos - start;
-                        if (lastChar != ' ')
+                        if (lastChar != ' ' && current != '\0')
                         {
                             // If the closing token wasn't <space> then we want to include it.
                             output.Append(current);
