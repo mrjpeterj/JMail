@@ -123,8 +123,13 @@ namespace Mail
 
             if (!lastTokenIsComplete_)
             {
-                string lastToken = currentCommand_.Last();
-                currentCommand_.RemoveAt(currentCommand_.Count - 1);
+                string lastToken = "";
+
+                if (currentCommand_.Any())
+                {
+                    lastToken = currentCommand_.Last();
+                    currentCommand_.RemoveAt(currentCommand_.Count - 1);
+                }
 
                 lastTokenIsComplete_ = true;
 
@@ -639,7 +644,34 @@ namespace Mail
             string[] cc = ImapData.SplitToken(envItems[6]);
             string[] bcc = ImapData.SplitToken(envItems[7]);
 
-            msg.SetValue("From", AddressBuilder(ImapData.SplitToken(from[0])));
+            msg.From = AddressBuilder(ImapData.SplitToken(from[0]));
+            msg.ReplyTo = AddressBuilder(ImapData.SplitToken(from[0]));
+
+            if (to != null)
+            {
+                foreach (var addr in to)
+                {
+                    var address = AddressBuilder(ImapData.SplitToken(addr));
+
+                    if (address != null)
+                    {
+                        msg.To.Add(address);
+                    }
+                }
+            }
+
+            if (cc != null)
+            {
+                foreach (var addr in cc)
+                {
+                    var address = AddressBuilder(ImapData.SplitToken(addr));
+
+                    if (address != null)
+                    {
+                        msg.Cc.Add(address);
+                    }
+                }
+            }
         }
 
         string AppendTextLocation(string loc, int idx)
@@ -739,19 +771,26 @@ namespace Mail
             msg.Body.Text = data;
         }
 
-        string AddressBuilder(string[] addressParts)
+        System.Net.Mail.MailAddress AddressBuilder(string[] addressParts)
         {
-            string address = "";
-            if (addressParts[0] != "NIL")
-            {
-                address = addressParts[0];
-            }
-            else
-            {
-                address = addressParts[2] + "@" + addressParts[3];
-            }
+            string address = ImapData.StripQuotes(addressParts[2]) + "@" + ImapData.StripQuotes(addressParts[3]);
+            string displayName = ImapData.StripQuotes(addressParts[0]);
 
-            return address.Replace("\"", ""); 
+            try
+            {
+                if (displayName.Length > 0)
+                {
+                    return new System.Net.Mail.MailAddress(address, displayName);
+                }
+                else
+                {
+                    return new System.Net.Mail.MailAddress(address);
+                }
+            }
+            catch (FormatException e)
+            {
+                return null;
+            }
         }
 
         #region IAccount Members

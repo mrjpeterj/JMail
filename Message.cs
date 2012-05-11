@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 
 using System.ComponentModel;
+using System.Net.Mail;
 
 namespace Mail
 {
@@ -44,11 +45,31 @@ namespace Mail
         int id_;
         List<MessageFlags> flags_;
 
+        MailAddress from_;
+
         public int id { get { return id_; } }
 
         public BodyPart Body { get; set; }
 
-        public string From { get; private set; }
+        public MailAddress From
+        {
+            get
+            {
+                return from_;
+            }
+            set
+            {
+                from_ = value;
+                if (PropertyChanged != null)
+                {
+                    PropertyChanged(this, new PropertyChangedEventArgs("From"));
+                }
+            }
+        }
+        public MailAddress ReplyTo { get; set; }
+        public MailAddressCollection To { get; private set; }
+        public MailAddressCollection Cc { get; private set; }
+
         public string Subject { get; private set; }
         public DateTime Sent { get; private set; }
         public DateTime Date { get; private set; }
@@ -77,6 +98,9 @@ namespace Mail
             folder_ = f;
             id_ = id;
             flags_ = new List<MessageFlags>();
+
+            To = new MailAddressCollection();
+            Cc = new MailAddressCollection();
         }
 
         public void SetValue(string field, string value)
@@ -99,10 +123,6 @@ namespace Mail
             {
                 Date = ParseDate(value);
                 field = "date";
-            }
-            else if (field.Equals("from", StringComparison.CurrentCultureIgnoreCase))
-            {
-                From = value;
             }
             else if (field.Equals("uid", StringComparison.CurrentCultureIgnoreCase))
             {
