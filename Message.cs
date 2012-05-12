@@ -44,12 +44,14 @@ namespace Mail
         Folder folder_;
         int id_;
         List<MessageFlags> flags_;
+        List<BodyPart> attachments_;
 
         MailAddress from_;
 
         public int id { get { return id_; } }
 
         public BodyPart Body { get; set; }
+        public IEnumerable<BodyPart> Attachments { get { return attachments_; } }
 
         public MailAddress From
         {
@@ -75,7 +77,13 @@ namespace Mail
         public DateTime Date { get; private set; }
         public string Uid { get; private set; }
         public int Size { get; private set; }
-        public int AttachementCount { get; set; }
+        public bool HasAttachments
+        {
+            get
+            {
+                return attachments_.Any();
+            }
+        }
 
         public bool UnRead
         {
@@ -98,6 +106,7 @@ namespace Mail
             folder_ = f;
             id_ = id;
             flags_ = new List<MessageFlags>();
+            attachments_ = new List<BodyPart>();
 
             To = new MailAddressCollection();
             Cc = new MailAddressCollection();
@@ -214,6 +223,20 @@ namespace Mail
             }
 
             return DateTime.UtcNow;
+        }
+
+        public void AddAttachment(BodyPart b)
+        {
+            if (Body == b)
+            {
+                return;
+            }
+
+            attachments_.Add(b);
+            if (PropertyChanged != null)
+            {
+                PropertyChanged(this, new PropertyChangedEventArgs("HasAttachments"));
+            }
         }
 
         public void Fetch()

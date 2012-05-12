@@ -686,7 +686,7 @@ namespace Mail
             return loc;
         }
 
-        void ParseBodyStructure(MessageHeader msg, string structData, string loc)
+        ImapBodyPart ParseBodyStructure(MessageHeader msg, string structData, string loc)
         {
             string[] dataPieces = ImapData.SplitToken(structData);
 
@@ -700,17 +700,23 @@ namespace Mail
                 if (paramSet != null)
                 {
                     paramList = paramSet.ToList();
+                    for (int i = 0; i < paramList.Count; ++i)
+                    {
+                        paramList[i] = ImapData.StripQuotes(paramList[i]);
+                    }
                 }
 
                 if (multiType == "MIXED")
                 {
-                    msg.AttachementCount = dataPieces.Length - 5;
-
                     for (int i = 0; i < typePos; ++i)
                     {
                         string subLoc = AppendTextLocation(loc, i + 1);
 
-                        ParseBodyStructure(msg, dataPieces[i], subLoc);
+                        var part = ParseBodyStructure(msg, dataPieces[i], subLoc);
+                        if (part != null)
+                        {
+                            msg.AddAttachment(part);
+                        }
                     }
                 }
                 else if (multiType == "ALTERNATIVE")
@@ -741,8 +747,10 @@ namespace Mail
                 else
                 {
                     string subLoc = AppendTextLocation(loc, 1);
-                    ParseBodyStructure(msg, dataPieces[0], subLoc);                    
+                    ParseBodyStructure(msg, dataPieces[0], subLoc);
                 }
+
+                return null;
             }
             else
             {
@@ -763,6 +771,8 @@ namespace Mail
                         msg.Body = bodyPart;
                     }
                 }
+
+                return bodyPart;
             }
         }
 
