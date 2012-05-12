@@ -94,6 +94,12 @@ namespace Mail
             MessageHeader msg = ele.DataContext as MessageHeader;
 
             msg.Fetch();
+
+            Message m = new Message();
+            m.DataContext = msg;
+
+            m.Owner = this;
+            m.Show();
         }
     }
 }

@@ -805,7 +805,7 @@ namespace Mail
 
         void ExtractBodyInfo(MessageHeader msg, string data)
         {
-            msg.Body.Text = data;
+            msg.Body.Text = ImapData.StripQuotes(data);
         }
 
         System.Net.Mail.MailAddress AddressBuilder(string[] addressParts)
