@@ -120,7 +120,8 @@ namespace Mail
                             {
                                 if (toMatch.Count == 1)
                                 {
-                                    output.Remove(byteCounterStart - start - 1, bytesLenLen + 1);
+                                    int charsToRemove = bytesLenLen + 1;
+                                    output.Remove(output.Length - charsToRemove, charsToRemove);
 
                                     string dataStr = data.Substring(pos + 3, bytesLen);
                                     output.Append('\"');
