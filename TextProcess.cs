@@ -316,7 +316,8 @@ namespace Mail
                 }
                 else
                 {
-                    data = QuottedPrintableDecode(rest);
+                    var restBytes = Encoding.UTF8.GetBytes(rest);
+                    data = QuottedPrintableDecode(restBytes);
                 }
 
                 string res = Encoding.GetEncoding(charset).GetString(data);
@@ -327,7 +328,7 @@ namespace Mail
             return input;
         }
 
-        public static byte[] QuottedPrintableDecode(string input)
+        public static byte[] QuottedPrintableDecode(byte[] input)
         {
             List<byte> res = new List<byte>();
             bool encoding = false;
@@ -338,7 +339,7 @@ namespace Mail
             {
                 if (encoding)
                 {
-                    encodeVal[encodingPos] = c;
+                    encodeVal[encodingPos] = (char)c;
                     ++encodingPos;
 
                     if (encodingPos == 2)
@@ -362,7 +363,7 @@ namespace Mail
                     }
                     else
                     {
-                        res.Add((byte)c);
+                        res.Add(c);
                     }
                 }
             }

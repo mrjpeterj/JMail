@@ -13,19 +13,8 @@ namespace Mail
         private string text_;
         private byte[] data_;
 
-        public string Text
-        {
-            get { return text_; }
-            set
-            {
-                text_ = value;
-                if (PropertyChanged != null)
-                {
-                    PropertyChanged(this, new PropertyChangedEventArgs("Text"));
-                }
-            }
-        }
-        public byte[] Data { get; set; }
+        public string Text { get { return text_; } }
+        public byte[] Data { get { return data_; } }
 
         public ContentType ContentType { get; protected set; }
         public ContentDisposition Disposition { get; protected set; }
@@ -51,6 +40,38 @@ namespace Mail
             ContentType = new ContentType();
             Disposition = new ContentDisposition();
             Disposition.Inline = true;
+        }
+
+        public void SetContent(byte[] content)
+        {
+            if (ContentType.MediaType.StartsWith("text"))
+            {
+                byte[] bytes = null;
+                if (Encoding == TextEncoding.QuotedPrintable)
+                {
+                    bytes = EncodedText.QuottedPrintableDecode(content);
+                }
+                else
+                {
+                    bytes = content;
+                }
+
+                string text = System.Text.Encoding.UTF8.GetString(bytes);
+
+                text_ = ImapData.StripQuotes(text);
+                if (PropertyChanged != null)
+                {
+                    PropertyChanged(this, new PropertyChangedEventArgs("Text"));
+                }
+            }
+            else
+            {
+                data_ = content;
+                if (PropertyChanged != null)
+                {
+                    PropertyChanged(this, new PropertyChangedEventArgs("Data"));
+                }
+            }
         }
 
         #region INotifyPropertyChanged Members

@@ -62,6 +62,6 @@
                 <TextBlock Text="{Binding Sent}" HorizontalAlignment="Right" />
             </StackPanel>
         </Grid>
-        <TextBox Grid.Row="2" Text="{Binding Body.Text}" IsReadOnly="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" />
+        <TextBox Grid.Row="2" Text="{Binding Body.Text, Mode=OneWay}" IsReadOnly="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" />
     </Grid>
 </Window>

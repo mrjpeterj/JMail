@@ -114,9 +114,9 @@ namespace Mail
 
         void ProcessResponse(string responseText)
         {
-            //System.Diagnostics.Debug.WriteLine(">>>>>>>>");
-            //System.Diagnostics.Debug.Write(responseText);
-            //System.Diagnostics.Debug.WriteLine("<<<<<<<<");
+            System.Diagnostics.Debug.WriteLine(">>>>>>>>");
+            System.Diagnostics.Debug.Write(responseText);
+            System.Diagnostics.Debug.WriteLine("<<<<<<<<");
 
             if (!lastTokenIsComplete_)
             {
@@ -798,7 +798,9 @@ namespace Mail
 
         void ExtractBodyInfo(MessageHeader msg, string data)
         {
-            msg.Body.Text = ImapData.StripQuotes(data);
+            var bytes = Encoding.UTF8.GetBytes(data);
+
+            msg.Body.SetContent(bytes);
         }
 
         System.Net.Mail.MailAddress AddressBuilder(string[] addressParts)
