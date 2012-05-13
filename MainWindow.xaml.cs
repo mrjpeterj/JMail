@@ -20,6 +20,7 @@ namespace Mail
     /// </summary>
     public partial class MainWindow: Window
     {
+        public static System.Windows.Threading.Dispatcher MainDispatcher;
         public IList<AccountInfo> Servers { get; private set; }
 
         public MainWindow()
@@ -28,7 +29,9 @@ namespace Mail
             {
                 Properties.Settings.Default.Accounts = new AccountList();
             }
-            
+
+            MainDispatcher = Dispatcher;
+   
             Servers = Properties.Settings.Default.Accounts;
 
             DataContext = this;

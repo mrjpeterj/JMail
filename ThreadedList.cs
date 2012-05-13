@@ -13,13 +13,16 @@ namespace Mail
         delegate void VoidCall();
 
         Dispatcher dispatcher_;
-        List<T> items_;
+        DispatcherOperation op_;
 
         List<NotifyCollectionChangedEventArgs> pending_;
 
+
+        List<T> items_;
+
         public ThreadedList()
         {
-            dispatcher_ = Dispatcher.CurrentDispatcher;
+            dispatcher_ = MainWindow.MainDispatcher;
             items_ = new List<T>();
 
             pending_ = new List<NotifyCollectionChangedEventArgs>();
@@ -32,9 +35,12 @@ namespace Mail
                 lock (this)
                 {
                     pending_.Add(e);
-                }
 
-                dispatcher_.BeginInvoke(DispatcherPriority.Send, new VoidCall(FlushPending));
+                    if (op_ == null || op_.Status != DispatcherOperationStatus.Pending)
+                    {
+                        op_ = dispatcher_.BeginInvoke(DispatcherPriority.Send, new VoidCall(FlushPending));
+                    }
+                }
             }
             else
             {
