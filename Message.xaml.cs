@@ -22,5 +22,25 @@ namespace Mail
         {
             InitializeComponent();
         }
+
+        private void NextMessage(object sender, RoutedEventArgs e)
+        {
+            MessageHeader currentMessage = DataContext as MessageHeader;
+            MessageHeader nextMessage = currentMessage.Folder.FindNext(currentMessage);
+            if (nextMessage != null)
+            {
+                DataContext = nextMessage;
+            }
+        }
+
+        private void PreviousMessage(object sender, RoutedEventArgs e)
+        {
+            MessageHeader currentMessage = DataContext as MessageHeader;
+            MessageHeader nextMessage = currentMessage.Folder.FindPrev(currentMessage);
+            if (nextMessage != null)
+            {
+                DataContext = nextMessage;
+            }
+        }
     }
 }

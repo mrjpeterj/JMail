@@ -14,6 +14,7 @@ namespace Mail
         string shortName_;
         
         ThreadedList<Folder> subFolders_;
+        MessageStore messages_;
 
         bool canHaveMessages_;
 
@@ -93,6 +94,7 @@ namespace Mail
 
         public IAccount Server { get { return server_; } }
         public IList<Folder> Children { get { return subFolders_; } }
+        public MessageStore Messages { get { return messages_; } }
 
         public Folder(IAccount server, string name, string shortName, bool hasChildren, bool canHaveMessages)
         {
@@ -106,6 +108,10 @@ namespace Mail
             }
 
             canHaveMessages_ = canHaveMessages;
+            if (canHaveMessages)
+            {
+                messages_ = new MessageStore();
+            }
         }
 
         public override string ToString()
@@ -119,6 +125,16 @@ namespace Mail
             {
                 server_.SelectFolder(this);
             }
+        }
+
+        public MessageHeader FindNext(MessageHeader msg)
+        {
+            return messages_.Next(msg);
+        }
+
+        public MessageHeader FindPrev(MessageHeader msg)
+        {
+            return messages_.Prev(msg);
         }
 
         #region INotifyPropertyChanged Members

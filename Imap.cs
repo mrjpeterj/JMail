@@ -62,9 +62,7 @@ namespace Mail
         private ThreadedList<Folder> allFolders_;
         private ThreadedList<Folder> folders_;
 
-        private Folder currentFolder_;
-        
-        private MessageStore messages_;
+        private Folder currentFolder_;       
 
         public Imap(AccountInfo account)
         {
@@ -77,7 +75,6 @@ namespace Mail
 
             allFolders_ = new ThreadedList<Folder>();
             folders_ = new ThreadedList<Folder>();
-            messages_ = new MessageStore();
 
             client_ = new TcpClient(account.Host, account.Port);            
 
@@ -117,9 +114,9 @@ namespace Mail
 
         void ProcessResponse(string responseText)
         {
-            System.Diagnostics.Debug.WriteLine(">>>>>>>>");
-            System.Diagnostics.Debug.Write(responseText);
-            System.Diagnostics.Debug.WriteLine("<<<<<<<<");
+            //System.Diagnostics.Debug.WriteLine(">>>>>>>>");
+            //System.Diagnostics.Debug.Write(responseText);
+            //System.Diagnostics.Debug.WriteLine("<<<<<<<<");
 
             if (!lastTokenIsComplete_)
             {
@@ -395,7 +392,6 @@ namespace Mail
         {
             ListMessages(request, responseData);
 
-            messages_.Clear();
             SendCommand("SEARCH", "UNDELETED", AvailableMessages);       
         }
 
@@ -518,16 +514,13 @@ namespace Mail
             {
                 int id = ids[i];
 
-                if (!messages_.Contains(id))
-                {
-                    messages_.Add(new MessageHeader(id, currentFolder_));
+                currentFolder_.Messages.Add(new MessageHeader(id, currentFolder_));
 
-                    if (idList.Length > 0)
-                    {
-                        idList += ",";
-                    }
-                    idList += id;
+                if (idList.Length > 0)
+                {
+                    idList += ",";
                 }
+                idList += id;
 
                 if (i % 50 == 49)
                 {
@@ -568,7 +561,7 @@ namespace Mail
                 else if (isId)
                 {
                     int id = Int32.Parse(response);
-                    msg = messages_.Message(id);
+                    msg = currentFolder_.Messages.Message(id);
 
                     isId = false;
                 }
@@ -840,11 +833,6 @@ namespace Mail
         public IEnumerable<Folder> AllFolders
         {
             get { return allFolders_; }
-        }
-
-        public IEnumerable<MessageHeader> MessageList
-        {
-            get { return messages_; }
         }
 
         public void SelectFolder(Folder f)

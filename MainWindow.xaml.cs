@@ -53,12 +53,12 @@ namespace Mail
         {
             var item = e.OriginalSource as TreeViewItem;
             var folder = item.DataContext as Folder;
-
+            
             if (folder != null)
             {
                 folder.Select();
 
-                messageList_.ItemsSource = folder.Server.MessageList;
+                messageList_.ItemsSource = folder.Messages;
             }
         }
 

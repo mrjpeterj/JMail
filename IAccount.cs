@@ -10,8 +10,6 @@ namespace Mail
         IEnumerable<Folder> FolderList { get; }
         IEnumerable<Folder> AllFolders { get; }
 
-        IEnumerable<MessageHeader> MessageList { get; }
-
         void SelectFolder(Folder f);
         void FetchMessage(MessageHeader m, BodyPart p);
     }

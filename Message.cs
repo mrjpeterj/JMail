@@ -27,6 +27,32 @@ namespace Mail
 
             return matches.FirstOrDefault();
         }
+
+        public MessageHeader Next(MessageHeader msg)
+        {
+            int idx = this.IndexOf(msg);
+            if (idx >= 0 && idx < Count - 1)
+            {
+                return this[idx + 1];
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        public MessageHeader Prev(MessageHeader msg)
+        {
+            int idx = this.IndexOf(msg);
+            if (idx >= 1 && idx < Count)
+            {
+                return this[idx - 1];
+            }
+            else
+            {
+                return null;
+            }
+        }
     }
 
     public enum MessageFlags
@@ -49,6 +75,7 @@ namespace Mail
         MailAddress from_;
 
         public int id { get { return id_; } }
+        public Folder Folder { get { return folder_; } }
 
         public BodyPart Body { get; set; }
         public IEnumerable<BodyPart> Attachments { get { return attachments_; } }
