@@ -274,6 +274,28 @@ namespace Mail
             }
         }
 
+        public MessageHeader Next()
+        {
+            var nextMsg = Folder.FindNext(this);
+            if (nextMsg != null)
+            {
+                nextMsg.Fetch();
+            }
+
+            return nextMsg;
+        }
+
+        public MessageHeader Prev()
+        {
+            var nextMsg = Folder.FindPrev(this);
+            if (nextMsg != null)
+            {
+                nextMsg.Fetch();
+            }
+
+            return nextMsg;
+        }
+
         #region INotifyPropertyChanged Members
 
         public event PropertyChangedEventHandler PropertyChanged;

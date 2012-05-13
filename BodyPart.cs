@@ -3,13 +3,28 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
+using System.ComponentModel;
 using System.Net.Mime;
 
 namespace Mail
 {
-    public class BodyPart
+    public class BodyPart: INotifyPropertyChanged
     {
-        public string Text { get; set; }
+        private string text_;
+        private byte[] data_;
+
+        public string Text
+        {
+            get { return text_; }
+            set
+            {
+                text_ = value;
+                if (PropertyChanged != null)
+                {
+                    PropertyChanged(this, new PropertyChangedEventArgs("Text"));
+                }
+            }
+        }
         public byte[] Data { get; set; }
 
         public ContentType ContentType { get; protected set; }
@@ -37,6 +52,12 @@ namespace Mail
             Disposition = new ContentDisposition();
             Disposition.Inline = true;
         }
+
+        #region INotifyPropertyChanged Members
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        #endregion
     }
 
     internal class ImapBodyPart: BodyPart

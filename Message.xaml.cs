@@ -26,7 +26,7 @@ namespace Mail
         private void NextMessage(object sender, RoutedEventArgs e)
         {
             MessageHeader currentMessage = DataContext as MessageHeader;
-            MessageHeader nextMessage = currentMessage.Folder.FindNext(currentMessage);
+            MessageHeader nextMessage = currentMessage.Next();
             if (nextMessage != null)
             {
                 DataContext = nextMessage;
@@ -36,7 +36,7 @@ namespace Mail
         private void PreviousMessage(object sender, RoutedEventArgs e)
         {
             MessageHeader currentMessage = DataContext as MessageHeader;
-            MessageHeader nextMessage = currentMessage.Folder.FindPrev(currentMessage);
+            MessageHeader nextMessage = currentMessage.Prev();
             if (nextMessage != null)
             {
                 DataContext = nextMessage;
