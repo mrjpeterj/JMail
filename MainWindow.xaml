@@ -3,23 +3,23 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:Mail"
         Title="MainWindow" Height="350" Width="525" Loaded="OnLoaded"
-    Style="{DynamicResource BaseStyle}">
+        Style="{DynamicResource BaseStyle}">
     <Window.Resources>
     <ResourceDictionary>
         <ResourceDictionary.MergedDictionaries>
             <ResourceDictionary Source="Style.xaml"/>
             <ResourceDictionary>
                 <HierarchicalDataTemplate DataType="{x:Type local:AccountInfo}" ItemsSource="{Binding Connection.FolderList}">
-                    <TextBlock Text="{Binding Host}">
-            <TextBlock.ContextMenu>
-              <ContextMenu>
-                <MenuItem Header="Delete" Click="Account_Delete" />
-                <MenuItem Header="Edit" Click="Account_Edit"/>
-              </ContextMenu>        
-            </TextBlock.ContextMenu>
-                    </TextBlock>
+                  <TextBlock Text="{Binding Host}">
+		    <TextBlock.ContextMenu>
+		      <ContextMenu>
+			<MenuItem Header="Delete" Click="Account_Delete" />
+			<MenuItem Header="Edit" Click="Account_Edit"/>
+		      </ContextMenu>        
+		    </TextBlock.ContextMenu>
+                  </TextBlock>
                 </HierarchicalDataTemplate>
-
+		
                 <HierarchicalDataTemplate DataType="{x:Type local:Folder}" ItemsSource="{Binding Children}" >
                     <StackPanel Orientation="Horizontal">
                         <Label Content="{Binding Name}" Padding="2" />

@@ -1,8 +1,12 @@
 ﻿<Window x:Class="Mail.Message"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Width="600">
-    <Grid>
+        Width="600"
+        Style="{DynamicResource BaseStyle}">
+    <Window.Resources>
+        <ResourceDictionary Source="Style.xaml" />
+    </Window.Resources>
+        <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*"/>
