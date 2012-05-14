@@ -764,6 +764,10 @@ namespace Mail
                     {
                         msg.Body = bodyPart;
                     }
+                    else if (msg.Body == null)
+                    {
+                        msg.Body = bodyPart;
+                    }
                 }
 
                 return bodyPart;
