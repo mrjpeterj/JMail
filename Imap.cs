@@ -51,6 +51,7 @@ namespace Mail
         private TcpClient client_;
         private Stream stream_;
 
+        private System.Text.Encoding encoder_ = System.Text.Encoding.ASCII;
         private byte[] incoming_;
 
         private ImapState state_;
@@ -104,7 +105,7 @@ namespace Mail
 
             if (bytesRead > 0)
             {
-                string response = Encoding.UTF8.GetString(incoming_, 0, bytesRead);
+                string response = encoder_.GetString(incoming_, 0, bytesRead);
 
                 ProcessResponse(response);
             }
@@ -238,7 +239,7 @@ namespace Mail
 
             pendingCommands_[commandId] = new ImapRequest(commandId, command, args, handler);
 
-            byte[] bytes = Encoding.UTF8.GetBytes(cmd);
+            byte[] bytes = encoder_.GetBytes(cmd);
 
             stream_.Write(bytes, 0, bytes.Length);
             stream_.Flush();
@@ -798,7 +799,7 @@ namespace Mail
 
         void ExtractBodyInfo(MessageHeader msg, string data)
         {
-            var bytes = Encoding.UTF8.GetBytes(data);
+            var bytes = encoder_.GetBytes(data);
 
             msg.Body.SetContent(bytes);
         }

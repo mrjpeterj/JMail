@@ -44,19 +44,26 @@ namespace Mail
 
         public void SetContent(byte[] content)
         {
-            if (ContentType.MediaType.StartsWith("text"))
+            if (Encoding != TextEncoding.Binary)
             {
                 byte[] bytes = null;
                 if (Encoding == TextEncoding.QuotedPrintable)
                 {
                     bytes = EncodedText.QuottedPrintableDecode(content);
                 }
+                else if (Encoding == TextEncoding.Base64)
+                {
+                    string base64Data = System.Text.Encoding.ASCII.GetString(content);
+                    bytes = Convert.FromBase64String(base64Data);
+                }
                 else
                 {
                     bytes = content;
                 }
 
-                string text = System.Text.Encoding.UTF8.GetString(bytes);
+                var encoder = System.Text.Encoding.GetEncoding(ContentType.CharSet);
+
+                string text = encoder.GetString(bytes);
 
                 text_ = ImapData.StripQuotes(text);
                 if (PropertyChanged != null)

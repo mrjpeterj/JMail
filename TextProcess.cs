@@ -344,8 +344,14 @@ namespace Mail
 
                     if (encodingPos == 2)
                     {
-                        int charVal = Convert.ToInt32(new string(encodeVal), 16);
-                        res.Add((byte)charVal);
+                        try
+                        {
+                            int charVal = Convert.ToInt32(new string(encodeVal), 16);
+                            res.Add((byte)charVal);
+                        }
+                        catch
+                        {
+                        }
 
                         encoding = false;
                     }
