@@ -11,15 +11,15 @@
             <ResourceDictionary>
                 <HierarchicalDataTemplate DataType="{x:Type local:AccountInfo}" ItemsSource="{Binding Connection.FolderList}">
                   <TextBlock Text="{Binding Host}">
-		    <TextBlock.ContextMenu>
-		      <ContextMenu>
-			<MenuItem Header="Delete" Click="Account_Delete" />
-			<MenuItem Header="Edit" Click="Account_Edit"/>
-		      </ContextMenu>        
-		    </TextBlock.ContextMenu>
+                    <TextBlock.ContextMenu>
+                      <ContextMenu>
+                        <MenuItem Header="Delete" Click="Account_Delete" />
+                        <MenuItem Header="Edit" Click="Account_Edit"/>
+                      </ContextMenu>        
+                    </TextBlock.ContextMenu>
                   </TextBlock>
                 </HierarchicalDataTemplate>
-		
+                
                 <HierarchicalDataTemplate DataType="{x:Type local:Folder}" ItemsSource="{Binding Children}" >
                     <StackPanel Orientation="Horizontal">
                         <Label Content="{Binding Name}" Padding="2" />
@@ -89,7 +89,7 @@
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding From}" Header="From" />
+                    <GridViewColumn DisplayMemberBinding="{Binding From, Converter={StaticResource addressText}}" Header="From" />
                     <GridViewColumn DisplayMemberBinding="{Binding Subject}" Header="Subject" />
                     <GridViewColumn DisplayMemberBinding="{Binding Sent}" Header="Sent" />
                     <GridViewColumn DisplayMemberBinding="{Binding Date}" Header="Date" />

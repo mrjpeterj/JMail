@@ -302,4 +302,39 @@ namespace Mail
 
         #endregion
     }
+
+    public class AddressDisplay : System.Windows.Data.IValueConverter
+    {
+        #region IValueConverter Members
+
+        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            MailAddress addr = value as MailAddress;
+            if (addr == null)
+            {
+                return null;
+            }
+
+            if (targetType != typeof(string))
+            {
+                return null;
+            }
+
+            if (addr.DisplayName.Length > 0)
+            {
+                return addr.DisplayName;
+            }
+            else
+            {
+                return addr.Address;
+            }
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+
+        #endregion
+    }
 }

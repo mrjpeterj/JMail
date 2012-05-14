@@ -27,17 +27,21 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
-            <StackPanel Grid.Column="0" Margin="0,0,8,0">
+            <StackPanel Grid.Column="0">
                 <TextBlock>Subject:</TextBlock>
                 <TextBlock>From:</TextBlock>
             </StackPanel>
-            <StackPanel Grid.Column="1">
-                <TextBlock Text="{Binding Subject}" />
-                <TextBlock Text="{Binding From}" />
-            </StackPanel>
-
+            <Border Grid.Column="1" Padding="3,0">
+                <StackPanel>
+                    <TextBlock Text="{Binding Subject}" />
+                    <ContentControl Content="{Binding From}" ContentTemplate="{StaticResource AddressDisplay}" />
+                </StackPanel>
+            </Border>
+            
             <TextBlock Grid.Row="1" Grid.Column="0">To:</TextBlock>
-            <ListBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3"  MaxHeight="100" ItemsSource="{Binding To}" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto" >
+            <ListBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3"  MaxHeight="100" ItemsSource="{Binding To}" 
+                     BorderThickness="0"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto" >
                 <ListBox.ItemsPanel>
                     <ItemsPanelTemplate>
                         <WrapPanel  />
@@ -46,7 +50,7 @@
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <StackPanel Orientation="Horizontal">
-                            <ContentControl Content="{Binding}" />
+                            <ContentControl Content="{Binding}" ContentTemplate="{StaticResource AddressDisplay}" />
                             <TextBlock>;</TextBlock>
                         </StackPanel>
                     </DataTemplate>
