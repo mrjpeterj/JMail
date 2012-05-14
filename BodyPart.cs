@@ -61,7 +61,11 @@ namespace Mail
                     bytes = content;
                 }
 
-                var encoder = System.Text.Encoding.GetEncoding(ContentType.CharSet);
+                System.Text.Encoding encoder = System.Text.Encoding.ASCII;
+                if (ContentType.CharSet != null)
+                {
+                    encoder = System.Text.Encoding.GetEncoding(ContentType.CharSet);
+                }
 
                 string text = encoder.GetString(bytes);
 

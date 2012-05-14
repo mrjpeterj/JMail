@@ -799,7 +799,7 @@ namespace Mail
 
         void ExtractBodyInfo(MessageHeader msg, string data)
         {
-            var bytes = encoder_.GetBytes(data);
+            var bytes = encoder_.GetBytes(ImapData.StripQuotes(data));
 
             msg.Body.SetContent(bytes);
         }
