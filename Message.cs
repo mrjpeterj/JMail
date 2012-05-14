@@ -71,6 +71,7 @@ namespace Mail
         int id_;
         List<MessageFlags> flags_;
         List<BodyPart> attachments_;
+        List<BodyPart> related_;
 
         MailAddress from_;
 
@@ -134,6 +135,7 @@ namespace Mail
             id_ = id;
             flags_ = new List<MessageFlags>();
             attachments_ = new List<BodyPart>();
+            related_ = new List<BodyPart>();
 
             To = new MailAddressCollection();
             Cc = new MailAddressCollection();
@@ -264,6 +266,16 @@ namespace Mail
             {
                 PropertyChanged(this, new PropertyChangedEventArgs("HasAttachments"));
             }
+        }
+
+        public void AddRelated(BodyPart b)
+        {
+            if (Body == b)
+            {
+                return;
+            }
+
+            related_.Add(b);
         }
 
         public void Fetch()

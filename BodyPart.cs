@@ -20,6 +20,7 @@ namespace Mail
         public ContentDisposition Disposition { get; protected set; }
         public TextEncoding Encoding { get; protected set; }
         public string PartNumber { get; set; }
+        public string Id { get; protected set; }
         public long Size
         {
             get
@@ -98,6 +99,7 @@ namespace Mail
         {
             string content = ImapData.StripQuotes(partDesc[0]).ToLower() + "/" + ImapData.StripQuotes(partDesc[1]).ToLower();
             ContentType = new ContentType(content);
+            Id = ImapData.StripQuotes(partDesc[3]);
 
             int extensionStart = 7;
             if (content.StartsWith("TEXT"))

@@ -735,8 +735,21 @@ namespace Mail
                         start = Int32.Parse(startStr);
                     }
 
-                    string subLoc = AppendTextLocation(loc, start);
-                    ParseBodyStructure(msg, dataPieces[start - 1], subLoc);
+                    for (int i = 0; i < typePos; ++i)
+                    {
+                        string subLoc = AppendTextLocation(loc, i + 1);
+                        var part = ParseBodyStructure(msg, dataPieces[i], subLoc);
+                        if (part != null)
+                        {
+                            if (i + 1 == start)
+                            {
+                            }
+                            else
+                            {
+                                msg.AddRelated(part);
+                            }
+                        }
+                    }
                 }
                 else
                 {
