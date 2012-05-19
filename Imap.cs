@@ -773,7 +773,7 @@ namespace Mail
                 {
                     string textType = ImapData.StripQuotes(dataPieces[1]);
 
-                    if (textType == "PLAIN")
+                    if (textType == "HTML")
                     {
                         msg.Body = bodyPart;
                     }
@@ -824,7 +824,7 @@ namespace Mail
         System.Net.Mail.MailAddress AddressBuilder(string[] addressParts)
         {
             string address = ImapData.StripQuotes(addressParts[2]) + "@" + ImapData.StripQuotes(addressParts[3]);
-            string displayName = ImapData.StripQuotes(addressParts[0]);
+            string displayName = EncodedText.Decode(ImapData.StripQuotes(addressParts[0]));
 
             try
             {

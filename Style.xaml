@@ -7,9 +7,17 @@
         <Setter Property="FontStretch" Value="SemiExpanded" />
     </Style>
 
+    <Style TargetType="TextBox" x:Key="PlainTextStyle">
+        <Setter Property="FontFamily" Value="Consolas" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="IsReadOnly" Value="True" />
+        <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
+        <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
+    </Style>
+
     <local:AddressDisplay x:Key="addressText" />
 
-    <DataTemplate x:Key="AddressDisplay">
+    <DataTemplate x:Key="addressDisplay">
         <TextBlock Text="{Binding Converter={StaticResource addressText}}">    
             <TextBlock.ToolTip>
                 <Label Content="{Binding}" />
