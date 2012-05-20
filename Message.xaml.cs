@@ -114,5 +114,31 @@ namespace Mail
                     UpdateContent();
                 }));
         }
+
+        private void SaveAttachment(object sender, RoutedEventArgs e)
+        {
+            FrameworkElement ele = (FrameworkElement)sender;
+
+            BodyPart part = ele.DataContext as BodyPart;
+
+            //part.Save();
+        }
+
+        private void OpenAttachment(object sender, RoutedEventArgs e)
+        {
+            FrameworkElement ele = (FrameworkElement)sender;
+
+            BodyPart part = ele.DataContext as BodyPart;
+
+            //part.Open();
+        }
+
+        private void ClickAttachment(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ClickCount > 1 && e.ChangedButton == MouseButton.Left)
+            {
+                OpenAttachment(sender, null);
+            }
+        }
     }
 }

@@ -91,12 +91,12 @@
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding From, Converter={StaticResource addressText}}" Header="From" />
                     <GridViewColumn DisplayMemberBinding="{Binding Subject}" Header="Subject" />
-                    <GridViewColumn DisplayMemberBinding="{Binding Sent}" Header="Sent" />
-                    <GridViewColumn DisplayMemberBinding="{Binding Date}" Header="Date" />
+                    <GridViewColumn DisplayMemberBinding="{Binding Sent, Converter={StaticResource dateDisplay}}" Header="Sent" />
+                    <GridViewColumn DisplayMemberBinding="{Binding Date, Converter={StaticResource dateDisplay}}" Header="Date" />
                     <GridViewColumn Header="Size">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock TextAlignment="Right" Text="{Binding Size}" />
+                                <TextBlock TextAlignment="Right" Text="{Binding Size, Converter={StaticResource sizeDisplay}}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>

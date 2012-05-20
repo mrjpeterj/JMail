@@ -16,6 +16,9 @@
     </Style>
 
     <local:AddressDisplay x:Key="addressText" />
+    <local:IsVisible x:Key="isVisible" />
+    <local:SizeDisplay x:Key="sizeDisplay" />
+    <local:DateDisplay x:Key="dateDisplay" />
 
     <DataTemplate x:Key="addressDisplay">
         <TextBlock Text="{Binding Converter={StaticResource addressText}}">    

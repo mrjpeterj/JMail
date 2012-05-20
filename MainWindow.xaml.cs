@@ -105,4 +105,94 @@ namespace Mail
             m.Show();
         }
     }
+
+    public class IsVisible: System.Windows.Data.IValueConverter
+    {
+        #region IValueConverter Members
+
+        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            bool bVal = (bool)value;
+
+            if (targetType != typeof(Visibility))
+            {
+                throw new NotImplementedException();                
+            }
+            
+            if (bVal)
+            {
+                return Visibility.Visible;
+            }
+            else
+            {
+                return Visibility.Hidden;
+            }
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+
+        #endregion
+    }
+
+    public class DateDisplay: System.Windows.Data.IValueConverter
+    {
+        #region IValueConverter Members
+
+        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            if (targetType != typeof(string))
+            {
+                throw new NotImplementedException();
+            }
+
+            culture = System.Globalization.CultureInfo.CurrentCulture;
+
+            DateTime valueStr = (DateTime)value;
+            return valueStr.ToString(culture);
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+
+        #endregion
+    }
+
+    public class SizeDisplay: System.Windows.Data.IValueConverter
+    {
+        #region IValueConverter Members
+
+        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            if (targetType != typeof(string))
+            {
+                throw new NotImplementedException();
+            }
+
+            if (value is long)
+            {
+                long sz = (long)value;
+                return "" + (sz / 1024) + "KB";
+            }
+
+            if (value is int)
+            {
+                int sz = (int)value;
+                return "" + (sz / 1024) + "KB";
+            }
+
+            throw new NotImplementedException();
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+
+        #endregion
+    }
 }
