@@ -700,20 +700,7 @@ namespace Mail
                     }
                 }
 
-                if (multiType == "MIXED")
-                {
-                    for (int i = 0; i < typePos; ++i)
-                    {
-                        string subLoc = AppendTextLocation(loc, i + 1);
-
-                        var part = ParseBodyStructure(msg, dataPieces[i], subLoc);
-                        if (part != null)
-                        {
-                            msg.AddAttachment(part);
-                        }
-                    }
-                }
-                else if (multiType == "ALTERNATIVE")
+                if (multiType == "ALTERNATIVE")
                 {
                     for (int i = 0; i < typePos; ++i)
                     {
@@ -751,10 +738,19 @@ namespace Mail
                         }
                     }
                 }
-                else
+                else // if (multiType == "MIXED")
+                     // spec states that the default behaviour should be the same as for 'mixed' 
                 {
-                    string subLoc = AppendTextLocation(loc, 1);
-                    ParseBodyStructure(msg, dataPieces[0], subLoc);
+                    for (int i = 0; i < typePos; ++i)
+                    {
+                        string subLoc = AppendTextLocation(loc, i + 1);
+
+                        var part = ParseBodyStructure(msg, dataPieces[i], subLoc);
+                        if (part != null)
+                        {
+                            msg.AddAttachment(part);
+                        }
+                    }
                 }
 
                 return null;
