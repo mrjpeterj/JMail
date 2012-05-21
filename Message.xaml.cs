@@ -80,6 +80,8 @@ namespace Mail
                 }
                 else
                 {
+                    currentMessage.Body.Save();
+
                     System.Windows.Forms.Integration.WindowsFormsHost host = new System.Windows.Forms.Integration.WindowsFormsHost();
 
                     System.Windows.Forms.WebBrowser htmlText = new System.Windows.Forms.WebBrowser();
@@ -89,8 +91,10 @@ namespace Mail
                     htmlText.AllowWebBrowserDrop = false;
                     htmlText.IsWebBrowserContextMenuEnabled = false;
                     htmlText.WebBrowserShortcutsEnabled = false;
-                    htmlText.DocumentText = currentMessage.Body.Text;
                     htmlText.Navigating += htmlText_Navigating;
+                    htmlText.DocumentCompleted += htmlText_Ready;
+
+                    htmlText.Navigate(currentMessage.Body.CacheFile);
 
                     content_.Children.Add(host);
                 }
@@ -99,12 +103,31 @@ namespace Mail
 
         void htmlText_Navigating(object sender, System.Windows.Forms.WebBrowserNavigatingEventArgs e)
         {
-            int a = 0;
+            if (e.Url.Scheme == "file")
+            {
+                return;
+            }
 
-             System.Diagnostics.Process p = System.Diagnostics.Process.Start(e.Url.ToString());
+            System.Diagnostics.Process p = System.Diagnostics.Process.Start(e.Url.ToString());
 
             e.Cancel = true;
-            
+        }
+
+        void htmlText_Ready(object sender, System.Windows.Forms.WebBrowserDocumentCompletedEventArgs e)
+        {
+            System.Windows.Forms.WebBrowser htmlText = sender as System.Windows.Forms.WebBrowser;            
+
+            foreach (var obj in htmlText.Document.Images)
+            {
+                var img = obj as System.Windows.Forms.HtmlElement;
+                string imgSrc = img.GetAttribute("src");
+                Uri imgSrcUri = new Uri(imgSrc);
+
+                if (imgSrcUri.Scheme == "cid")
+                {
+                    // Need to fixup from related component of the message.
+                }
+            }
         }
 
         private void BodyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)

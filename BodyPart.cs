@@ -10,11 +10,16 @@ namespace Mail
 {
     public class BodyPart: INotifyPropertyChanged
     {
+        private MessageHeader owner_;
+        private string saveLocation_;
+
         private string text_;
         private byte[] data_;
 
         public string Text { get { return text_; } }
         public byte[] Data { get { return data_; } }
+
+        public string CacheFile { get; private set; }
 
         public ContentType ContentType { get; protected set; }
         public ContentDisposition Disposition { get; protected set; }
@@ -29,18 +34,20 @@ namespace Mail
             }
         }
 
-        public BodyPart(string contentType)
+        public BodyPart(MessageHeader owner, string contentType)
+            : this(owner)
         {
             ContentType = new ContentType(contentType);
-            Disposition = new ContentDisposition();
-            Disposition.Inline = true;
         }
 
-        public BodyPart()
+        public BodyPart(MessageHeader owner)
         {
             ContentType = new ContentType();
             Disposition = new ContentDisposition();
             Disposition.Inline = true;
+
+            saveLocation_ = null;
+            owner_ = owner;
         }
 
         public void SetContent(byte[] content)
@@ -50,7 +57,7 @@ namespace Mail
                 byte[] bytes = null;
                 if (Encoding == TextEncoding.QuotedPrintable)
                 {
-                    bytes = EncodedText.QuottedPrintableDecode(content);
+                    bytes = EncodedText.QuottedPrintableDecode(content, false);
                 }
                 else if (Encoding == TextEncoding.Base64)
                 {
@@ -86,6 +93,85 @@ namespace Mail
             }
         }
 
+        public void Save(string location = "")
+        {
+            if (location.Length == 0)
+            {
+                string filename = Disposition.FileName;
+                if (filename == null)
+                {
+                    filename = Id;
+                }
+                if (filename.Length == 0)
+                {
+                    filename = "base";
+                }
+
+                if (filename == System.IO.Path.GetFileNameWithoutExtension(filename))
+                {
+                    filename += "." + ContentType.MediaType.Substring(ContentType.MediaType.IndexOf('/') + 1);
+                }
+
+                location = System.IO.Path.Combine(new string[] {
+                    System.IO.Path.GetTempPath(),
+                    "JMail",
+                    "Cache",
+                    MessageIdToDirName(owner_.MessageId),
+                    filename
+                });
+            }
+
+            saveLocation_ = location;
+
+            if (Text == null && Data == null)
+            {
+                PropertyChanged += new PropertyChangedEventHandler((obj, e) => { SaveFile(); });
+                owner_.Folder.Server.FetchMessage(owner_, this);
+            }
+            else
+            {
+                SaveFile();
+            }
+        }
+
+        string MessageIdToDirName(string messageId)
+        {
+            return messageId.Replace('<', '_').Replace('>', '_').Replace('@', '=');
+        }
+
+        void EnsureDir(string fileName)
+        {
+            string dirName = System.IO.Path.GetDirectoryName(fileName);
+            if (!System.IO.Directory.Exists(dirName))
+            {
+                System.IO.Directory.CreateDirectory(dirName);
+            }
+        }
+        
+        void SaveFile()
+        {
+            if (saveLocation_ != null)
+            {
+                EnsureDir(saveLocation_);
+                System.IO.FileStream outFile = new System.IO.FileStream(saveLocation_, System.IO.FileMode.Create, System.IO.FileAccess.Write);
+
+                if (Data != null)
+                {
+                    outFile.Write(Data, 0, Data.Length);
+                }
+                else if (Text != null)
+                {
+                    byte[] bytes = System.Text.Encoding.UTF8.GetBytes(Text);
+                    outFile.Write(bytes, 0, bytes.Length);
+                }
+
+                outFile.Close();
+
+                CacheFile = saveLocation_;
+                saveLocation_ = null;
+            }
+        }
+
         #region INotifyPropertyChanged Members
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -95,7 +181,8 @@ namespace Mail
 
     internal class ImapBodyPart: BodyPart
     {
-        public ImapBodyPart(string[] partDesc)
+        public ImapBodyPart(MessageHeader owner, string[] partDesc)
+            : base(owner)
         {
             string content = ImapData.StripQuotes(partDesc[0]).ToLower() + "/" + ImapData.StripQuotes(partDesc[1]).ToLower();
             ContentType = new ContentType(content);

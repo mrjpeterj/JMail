@@ -104,6 +104,7 @@ namespace Mail
         public DateTime Sent { get; private set; }
         public DateTime Date { get; private set; }
         public string Uid { get; private set; }
+        public string MessageId { get; private set; }
         public int Size { get; private set; }
         public bool HasAttachments
         {
@@ -170,7 +171,10 @@ namespace Mail
             {
                 Size = Int32.Parse(value);
             }
-
+            else if (field.Equals("message-id", StringComparison.CurrentCultureIgnoreCase))
+            {
+                MessageId = value;
+            }
 
             if (PropertyChanged != null)
             {
