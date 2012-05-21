@@ -80,6 +80,7 @@ namespace Mail
 
         public BodyPart Body { get; set; }
         public IEnumerable<BodyPart> Attachments { get { return attachments_; } }
+        public IEnumerable<BodyPart> Related { get { return related_; } }
 
         public MailAddress From
         {

@@ -126,6 +126,20 @@ namespace Mail
                 if (imgSrcUri.Scheme == "cid")
                 {
                     // Need to fixup from related component of the message.
+                    string refId = "<" + imgSrcUri.PathAndQuery + ">";
+
+                    MessageHeader msg = DataContext as MessageHeader;
+                    var imgPart = from r in msg.Related
+                                  where r.Id == refId
+                                  select r;
+
+                    if (imgPart.Any())
+                    {
+                        var item = imgPart.First();
+                        item.Save();
+
+                        img.SetAttribute("src", item.CacheFile);
+                    }
                 }
             }
         }

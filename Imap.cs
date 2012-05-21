@@ -20,28 +20,31 @@ namespace Mail
 
     internal class ImapRequest
     {
-        internal delegate void ResponseHandler(ImapRequest request, IList<string> data);
+        internal delegate void ResponseHandler(ImapRequest request, IList<string> responseData, object data);
 
         string id_;
         string commandName_;
         string args_;
         ResponseHandler response_;
 
+        object data_;
+
         public string Key { get { return id_; } }
         public string Command { get { return commandName_; } }
         public string Args { get { return args_; } }
 
-        public ImapRequest(string id, string commandName, string args, ResponseHandler handler)
+        public ImapRequest(string id, string commandName, string args, ResponseHandler handler, object data)
         {
             id_ = id;
             commandName_ = commandName;
             args_ = args;
             response_ = handler;
+            data_ = data;
         }
 
         public void Process(IList<string> resultData)
         {
-            response_(this, resultData);
+            response_(this, resultData, data_);
         }
     }
 
@@ -222,7 +225,7 @@ namespace Mail
             }
         }
 
-        void SendCommand(string command, string args, ImapRequest.ResponseHandler handler)
+        void SendCommand(string command, string args, ImapRequest.ResponseHandler handler, object data = null)
         {
             string commandId = NextCommand();
             string cmd = commandId + " " + command;
@@ -237,7 +240,7 @@ namespace Mail
 
             cmd += "\r\n";
 
-            pendingCommands_[commandId] = new ImapRequest(commandId, command, args, handler);
+            pendingCommands_[commandId] = new ImapRequest(commandId, command, args, handler, data);
 
             byte[] bytes = encoder_.GetBytes(cmd);
 
@@ -255,7 +258,7 @@ namespace Mail
             SendCommand("CAPABILITY", "", HandleCaps);
         }
 
-        void HandleCaps(ImapRequest request, IEnumerable<string> resultData)
+        void HandleCaps(ImapRequest request, IEnumerable<string> resultData, object data)
         {
             // Looks like 
             // * CAPABILITY <cap1> <cap2> <cap3>
@@ -274,7 +277,7 @@ namespace Mail
             SendCommand("STARTTLS", "", HandleTLS);
         }
 
-        void HandleTLS(ImapRequest request, IEnumerable<string> responseData)
+        void HandleTLS(ImapRequest request, IEnumerable<string> responseData, object data)
         {
             var sslStream = new System.Net.Security.SslStream(client_.GetStream(), false,
                 new System.Net.Security.RemoteCertificateValidationCallback(GotRemoteCert));
@@ -296,7 +299,7 @@ namespace Mail
             SendCommand("LOGIN", account_.Username + " " + account_.GetPassword(), HandleLogin);
         }
 
-        void HandleLogin(ImapRequest request, IEnumerable<string> resultData)
+        void HandleLogin(ImapRequest request, IEnumerable<string> resultData, object data)
         {
             state_ = ImapState.LoggedIn;
             ListFolders();
@@ -308,7 +311,7 @@ namespace Mail
             SendCommand("LSUB", "\"\" \"*\"", ListedFolder);
         }
 
-        void ListedFolder(ImapRequest request, IEnumerable<string> responseData)
+        void ListedFolder(ImapRequest request, IEnumerable<string> responseData, object data)
         {
             Folder currentParent = null;
 
@@ -389,7 +392,7 @@ namespace Mail
             }
         }
 
-        void SelectedFolder(ImapRequest request, IEnumerable<string> responseData)
+        void SelectedFolder(ImapRequest request, IEnumerable<string> responseData, object data)
         {
             ListMessages(request, responseData);
 
@@ -444,7 +447,7 @@ namespace Mail
             SendCommand("STATUS", "\"" + f.FullName + "\"" + " (MESSAGES UNSEEN RECENT)", UnreadCount);
         }
 
-        void UnreadCount(ImapRequest request, IList<string> responseData)
+        void UnreadCount(ImapRequest request, IList<string> responseData, object data)
         {
             string folderName = responseData[2];
 
@@ -485,7 +488,7 @@ namespace Mail
         }
 
 
-        void AvailableMessages(ImapRequest request, IEnumerable<string> responseData)
+        void AvailableMessages(ImapRequest request, IEnumerable<string> responseData, object data)
         {
             // Each line is of the form:
             // * SEARCH <list of ids>
@@ -539,7 +542,7 @@ namespace Mail
             }
         }
 
-        void ProcessMessage(ImapRequest request, IEnumerable<string> responseData)
+        void ProcessMessage(ImapRequest request, IEnumerable<string> responseData, object data)
         {
             // Format of this is:
             // * {id} FETCH (<field> <field data> <field> <field data> ......
@@ -548,6 +551,7 @@ namespace Mail
             bool isResponse = false;
 
             MessageHeader msg = null;
+            BodyPart body = data as BodyPart;
 
             foreach (var response in responseData)
             {
@@ -568,7 +572,7 @@ namespace Mail
                 }
                 else if (isResponse && msg != null)
                 {
-                    ExtractValues(msg, response);
+                    ExtractValues(msg, body, response);
 
                     isResponse = false;
                     msg = null;
@@ -576,7 +580,7 @@ namespace Mail
             }
         }
 
-        void ExtractValues(MessageHeader msg, string data)
+        void ExtractValues(MessageHeader msg, BodyPart body, string data)
         {
             string[] values = ImapData.SplitToken(data);
 
@@ -591,7 +595,7 @@ namespace Mail
                 }
                 else if (key.StartsWith("BODY["))
                 {
-                    ExtractBodyInfo(msg, value);
+                    ExtractBodyInfo(msg, body, value);
                 }
                 else if (key == "INTERNALDATE")
                 {
@@ -810,11 +814,18 @@ namespace Mail
             msg.SetValue("Received", dateString.Substring(1, dateString.Length - 2));
         }
 
-        void ExtractBodyInfo(MessageHeader msg, string data)
+        void ExtractBodyInfo(MessageHeader msg, BodyPart body, string data)
         {
             var bytes = encoder_.GetBytes(ImapData.StripQuotes(data));
 
-            msg.Body.SetContent(bytes);
+            if (body == null)
+            {
+                msg.Body.SetContent(bytes);
+            }
+            else
+            {
+                body.SetContent(bytes);
+            }
         }
 
         System.Net.Mail.MailAddress AddressBuilder(string[] addressParts)
@@ -859,7 +870,14 @@ namespace Mail
 
         public void FetchMessage(MessageHeader m, BodyPart body)
         {
-            SendCommand("FETCH", m.id + " (FLAGS BODY.PEEK[" + body.PartNumber + "])", ProcessMessage);
+            if (body == m.Body || body == null)
+            {
+                SendCommand("FETCH", m.id + " (FLAGS BODY.PEEK[" + body.PartNumber + "])", ProcessMessage, body);
+            }
+            else
+            {
+                SendCommand("FETCH", m.id + " (BODY.PEEK[" + body.PartNumber + "])", ProcessMessage, body);
+            }
         }
 
 

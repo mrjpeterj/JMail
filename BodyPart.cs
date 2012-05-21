@@ -52,9 +52,10 @@ namespace Mail
 
         public void SetContent(byte[] content)
         {
+                byte[] bytes = null;
+
             if (Encoding != TextEncoding.Binary)
             {
-                byte[] bytes = null;
                 if (Encoding == TextEncoding.QuotedPrintable)
                 {
                     bytes = EncodedText.QuottedPrintableDecode(content, false);
@@ -68,7 +69,12 @@ namespace Mail
                 {
                     bytes = content;
                 }
+            } else {
+                bytes = content;
+            }
 
+            if (ContentType.MediaType.StartsWith("text/"))
+            {
                 System.Text.Encoding encoder = System.Text.Encoding.ASCII;
                 if (ContentType.CharSet != null)
                 {
@@ -85,7 +91,7 @@ namespace Mail
             }
             else
             {
-                data_ = content;
+                data_ = bytes;
                 if (PropertyChanged != null)
                 {
                     PropertyChanged(this, new PropertyChangedEventArgs("Data"));
@@ -98,6 +104,10 @@ namespace Mail
             if (location.Length == 0)
             {
                 string filename = Disposition.FileName;
+                if (filename == null)
+                {
+                    filename = ContentType.Name;
+                }
                 if (filename == null)
                 {
                     filename = Id;
