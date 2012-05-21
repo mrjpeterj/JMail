@@ -627,7 +627,7 @@ namespace Mail
             string msgId = ImapData.StripQuotes(envItems[9]);
 
             msg.SetValue("Date", dataStr);
-            msg.SetValue("Subject", EncodedText.Decode(subject));
+            msg.SetValue("Subject", EncodedText.DecodeWord(subject));
             msg.SetValue("In-Reply-To", inReplyTo);
             msg.SetValue("Message-Id", msgId);
 
@@ -762,7 +762,7 @@ namespace Mail
                     loc += 1;
                 }
 
-                ImapBodyPart bodyPart = new ImapBodyPart(dataPieces);
+                ImapBodyPart bodyPart = new ImapBodyPart(msg, dataPieces);
                 bodyPart.PartNumber = loc;
 
                 if (ImapData.StripQuotes(dataPieces[0]) == "TEXT")
@@ -820,7 +820,7 @@ namespace Mail
         System.Net.Mail.MailAddress AddressBuilder(string[] addressParts)
         {
             string address = ImapData.StripQuotes(addressParts[2]) + "@" + ImapData.StripQuotes(addressParts[3]);
-            string displayName = EncodedText.Decode(ImapData.StripQuotes(addressParts[0]));
+            string displayName = EncodedText.DecodeWord(ImapData.StripQuotes(addressParts[0]));
 
             try
             {

@@ -279,7 +279,7 @@ namespace Mail
             }
         }
 
-        public static string Decode(string input)
+        public static string DecodeWord(string input)
         {
             while (true)
             {
@@ -317,7 +317,7 @@ namespace Mail
                 else
                 {
                     var restBytes = Encoding.UTF8.GetBytes(rest);
-                    data = QuottedPrintableDecode(restBytes);
+                    data = QuottedPrintableDecode(restBytes, true);
                 }
 
                 string res = Encoding.GetEncoding(charset).GetString(data);
@@ -328,7 +328,7 @@ namespace Mail
             return input;
         }
 
-        public static byte[] QuottedPrintableDecode(byte[] input)
+        public static byte[] QuottedPrintableDecode(byte[] input, bool isWord)
         {
             List<byte> res = new List<byte>();
             bool encoding = false;
@@ -365,7 +365,14 @@ namespace Mail
                     }
                     else if (c == '_')
                     {
-                        res.Add(32);
+                        if (isWord)
+                        {
+                            res.Add(32);
+                        }
+                        else
+                        {
+                            res.Add(c);
+                        }
                     }
                     else
                     {
