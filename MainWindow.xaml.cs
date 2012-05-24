@@ -125,7 +125,7 @@ namespace Mail
             }
             else
             {
-                return Visibility.Hidden;
+                return Visibility.Collapsed;
             }
         }
 
