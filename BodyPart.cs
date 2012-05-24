@@ -73,6 +73,11 @@ namespace Mail
                 bytes = content;
             }
 
+            SetContentInternal(bytes);
+        }
+
+        void SetContentInternal(byte[] bytes)
+        {
             if (ContentType.MediaType.StartsWith("text/"))
             {
                 System.Text.Encoding encoder = System.Text.Encoding.ASCII;
@@ -133,6 +138,20 @@ namespace Mail
 
             saveLocation_ = location;
 
+            if (System.IO.File.Exists(saveLocation_))
+            {
+                var info = new System.IO.FileInfo(saveLocation_);
+                if (info.Length > 0)
+                {
+                    // File already here, load it.
+                    SetContentInternal(System.IO.File.ReadAllBytes(saveLocation_));
+
+                    CacheFile = saveLocation_;
+                    saveLocation_ = null;
+                    SaveFile(saveComplete);
+                }
+            }
+
             if (Text == null && Data == null)
             {
                 PropertyChanged += new PropertyChangedEventHandler((obj, e) => { SaveFile(saveComplete); });
@@ -157,7 +176,7 @@ namespace Mail
                 System.IO.Directory.CreateDirectory(dirName);
             }
         }
-        
+
         void SaveFile(Action<BodyPart> saveComplete)
         {
             if (saveLocation_ != null)
@@ -179,11 +198,11 @@ namespace Mail
 
                 CacheFile = saveLocation_;
                 saveLocation_ = null;
+            }
 
-                if (saveComplete != null)
-                {
-                    saveComplete(this);
-                }
+            if (saveComplete != null)
+            {
+                saveComplete(this);
             }
         }
 
