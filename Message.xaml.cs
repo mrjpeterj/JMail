@@ -11,6 +11,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
+using System.Windows.Forms.Integration;
+
 namespace Mail
 {
     /// <summary>
@@ -68,35 +70,55 @@ namespace Mail
             MessageHeader currentMessage = DataContext as MessageHeader;
             if (currentMessage.Body.Text != null)
             {
-                content_.Children.Clear();
+                UIElement existingChild = content_.Child;
 
                 if (currentMessage.Body.ContentType.MediaType.EndsWith("/plain"))
                 {
-                    TextBox plainText = new TextBox();
-                    plainText.Text = currentMessage.Body.Text;
-                    plainText.Style = Resources["PlainTextStyle"] as Style;
+                    TextBox plainText = existingChild as TextBox;
 
-                    content_.Children.Add(plainText);
+                    if (plainText == null)
+                    {
+                        if (existingChild is IDisposable)
+                        {
+                            ((IDisposable)existingChild).Dispose();
+                        }
+
+                        plainText = new TextBox();
+                        plainText.Style = Resources["PlainTextStyle"] as Style;
+                        content_.Child = plainText;
+                    }
+
+                    plainText.Text = currentMessage.Body.Text;
                 }
                 else
                 {
                     currentMessage.Body.Save();
 
-                    System.Windows.Forms.Integration.WindowsFormsHost host = new System.Windows.Forms.Integration.WindowsFormsHost();
+                    System.Windows.Forms.WebBrowser htmlText = null;
+                    WindowsFormsHost host = existingChild as WindowsFormsHost;
 
-                    System.Windows.Forms.WebBrowser htmlText = new System.Windows.Forms.WebBrowser();
-                    host.Child = htmlText;
+                    if (host == null)
+                    {
+                        host = new WindowsFormsHost();
 
-                    htmlText.AllowNavigation = true;
-                    htmlText.AllowWebBrowserDrop = false;
-                    htmlText.IsWebBrowserContextMenuEnabled = false;
-                    htmlText.WebBrowserShortcutsEnabled = false;
-                    htmlText.Navigating += htmlText_Navigating;
-                    htmlText.DocumentCompleted += htmlText_Ready;
+                        htmlText = new System.Windows.Forms.WebBrowser();
+                        host.Child = htmlText;
+
+                        htmlText.AllowNavigation = true;
+                        htmlText.AllowWebBrowserDrop = false;
+                        htmlText.IsWebBrowserContextMenuEnabled = false;
+                        htmlText.WebBrowserShortcutsEnabled = false;
+                        htmlText.Navigating += htmlText_Navigating;
+                        htmlText.DocumentCompleted += htmlText_Ready;
+
+                        content_.Child = host;
+                    }
+                    else
+                    {
+                        htmlText = host.Child as System.Windows.Forms.WebBrowser;
+                    }
 
                     htmlText.Navigate(currentMessage.Body.CacheFile);
-
-                    content_.Children.Add(host);
                 }
             }
         }
