@@ -106,6 +106,7 @@ namespace Mail
                         htmlText.AllowWebBrowserDrop = false;
                         htmlText.IsWebBrowserContextMenuEnabled = false;
                         htmlText.WebBrowserShortcutsEnabled = false;
+
                         htmlText.Navigating += htmlText_Navigating;
                         htmlText.DocumentCompleted += htmlText_Ready;
 
@@ -116,7 +117,17 @@ namespace Mail
                         htmlText = host.Child as System.Windows.Forms.WebBrowser;
                     }
 
-                    htmlText.DocumentText = currentMessage.Body.Text;
+                    if (htmlText.Document != null)
+                    {
+                        // Doing this avoids the window playing the navigation sounds 
+                        htmlText.Document.OpenNew(true);
+                        htmlText.Document.Write(currentMessage.Body.Text);
+                        htmlText_Ready(htmlText, null);
+                    }
+                    else
+                    {
+                        htmlText.DocumentText = currentMessage.Body.Text;
+                    }
                 }
             }
         }
@@ -129,7 +140,7 @@ namespace Mail
             }
 
             System.Diagnostics.Process p = System.Diagnostics.Process.Start(e.Url.ToString());
-
+            
             e.Cancel = true;
         }
 
