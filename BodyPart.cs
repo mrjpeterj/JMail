@@ -52,7 +52,7 @@ namespace Mail
 
         public void SetContent(byte[] content)
         {
-                byte[] bytes = null;
+            byte[] bytes = null;
 
             if (Encoding != TextEncoding.Binary)
             {
@@ -99,7 +99,7 @@ namespace Mail
             }
         }
 
-        public void Save(string location = "")
+        public void Save(Action<BodyPart> saveComplete, string location = "")
         {
             if (location.Length == 0)
             {
@@ -135,12 +135,12 @@ namespace Mail
 
             if (Text == null && Data == null)
             {
-                PropertyChanged += new PropertyChangedEventHandler((obj, e) => { SaveFile(); });
+                PropertyChanged += new PropertyChangedEventHandler((obj, e) => { SaveFile(saveComplete); });
                 owner_.Folder.Server.FetchMessage(owner_, this);
             }
             else
             {
-                SaveFile();
+                SaveFile(saveComplete);
             }
         }
 
@@ -158,7 +158,7 @@ namespace Mail
             }
         }
         
-        void SaveFile()
+        void SaveFile(Action<BodyPart> saveComplete)
         {
             if (saveLocation_ != null)
             {
@@ -179,6 +179,11 @@ namespace Mail
 
                 CacheFile = saveLocation_;
                 saveLocation_ = null;
+
+                if (saveComplete != null)
+                {
+                    saveComplete(this);
+                }
             }
         }
 

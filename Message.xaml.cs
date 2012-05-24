@@ -92,8 +92,6 @@ namespace Mail
                 }
                 else
                 {
-                    currentMessage.Body.Save();
-
                     System.Windows.Forms.WebBrowser htmlText = null;
                     WindowsFormsHost host = existingChild as WindowsFormsHost;
 
@@ -118,14 +116,14 @@ namespace Mail
                         htmlText = host.Child as System.Windows.Forms.WebBrowser;
                     }
 
-                    htmlText.Navigate(currentMessage.Body.CacheFile);
+                    htmlText.DocumentText = currentMessage.Body.Text;
                 }
             }
         }
 
         void htmlText_Navigating(object sender, System.Windows.Forms.WebBrowserNavigatingEventArgs e)
         {
-            if (e.Url.Scheme == "file")
+            if (e.Url.Scheme == "file" || e.Url.Scheme == "about")
             {
                 return;
             }
@@ -158,9 +156,10 @@ namespace Mail
                     if (imgPart.Any())
                     {
                         var item = imgPart.First();
-                        item.Save();
-
-                        img.SetAttribute("src", item.CacheFile);
+                        item.Save((bp) =>
+                        {
+                            img.SetAttribute("src", item.CacheFile);                            
+                        });
                     }
                 }
             }
