@@ -65,8 +65,8 @@
                 <TextBlock>Sent:</TextBlock>
             </StackPanel>
             <StackPanel Grid.Column="3">
-                <TextBlock Text="{Binding Date}" HorizontalAlignment="Right" />
-                <TextBlock Text="{Binding Sent}" HorizontalAlignment="Right" />
+                <TextBlock Text="{Binding Date, Converter={StaticResource dateDisplay}}" HorizontalAlignment="Right" />
+                <TextBlock Text="{Binding Sent, Converter={StaticResource dateDisplay}}" HorizontalAlignment="Right" />
             </StackPanel>
 
             <TextBlock Grid.Row="2" Visibility="{Binding HasAttachments, Converter={StaticResource isVisible}}">Attachments:</TextBlock>
