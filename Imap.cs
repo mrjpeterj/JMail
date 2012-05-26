@@ -401,6 +401,9 @@ namespace Mail
 
         void ListMessages(ImapRequest request, IEnumerable<string> responseData)
         {
+            Folder folder = currentFolder_;
+
+#if false
             string folderName = request.Args.Substring(1, request.Args.Length - 2);
 
             state_ = ImapState.Selected;
@@ -408,11 +411,13 @@ namespace Mail
             Folder folder = (from f in AllFolders
                              where f.FullName == folderName
                              select f).FirstOrDefault();
+#endif
 
             if (folder != null)
             {
                 string lastValue = null;
                 bool subProcessNext = false;
+                MessageHeader msg = null;
 
                 foreach (var response in responseData)
                 {
@@ -422,7 +427,11 @@ namespace Mail
 
                         subProcessNext = false;
                     }
-
+                    else if (msg != null)
+                    {
+                        ExtractValues(msg, null, response);
+                        msg = null;
+                    }
 
                     if (response == "EXISTS")
                     {
@@ -431,6 +440,12 @@ namespace Mail
                     else if (response == "RECENT")
                     {
                         folder.Recent = Int32.Parse(lastValue);
+                    }
+                    else if (response == "FETCH")
+                    {
+                        int msgId = Int32.Parse(lastValue);
+
+                        msg = currentFolder_.Messages.Message(msgId);
                     }
                     else if (response == "OK")
                     {
@@ -487,6 +502,13 @@ namespace Mail
             }            
         }
 
+        void UpdateStatus(ImapRequest request, IEnumerable<string> responseData, object data)
+        {
+            if (responseData.Any())
+            {
+                ListMessages(request, responseData);
+            }
+        }
 
         void AvailableMessages(ImapRequest request, IEnumerable<string> responseData, object data)
         {
@@ -880,6 +902,10 @@ namespace Mail
             }
         }
 
+        public void Poll()
+        {
+            SendCommand("NOOP", "", UpdateStatus);
+        }
 
         #endregion
     }

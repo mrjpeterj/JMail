@@ -12,5 +12,6 @@ namespace Mail
 
         void SelectFolder(Folder f);
         void FetchMessage(MessageHeader m, BodyPart p);
+        void Poll();
     }
 }

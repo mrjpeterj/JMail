@@ -20,6 +20,8 @@ namespace Mail
     /// </summary>
     public partial class MainWindow: Window
     {
+        private System.Windows.Threading.DispatcherTimer poller_;
+
         public static System.Windows.Threading.Dispatcher MainDispatcher;
         public IList<AccountInfo> Servers { get; private set; }
 
@@ -36,6 +38,23 @@ namespace Mail
 
             DataContext = this;
             InitializeComponent();
+
+            poller_ = new System.Windows.Threading.DispatcherTimer();
+            poller_.Interval = new TimeSpan(0, 10, 0);
+            poller_.Tick += PollServers;
+
+            poller_.Start();
+        }
+
+        void PollServers(object sender, EventArgs e)
+        {
+            foreach (var server in Servers)
+            {
+                if (server.Connection != null)
+                {
+                    server.Connection.Poll();
+                }
+            }
         }
 
         void OnLoaded(object sender, RoutedEventArgs e)
