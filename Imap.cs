@@ -526,9 +526,31 @@ namespace Mail
                 }
             }
 
-            if (msgIds.Count > 0)
+            var currentIds = (from m in currentFolder_.Messages
+                              select m.id).ToList();
+            List<int> newIds = new List<int>();
+
+            foreach (var id in msgIds)
             {
-                FetchMessage(msgIds);
+                if (!currentIds.Contains(id))
+                {
+                    newIds.Add(id);
+                }
+                else
+                {
+                    currentIds.Remove(id);
+                }
+            }
+
+            foreach (var id in currentIds)
+            {
+                // These are no longer in the folder
+                currentFolder_.Messages.Remove(currentFolder_.Messages.Message(id));
+            }
+
+            if (newIds.Count > 0)
+            {
+                FetchMessage(newIds);
             }
         }
 
