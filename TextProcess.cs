@@ -71,7 +71,7 @@ namespace Mail
             return lastIsComplete;
         }
 
-        public static string NextToken(string data, int start, out int end)
+        static string NextToken(string data, int start, out int end)
         {
             if (start < 0)
             {
@@ -82,6 +82,7 @@ namespace Mail
             StringBuilder output = new StringBuilder();
             int pos = start;
             int byteCounterStart = 0;
+            char prevChar = '\0';
 
             Stack<char> toMatch = new Stack<char>();
 
@@ -166,56 +167,76 @@ namespace Mail
                         break;
                 }
 
-                if (foundMatch)
+                if (prevChar == '\\' && toMatch.Count == 1 && toMatch.First() == '"')
                 {
-                    char lastChar = toMatch.Pop();
-                    if (toMatch.Count == 0)
-                    {
-                        end = pos + 1;
+                    // Handle backslashified char.
+                    // I think that there we are really only handling \" quoted pair and maybe \\
+                    // However, we don't want to do this substitution until we are at the last level 
+                    // of splitting, otherwise the next time that we come in here we won't have
+                    // backslashed quotes and they will be parsed wrongly.
+                    output.Remove(output.Length - 1, 1);
+                    prevChar = '\0';
+                }
+                else
+                {
+                    prevChar = current;
 
-                        int matchedLen = pos - start;
-                        if (lastChar != ' ' && current != '\0')
+
+                    if (foundMatch)
+                    {
+                        char lastChar = toMatch.Pop();
+                        if (toMatch.Count == 0)
                         {
-                            // If the closing token wasn't <space> then we want to include it.
-                            output.Append(current);
+                            end = pos + 1;
+
+                            int matchedLen = pos - start;
+                            if (lastChar != ' ' && current != '\0')
+                            {
+                                // If the closing token wasn't <space> then we want to include it.
+                                output.Append(current);
+                            }
+                            return output.ToString();
                         }
-                        return output.ToString();
                     }
-                }
-                else if (current == '\"')
-                {
-                    toMatch.Push(current);
-                }
-                else if (current == '[' ||
-                         current == '(' ||
-                         current == '<')
-                {
-                    if (!toMatch.Contains('\"'))
+                    else if (current == '\"')
                     {
                         toMatch.Push(current);
                     }
-                }
-                else if (current == '{')
-                {
-                    if (!toMatch.Contains('\"'))
+                    else if (current == '[' ||
+                             current == '(' ||
+                             current == '<')
                     {
-                        toMatch.Push(current);
-                        byteCounterStart = pos + 1;
+                        if (!toMatch.Contains('\"'))
+                        {
+                            toMatch.Push(current);
+                        }
+                    }
+                    else if (current == '{')
+                    {
+                        if (!toMatch.Contains('\"'))
+                        {
+                            toMatch.Push(current);
+                            byteCounterStart = pos + 1;
+                        }
+                    }
+                    else if (!toMatch.Any())
+                    {
+                        if (current == '\r' || current == '\n' || current == ' ')
+                        {
+                            // Don't put this in as the start char
+                            current = '\0';
+                        }
+                        else
+                        {
+                            // First character and wasn't another token character
+                            toMatch.Push(' ');
+                        }
                     }
                 }
-                else if (!toMatch.Any())
-                {
-                    if (current == '\r' || current == '\n' || current == ' ')
-                    {
-                        // Don't put this in as the start char
-                        current = '\0';
-                    } else {
-                        // First character and wasn't another token character
-                        toMatch.Push(' ');
-                    }
-                }
+
 
                 ++pos;
+
                 if (current != '\0')
                 {
                     output.Append(current);
