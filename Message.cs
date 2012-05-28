@@ -74,6 +74,7 @@ namespace Mail
         List<BodyPart> related_;
 
         MailAddress from_;
+        DateTime sent_;
 
         public int id { get { return id_; } }
         public Folder Folder { get { return folder_; } }
@@ -102,7 +103,24 @@ namespace Mail
         public MailAddressCollection Cc { get; private set; }
 
         public string Subject { get; private set; }
-        public DateTime Sent { get; private set; }
+        public DateTime Sent
+        {
+            get
+            {
+                if (sent_.Ticks == 0)
+                {
+                    return Date;
+                }
+                else
+                {
+                    return sent_;
+                }
+            }
+            private set
+            {
+                sent_ = value;
+            }
+        }
         public DateTime Date { get; private set; }
         public string Uid { get; private set; }
         public string MessageId { get; private set; }
@@ -256,7 +274,9 @@ namespace Mail
                 }
             }
 
-            return DateTime.UtcNow;
+            DateTime invalid = new DateTime();
+
+            return invalid;
         }
 
         public void AddAttachment(BodyPart b)
