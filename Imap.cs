@@ -562,8 +562,6 @@ namespace Mail
             {
                 int id = ids[i];
 
-                currentFolder_.Messages.Add(new MessageHeader(id, currentFolder_));
-
                 if (idList.Length > 0)
                 {
                     idList += ",";
@@ -611,6 +609,11 @@ namespace Mail
                 {
                     int id = Int32.Parse(response);
                     msg = currentFolder_.Messages.Message(id);
+                    if (msg == null)
+                    {
+                        msg = new MessageHeader(id, currentFolder_);
+                        currentFolder_.Messages.Add(msg);
+                    }
 
                     isId = false;
                 }
