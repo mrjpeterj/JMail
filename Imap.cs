@@ -686,8 +686,10 @@ namespace Mail
             string[] cc = ImapData.SplitToken(envItems[6]);
             string[] bcc = ImapData.SplitToken(envItems[7]);
 
+            //var senderAddr = AddressBuilder(ImapData.SplitToken(sender[0], ProtocolText.InternetMail));
+
             msg.From = AddressBuilder(ImapData.SplitToken(from[0]));
-            msg.ReplyTo = AddressBuilder(ImapData.SplitToken(from[0]));
+            msg.ReplyTo = AddressBuilder(ImapData.SplitToken(replyTo[0]));
 
             if (to != null)
             {
