@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Text;
 using System.Windows;
@@ -12,6 +13,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+
+using System.ComponentModel;
 
 namespace Mail
 {
@@ -77,8 +80,24 @@ namespace Mail
             {
                 folder.Select();
 
+                if (messageList_.ItemsSource is MessageStore)
+                {
+                    ((MessageStore)messageList_.ItemsSource).CollectionChanged -= UpdateSorting;
+                }
+
                 messageList_.ItemsSource = folder.Messages;
+                folder.Messages.CollectionChanged += UpdateSorting;
+
+                UpdateSorting(folder.Messages, null);
             }
+        }
+
+        private void UpdateSorting(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            // Make sure it updates the sorting of the list
+            messageList_.Items.SortDescriptions.Clear();
+            messageList_.Items.SortDescriptions.Add(new SortDescription("Sent", ListSortDirection.Ascending));
+            messageList_.Items.SortDescriptions.Add(new SortDescription("id", ListSortDirection.Ascending));
         }
 
         private void Account_Create(object sender, RoutedEventArgs e)
