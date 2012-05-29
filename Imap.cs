@@ -739,8 +739,18 @@ namespace Mail
 
             if (ImapData.IsArray(dataPieces[0]))
             {
-                // Analyze multi-part type
-                int typePos = dataPieces.Length - 4;
+                // Find where the sub parts finish.
+                int typePos = 0;
+
+                for (int p = 0; p < dataPieces.Length; ++p)
+                {
+                    if (!ImapData.IsArray(dataPieces[p])) {
+                        typePos = p;
+                        break;
+                    }
+                }
+
+                // Analyze multi-part type                
                 string multiType = ImapData.StripQuotes(dataPieces[typePos]);
                 string[] paramSet = ImapData.SplitToken(dataPieces[typePos + 1]);
                 List<string> paramList = null;
