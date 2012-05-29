@@ -223,11 +223,11 @@ namespace Mail
             Id = ImapData.StripQuotes(partDesc[3]);
 
             int extensionStart = 7;
-            if (content.StartsWith("TEXT"))
+            if (content.StartsWith("text"))
             {
                 extensionStart += 1;
             }
-            else if (content.StartsWith("MESSAGE"))
+            else if (content.StartsWith("message"))
             {
                 extensionStart += 3;
             }
