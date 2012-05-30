@@ -52,7 +52,7 @@
             </TreeView.ItemContainerStyle>
         </TreeView>
 
-        <ListView Grid.Column="1" Grid.Row="1" Name="messageList_" Foreground="Black">
+        <ListView Grid.Column="1" Grid.Row="1" Name="messageList_" Foreground="Black" SizeChanged="MessageListResized">
             <ListView.ItemContainerStyle>
                 <Style TargetType="ListViewItem">
                     <EventSetter Event="MouseDoubleClick" Handler="OpenMessage" />

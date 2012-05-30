@@ -142,6 +142,73 @@ namespace Mail
             m.Owner = this;
             m.Show();
         }
+
+        private void MessageListResized(object sender, SizeChangedEventArgs e)
+        {
+            if (e.WidthChanged)
+            {
+                ListView list = sender as ListView;
+                var kids = VisualTreeHelper.GetChildrenCount(list);
+                ScrollViewer scroller = null;
+                for (int i = 0; i < kids; ++i) 
+                {
+                    var kid = VisualTreeHelper.GetChild(list, i) as Decorator;
+
+                    if (kid != null)
+                    {
+                        scroller = kid.Child as ScrollViewer;
+
+                        if (scroller != null)
+                        {
+                            break;
+                        }
+                    }
+                }
+
+                GridView view = list.View as GridView;
+                GridViewColumn subjectColumn = null;
+
+                // Reinit columns so that the recalculate the layout
+                foreach (var col in view.Columns)
+                {
+                    col.Width = 0;
+                    col.Width = float.NaN;
+                    
+                    if ((string)col.Header == "Subject")
+                    {
+                        subjectColumn = col;
+                    }
+                }
+
+                list.UpdateLayout();
+
+                if (subjectColumn != null)
+                {
+                    double colWidth = 0;
+                    foreach (var col in view.Columns)
+                    {
+                        colWidth += col.ActualWidth;
+                    }
+
+                    double reqWidth = double.NaN;
+                    if (scroller != null)
+                    {
+                        reqWidth = ((ItemsPresenter)scroller.Content).ActualWidth;
+                    }
+                    else
+                    {
+                        reqWidth = list.ActualWidth;
+                    }
+                    
+                    reqWidth -= (colWidth - subjectColumn.ActualWidth);
+
+                    if (reqWidth > subjectColumn.ActualWidth)
+                    {
+                        subjectColumn.Width = reqWidth;
+                    }
+                }
+            }
+        }
     }
 
     public class IsVisible: System.Windows.Data.IValueConverter
