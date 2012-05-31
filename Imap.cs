@@ -234,9 +234,9 @@ namespace Mail
                 cmd += " " + args;
             }
             
-            //System.Diagnostics.Debug.WriteLine("++++++++");
-            //System.Diagnostics.Debug.WriteLine(cmd);
-            //System.Diagnostics.Debug.WriteLine("++++++++");            
+            System.Diagnostics.Debug.WriteLine("++++++++");
+            System.Diagnostics.Debug.WriteLine(cmd);
+            System.Diagnostics.Debug.WriteLine("++++++++");            
 
             cmd += "\r\n";
 
@@ -396,10 +396,11 @@ namespace Mail
         {
             ListMessages(request, responseData);
 
-            SendCommand("SEARCH", "UNDELETED", AvailableMessages);       
+            SendCommand("UID SEARCH", "UNDELETED", AvailableMessages);       
         }
 
-        void ListMessages(ImapRequest request, IEnumerable<string> responseData)
+        // Returns whether it thinks that the message list should be updated.
+        bool ListMessages(ImapRequest request, IEnumerable<string> responseData)
         {
             Folder folder = currentFolder_;
 
@@ -418,6 +419,9 @@ namespace Mail
                 string lastValue = null;
                 bool subProcessNext = false;
                 MessageHeader msg = null;
+
+                int prevExists = folder.Exists;
+                folder.Recent = 0;
 
                 foreach (var response in responseData)
                 {
@@ -445,7 +449,7 @@ namespace Mail
                     {
                         int msgId = Int32.Parse(lastValue);
 
-                        msg = currentFolder_.Messages.Message(msgId);
+                        msg = currentFolder_.Messages.MessageByID(msgId);
                     }
                     else if (response == "OK")
                     {
@@ -454,7 +458,14 @@ namespace Mail
 
                     lastValue = response;
                 }
+
+                if (folder.Exists != prevExists || folder.Recent > 0)
+                {
+                    return true;
+                }
             }
+
+            return false;
         }
 
         void CheckUnseen(Folder f)
@@ -506,7 +517,10 @@ namespace Mail
         {
             if (responseData.Any())
             {
-                ListMessages(request, responseData);
+                if (ListMessages(request, responseData))
+                {
+                    SendCommand("UID SEARCH", "UNDELETED", AvailableMessages);
+                }
             }
         }
 
@@ -527,25 +541,25 @@ namespace Mail
             }
 
             var currentIds = (from m in currentFolder_.Messages
-                              select m.id).ToList();
+                              select m.Uid).ToList();
             List<int> newIds = new List<int>();
 
-            foreach (var id in msgIds)
+            foreach (var uid in msgIds)
             {
-                if (!currentIds.Contains(id))
+                if (!currentIds.Contains(uid))
                 {
-                    newIds.Add(id);
+                    newIds.Add(uid);
                 }
                 else
                 {
-                    currentIds.Remove(id);
+                    currentIds.Remove(uid);
                 }
             }
 
-            foreach (var id in currentIds)
+            foreach (var uid in currentIds)
             {
                 // These are no longer in the folder
-                currentFolder_.Messages.Remove(currentFolder_.Messages.Message(id));
+                currentFolder_.Messages.Remove(currentFolder_.Messages.MessageByUID(uid));
             }
 
             if (newIds.Count > 0)
@@ -572,7 +586,7 @@ namespace Mail
                 {
                     // Batch into 50's
 
-                    SendCommand("FETCH", idList + " (FLAGS INTERNALDATE UID RFC822.SIZE ENVELOPE BODYSTRUCTURE)", ProcessMessage);
+                    SendCommand("UID FETCH", idList + " (FLAGS INTERNALDATE RFC822.SIZE ENVELOPE BODYSTRUCTURE)", ProcessMessage);
 
                     idList = "";
                 }
@@ -580,7 +594,7 @@ namespace Mail
 
             if (idList.Length > 0)
             {
-                SendCommand("FETCH", idList + " (FLAGS INTERNALDATE UID RFC822.SIZE ENVELOPE BODYSTRUCTURE)", ProcessMessage);
+                SendCommand("UID FETCH", idList + " (FLAGS INTERNALDATE RFC822.SIZE ENVELOPE BODYSTRUCTURE)", ProcessMessage);
             }
         }
 
@@ -608,7 +622,7 @@ namespace Mail
                 else if (isId)
                 {
                     int id = Int32.Parse(response);
-                    msg = currentFolder_.Messages.Message(id);
+                    msg = currentFolder_.Messages.MessageByID(id);
                     if (msg == null)
                     {
                         msg = new MessageHeader(id, currentFolder_);
@@ -931,11 +945,11 @@ namespace Mail
         {
             if (body == m.Body || body == null)
             {
-                SendCommand("FETCH", m.id + " (FLAGS BODY.PEEK[" + body.PartNumber + "])", ProcessMessage, body);
+                SendCommand("UID FETCH", m.Uid + " (FLAGS BODY.PEEK[" + body.PartNumber + "])", ProcessMessage, body);
             }
             else
             {
-                SendCommand("FETCH", m.id + " (BODY.PEEK[" + body.PartNumber + "])", ProcessMessage, body);
+                SendCommand("UID FETCH", m.Uid + " (BODY.PEEK[" + body.PartNumber + "])", ProcessMessage, body);
             }
         }
 

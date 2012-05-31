@@ -10,7 +10,7 @@ namespace Mail
 {
     public class MessageStore: ThreadedList<MessageHeader>
     {
-        public bool Contains(int id)
+        public bool ContainsUID(int id)
         {
             var matches = from m in this
                           where m.id == id
@@ -19,10 +19,19 @@ namespace Mail
             return matches.Any();
         }
 
-        public MessageHeader Message(int id)
+        public MessageHeader MessageByID(int id)
         {
             var matches = from m in this
                           where m.id == id
+                          select m;
+
+            return matches.FirstOrDefault();
+        }
+
+        public MessageHeader MessageByUID(int id)
+        {
+            var matches = from m in this
+                          where m.Uid == id
                           select m;
 
             return matches.FirstOrDefault();
@@ -122,7 +131,7 @@ namespace Mail
             }
         }
         public DateTime Date { get; private set; }
-        public string Uid { get; private set; }
+        public int Uid { get; private set; }
         public string MessageId { get; private set; }
         public int Size { get; private set; }
         public bool HasAttachments
@@ -184,7 +193,7 @@ namespace Mail
             }
             else if (field.Equals("uid", StringComparison.CurrentCultureIgnoreCase))
             {
-                Uid = value;
+                Uid = Int32.Parse(value);
             }
             else if (field.Equals("size", StringComparison.CurrentCultureIgnoreCase))
             {
