@@ -445,6 +445,13 @@ namespace Mail
                     {
                         folder.Recent = Int32.Parse(lastValue);
                     }
+                    else if (response == "EXPUNGE")
+                    {
+                        int msgId = Int32.Parse(lastValue);
+
+                        MessageHeader exMsg = currentFolder_.Messages.MessageByID(msgId);
+                        folder.Expunge(exMsg);
+                    }
                     else if (response == "FETCH")
                     {
                         int msgId = Int32.Parse(lastValue);

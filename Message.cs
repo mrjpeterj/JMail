@@ -85,7 +85,17 @@ namespace Mail
         MailAddress from_;
         DateTime sent_;
 
-        public int id { get { return id_; } }
+        public int id
+        {
+            get
+            {
+                return id_;
+            }
+            internal set
+            {
+                id_ = value;
+            }
+        }
         public Folder Folder { get { return folder_; } }
 
         public BodyPart Body { get; set; }

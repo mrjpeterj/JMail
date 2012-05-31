@@ -127,6 +127,20 @@ namespace Mail
             }
         }
 
+        public void Expunge(MessageHeader msg)
+        {
+            var msgLst = from m in messages_
+                         where m.id > msg.id
+                         select m;
+
+            foreach (var m in msgLst)
+            {
+                m.id = m.id - 1;
+            }
+
+            messages_.Remove(msg);
+        }
+
         public MessageHeader FindNext(MessageHeader msg)
         {
             return messages_.Next(msg);
