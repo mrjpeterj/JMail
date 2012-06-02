@@ -14,10 +14,33 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="4">
-            <Button Click="PreviousMessage">Prev</Button>
-            <Button Click="NextMessage">Next</Button>
-        </StackPanel>
+        <Menu Background="White">
+            <MenuItem Click="PreviousMessage" Padding="0">
+                <MenuItem.Header>
+                    <StackPanel>
+                        <Image Source="/JMail;component/Images/prev.png" Stretch="None" />
+                        <Label Padding="4">Prev</Label>
+                    </StackPanel>
+                </MenuItem.Header>
+            </MenuItem>
+            <MenuItem Click="NextMessage" Padding="0">
+                <MenuItem.Header>
+                    <StackPanel>
+                        <Image Source="/JMail;component/Images/next.png" Stretch="None" />
+                        <Label Padding="4">Next</Label>
+                    </StackPanel>
+                </MenuItem.Header>                
+            </MenuItem>
+            <Separator/>
+            <MenuItem Click="DeleteMessage" Padding="0">
+                <MenuItem.Header>
+                    <StackPanel>
+                        <Image Source="/JMail;component/Images/paperclip.png"  Stretch="None"/>
+                        <Label Padding="4">Delete</Label>
+                    </StackPanel>
+                </MenuItem.Header>                
+            </MenuItem>
+        </Menu>
         <Grid Grid.Row="1" Margin="4">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
@@ -92,8 +115,8 @@
                             </StackPanel.ContextMenu>
                             <TextBlock Text="{Binding Disposition.FileName}"/>
                             <TextBlock Margin="2,0,0,0">(</TextBlock>
-                            <TextBlock Text="{Binding Size, Converter={StaticResource sizeDisplay}}"></TextBlock>                            
-                            <TextBlock>); </TextBlock>
+                            <TextBlock Text="{Binding Size, Converter={StaticResource sizeDisplay}}"></TextBlock>
+                            <TextBlock>);</TextBlock>
                         </StackPanel>
                     </DataTemplate>
                 </ListBox.ItemTemplate>

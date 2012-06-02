@@ -57,6 +57,12 @@ namespace Mail
             }
         }
 
+        private void DeleteMessage(object sender, RoutedEventArgs e)
+        {
+            MessageHeader currentMessage = DataContext as MessageHeader;
+            //currentMessage.Delete();
+        }
+
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             MessageHeader currentMessage = DataContext as MessageHeader;
