@@ -144,11 +144,13 @@ namespace Mail
                 if (info.Length > 0)
                 {
                     // File already here, load it.
-                    SetContentInternal(System.IO.File.ReadAllBytes(saveLocation_));
+                    if (Data == null || Data.Length != info.Length)
+                    {
+                        SetContentInternal(System.IO.File.ReadAllBytes(saveLocation_));
+                    }
 
                     CacheFile = saveLocation_;
                     saveLocation_ = null;
-                    SaveFile(saveComplete);
                 }
             }
 

@@ -199,7 +199,16 @@ namespace Mail
 
             BodyPart part = ele.DataContext as BodyPart;
 
-            //part.Open();
+            Cursor = Cursors.Wait;
+            
+            part.Save((p) =>
+            {
+                System.Diagnostics.Process.Start(part.CacheFile);
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    Cursor = null;
+                }));
+            });
         }
 
         private void ClickAttachment(object sender, MouseButtonEventArgs e)
