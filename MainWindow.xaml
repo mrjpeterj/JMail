@@ -74,7 +74,7 @@
                     <GridViewColumn>
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <Image Source="/Mail;component/Images/paperclip.png" Height="16">
+                                <Image Source="/JMail;component/Images/paperclip.png" Height="16">
                                     <Image.Style>
                                         <Style TargetType="Image">
                                             <Setter Property="Visibility" Value="Hidden"/>
