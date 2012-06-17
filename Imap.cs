@@ -960,6 +960,13 @@ namespace Mail
             }
         }
 
+        public void DeleteMessage(MessageHeader m)
+        {
+            /// TODO: Ensure current folder selected
+
+            SendCommand("STORE", m.id + " +FLAGS (\\Deleted)", ProcessMessage, null);
+        }
+
         public void Poll()
         {
             SendCommand("NOOP", "", UpdateStatus);

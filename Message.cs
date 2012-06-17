@@ -352,6 +352,11 @@ namespace Mail
             return nextMsg;
         }
 
+        public void Delete()
+        {
+            Folder.Delete(this);
+        }
+
         #region INotifyPropertyChanged Members
 
         public event PropertyChangedEventHandler PropertyChanged;
