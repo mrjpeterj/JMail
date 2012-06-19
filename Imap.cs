@@ -118,7 +118,7 @@ namespace Mail
 
         void ProcessResponse(string responseText)
         {
-            System.Diagnostics.Debug.WriteLine(">>>>>>>>");
+            System.Diagnostics.Debug.WriteLine(">>>>>>>> " + account_.Host + " <<<<<<<");
             System.Diagnostics.Debug.Write(responseText);
             System.Diagnostics.Debug.WriteLine("<<<<<<<<");
 
