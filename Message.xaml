@@ -35,7 +35,7 @@
             <MenuItem Click="DeleteMessage" Padding="0">
                 <MenuItem.Header>
                     <StackPanel>
-                        <Image Source="/JMail;component/Images/paperclip.png"  Stretch="None"/>
+                        <Image Source="/JMail;component/Images/delete.png"  Stretch="None"/>
                         <Label Padding="4">Delete</Label>
                     </StackPanel>
                 </MenuItem.Header>                
