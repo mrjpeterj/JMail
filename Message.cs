@@ -168,6 +168,14 @@ namespace JMail
             }
         }
 
+        public bool Flagged
+        {
+            get
+            {
+                return flags_.Contains(MessageFlags.Flagged);
+            }
+        }
+
         public MessageHeader(int id, Folder f)
         {
             folder_ = f;
@@ -228,6 +236,7 @@ namespace JMail
             {
                 PropertyChanged(this, new PropertyChangedEventArgs("UnRead"));
                 PropertyChanged(this, new PropertyChangedEventArgs("Deleted"));
+                PropertyChanged(this, new PropertyChangedEventArgs("Flagged"));
             }
         }
 
@@ -252,6 +261,11 @@ namespace JMail
             else if (flag.Equals(MessageFlags.Flagged.ToString(), StringComparison.CurrentCultureIgnoreCase))
             {
                 flags_.Add(MessageFlags.Flagged);
+
+                if (PropertyChanged != null)
+                {
+                    PropertyChanged(this, new PropertyChangedEventArgs("Flagged"));
+                }
             }
             else if (flag.Equals(MessageFlags.Recent.ToString(), StringComparison.CurrentCultureIgnoreCase))
             {
