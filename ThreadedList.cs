@@ -6,7 +6,7 @@ using System.Text;
 using System.Windows.Threading;
 using System.Collections.Specialized;
 
-namespace Mail
+namespace JMail
 {
     public class ThreadedList<T>: IList<T>, INotifyCollectionChanged
     {

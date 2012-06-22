@@ -11,7 +11,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
-namespace Mail
+namespace JMail
 {
     /// <summary>
     /// Interaction logic for AccountProps.xaml

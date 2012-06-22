@@ -5,7 +5,7 @@ using System.Text;
 
 using System.ComponentModel;
 
-namespace Mail
+namespace JMail
 {
     public class Folder: INotifyPropertyChanged
     {

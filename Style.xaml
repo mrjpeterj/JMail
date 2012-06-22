@@ -1,6 +1,6 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:local="clr-namespace:Mail"
+                    xmlns:local="clr-namespace:JMail"
                     >
     <Style TargetType="{x:Type Window}" x:Key="BaseStyle">
         <Setter Property="FontFamily" Value="Arial" />

@@ -6,7 +6,7 @@ using System.Text;
 using System.ComponentModel;
 using System.Net.Mail;
 
-namespace Mail
+namespace JMail
 {
     public class MessageStore: ThreadedList<MessageHeader>
     {

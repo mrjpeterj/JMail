@@ -1,4 +1,4 @@
-﻿<Window x:Class="Mail.AccountProps"
+﻿<Window x:Class="JMail.AccountProps"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Account" Width="300" SizeToContent="Height" WindowStartupLocation="CenterOwner" WindowStyle="ToolWindow">

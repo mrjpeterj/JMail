@@ -16,7 +16,7 @@ using System.Windows.Shapes;
 
 using System.ComponentModel;
 
-namespace Mail
+namespace JMail
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml

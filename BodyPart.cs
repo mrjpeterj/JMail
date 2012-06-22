@@ -6,7 +6,7 @@ using System.Text;
 using System.ComponentModel;
 using System.Net.Mime;
 
-namespace Mail
+namespace JMail
 {
     public class BodyPart: INotifyPropertyChanged
     {

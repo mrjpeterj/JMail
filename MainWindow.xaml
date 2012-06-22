@@ -1,7 +1,7 @@
-﻿<Window x:Class="Mail.MainWindow"
+﻿<Window x:Class="JMail.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:local="clr-namespace:Mail"
+        xmlns:local="clr-namespace:JMail"
         Title="MainWindow" Height="350" Width="525" Loaded="OnLoaded"
         Style="{DynamicResource BaseStyle}">
     <Window.Resources>

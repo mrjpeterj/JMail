@@ -8,7 +8,7 @@
     <ProjectGuid>{E9C46DCC-036E-4499-B8C1-CBEAE80EB850}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Mail</RootNamespace>
+    <RootNamespace>JMail</RootNamespace>
     <AssemblyName>JMail</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <TargetFrameworkProfile>Client</TargetFrameworkProfile>

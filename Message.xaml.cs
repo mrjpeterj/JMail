@@ -13,7 +13,7 @@ using System.Windows.Shapes;
 
 using System.Windows.Forms.Integration;
 
-namespace Mail
+namespace JMail
 {
     /// <summary>
     /// Interaction logic for Message.xaml
@@ -224,6 +224,16 @@ namespace Mail
             {
                 OpenAttachment(sender, null);
             }
+        }
+
+        private void NotLastItem(object sender, CanExecuteRoutedEventArgs e)
+        {
+            e.CanExecute = true;
+        }
+
+        private void NextMessage(object sender, ExecutedRoutedEventArgs e)
+        {
+
         }
     }
 }
