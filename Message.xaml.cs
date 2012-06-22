@@ -25,45 +25,6 @@ namespace JMail
             InitializeComponent();
         }
 
-        private void NextMessage(object sender, RoutedEventArgs e)
-        {
-            MessageHeader currentMessage = DataContext as MessageHeader;
-            MessageHeader nextMessage = currentMessage.Next();
-            if (nextMessage != null)
-            {
-                currentMessage.Body.PropertyChanged -= BodyChanged;
-
-                DataContext = nextMessage;
-
-                UpdateContent();
-
-                nextMessage.Body.PropertyChanged += BodyChanged;
-            }
-        }
-
-        private void PreviousMessage(object sender, RoutedEventArgs e)
-        {
-            MessageHeader currentMessage = DataContext as MessageHeader;
-            MessageHeader nextMessage = currentMessage.Prev();
-            if (nextMessage != null)
-            {
-                currentMessage.Body.PropertyChanged -= BodyChanged;
-
-                DataContext = nextMessage;
-
-                UpdateContent();
-
-                nextMessage.Body.PropertyChanged += BodyChanged;
-            }
-        }
-
-        private void DeleteMessage(object sender, RoutedEventArgs e)
-        {
-            MessageHeader currentMessage = DataContext as MessageHeader;
-            NextMessage(sender, null);
-            currentMessage.Delete();
-        }
-
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             MessageHeader currentMessage = DataContext as MessageHeader;
@@ -231,9 +192,48 @@ namespace JMail
             e.CanExecute = true;
         }
 
+        private void NotFirstItem(object sender, CanExecuteRoutedEventArgs e)
+        {
+            e.CanExecute = true;
+        }
+
         private void NextMessage(object sender, ExecutedRoutedEventArgs e)
         {
+            MessageHeader currentMessage = DataContext as MessageHeader;
+            MessageHeader nextMessage = currentMessage.Next();
+            if (nextMessage != null)
+            {
+                currentMessage.Body.PropertyChanged -= BodyChanged;
 
+                DataContext = nextMessage;
+
+                UpdateContent();
+
+                nextMessage.Body.PropertyChanged += BodyChanged;
+            }
+        }
+
+        private void PreviousMessage(object sender, ExecutedRoutedEventArgs e)
+        {
+            MessageHeader currentMessage = DataContext as MessageHeader;
+            MessageHeader nextMessage = currentMessage.Prev();
+            if (nextMessage != null)
+            {
+                currentMessage.Body.PropertyChanged -= BodyChanged;
+
+                DataContext = nextMessage;
+
+                UpdateContent();
+
+                nextMessage.Body.PropertyChanged += BodyChanged;
+            }
+        }
+
+        private void DeleteMessage(object sender, ExecutedRoutedEventArgs e)
+        {
+            MessageHeader currentMessage = DataContext as MessageHeader;
+            NextMessage(sender, null);
+            currentMessage.Delete();
         }
     }
 }
