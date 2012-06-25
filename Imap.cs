@@ -59,7 +59,8 @@ namespace JMail
 
         private ImapState state_;
         private int cmdId_ = 0;
-        private Dictionary<string, ImapRequest> pendingCommands_;
+        private Queue<ImapRequest> pendingRequests_;
+        private Dictionary<string, ImapRequest> pendingResponses_;
         private List<string> currentCommand_;
         private bool lastTokenIsComplete_;
 
@@ -72,7 +73,8 @@ namespace JMail
         {
             account_ = account;
             state_ = ImapState.None;
-            pendingCommands_ = new Dictionary<string, ImapRequest>();
+            pendingResponses_ = new Dictionary<string, ImapRequest>();
+            pendingRequests_ = new Queue<ImapRequest>();
 
             currentCommand_ = new List<string>();
             lastTokenIsComplete_ = true;
@@ -168,7 +170,9 @@ namespace JMail
                         request.Process(currentCommand_);
 
                         currentCommand_.Clear();
-                        pendingCommands_.Remove(request.Key);
+                        pendingResponses_.Remove(request.Key);
+
+                        ProcessPending();
 
                         continue;
                     }
@@ -188,7 +192,7 @@ namespace JMail
                 }
                 
                 // match it to the request command of this name.
-                pendingCommands_.TryGetValue(response, out request);
+                pendingResponses_.TryGetValue(response, out request);
 
                 if (request == null)
                 {
@@ -228,10 +232,29 @@ namespace JMail
         void SendCommand(string command, string args, ImapRequest.ResponseHandler handler, object data = null)
         {
             string commandId = NextCommand();
-            string cmd = commandId + " " + command;
-            if (args != "")
+
+            var request = new ImapRequest(commandId, command, args, handler, data);
+            pendingRequests_.Enqueue(request);
+
+            if (pendingResponses_.Count < 5)
             {
-                cmd += " " + args;
+                ProcessPending();
+            }
+        }
+
+        void ProcessPending()
+        {
+            if (!pendingRequests_.Any())
+            {
+                return;
+            }
+
+            var request = pendingRequests_.Dequeue();
+
+            string cmd = request.Key + " " + request.Command;
+            if (request.Args != "")
+            {
+                cmd += " " + request.Args;
             }
             
             System.Diagnostics.Debug.WriteLine("++++++++");
@@ -240,7 +263,7 @@ namespace JMail
 
             cmd += "\r\n";
 
-            pendingCommands_[commandId] = new ImapRequest(commandId, command, args, handler, data);
+            pendingResponses_[request.Key] = request;
 
             byte[] bytes = encoder_.GetBytes(cmd);
 
