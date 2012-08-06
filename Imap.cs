@@ -82,7 +82,14 @@ namespace JMail
             allFolders_ = new ThreadedList<Folder>();
             folders_ = new ThreadedList<Folder>();
 
-            client_ = new TcpClient(account.Host, account.Port);            
+            try
+            {
+                client_ = new TcpClient(account.Host, account.Port);
+            } catch (SocketException e)
+            {
+                return;
+            }
+
 
             if (client_.Connected)
             {
