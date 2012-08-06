@@ -34,7 +34,12 @@ namespace JMail
 
             InitializeComponent();
 
-            proto_.ItemsSource = Enum.GetNames(typeof(Protocol));            
+            proto_.ItemsSource = Enum.GetNames(typeof(Protocol));
+
+            if (account_.SecurePassword != null)
+            {
+                passwordBox_.Password = account_.GetPassword();
+            }
         }
 
         private void Ok_Clicked(object sender, RoutedEventArgs e)

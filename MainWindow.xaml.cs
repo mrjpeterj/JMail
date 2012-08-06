@@ -126,7 +126,18 @@ namespace JMail
 
         private void Account_Edit(object sender, RoutedEventArgs e)
         {
+            FrameworkElement ele = sender as FrameworkElement;
+            AccountInfo acnt = ele.DataContext as AccountInfo;
 
+            AccountProps props = new AccountProps(acnt);
+            props.ShowDialog();
+
+            Servers.Remove(acnt);
+            Servers.Add(acnt);
+
+            Properties.Settings.Default.Save();
+
+            acnt.Connect();
         }
 
         private void OpenMessage(object sender, MouseButtonEventArgs e)
