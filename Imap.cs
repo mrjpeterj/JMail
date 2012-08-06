@@ -463,7 +463,7 @@ namespace JMail
                     }
                     else if (msg != null)
                     {
-                        ExtractValues(msg, null, response);
+                        ExtractValues(-1, msg, null, response);
                         msg = null;
                     }
 
@@ -643,7 +643,7 @@ namespace JMail
             bool isId = false;
             bool isResponse = false;
 
-            MessageHeader msg = null;
+            int msgId = -1;
             BodyPart body = data as BodyPart;
 
             foreach (var response in responseData)
@@ -658,34 +658,53 @@ namespace JMail
                 }
                 else if (isId)
                 {
-                    int id = Int32.Parse(response);
-                    msg = currentFolder_.Messages.MessageByID(id);
-                    if (msg == null)
-                    {
-                        msg = new MessageHeader(id, currentFolder_);
-                        currentFolder_.Messages.Add(msg);
-                    }
-
+                    msgId = Int32.Parse(response);
+                    
                     isId = false;
                 }
-                else if (isResponse && msg != null)
+                else if (isResponse)
                 {
-                    ExtractValues(msg, body, response);
+                    ExtractValues(msgId, null, body, response);
 
                     isResponse = false;
-                    msg = null;
                 }
             }
         }
 
-        void ExtractValues(MessageHeader msg, BodyPart body, string data)
+        void ExtractValues(int msgId, MessageHeader msgHdr, BodyPart body, string data)
         {
             string[] values = ImapData.SplitToken(data);
-
+            Dictionary<string, string> dictValues = new Dictionary<string, string>();
             for (int i = 0; i < values.Length; i = i + 2)
             {
-                string key = values[i];
-                string value = values[i + 1];
+                dictValues.Add(values[i], values[i + 1]);
+            }
+
+            string uidStr;
+            int uid = -1;
+            if (dictValues.TryGetValue("UID", out uidStr))
+            {
+                Int32.TryParse(uidStr, out uid);
+            }
+
+            MessageHeader msg = msgHdr;
+            if (uid >= 0)
+            {
+                msg = currentFolder_.Messages.MessageByUID(uid);
+            }
+
+            if (msg == null)
+            {
+                msg = new MessageHeader(uid, currentFolder_);
+                currentFolder_.Messages.Add(msg);
+
+                msg.id = msgId;
+            }
+
+            foreach (var val in dictValues)
+            {
+                string key = val.Key;
+                string value = val.Value;
 
                 if (key == "FLAGS")
                 {
@@ -698,10 +717,6 @@ namespace JMail
                 else if (key == "INTERNALDATE")
                 {
                     ExtractDate(msg, value);
-                }
-                else if (key == "UID")
-                {
-                    ExtractSingle(msg, value, "UID");
                 }
                 else if (key == "RFC822.SIZE")
                 {

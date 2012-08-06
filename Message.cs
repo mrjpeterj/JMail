@@ -10,15 +10,6 @@ namespace JMail
 {
     public class MessageStore: ThreadedList<MessageHeader>
     {
-        public bool ContainsUID(int id)
-        {
-            var matches = from m in this
-                          where m.id == id
-                          select m;
-
-            return matches.Any();
-        }
-
         public MessageHeader MessageByID(int id)
         {
             var matches = from m in this
@@ -36,32 +27,6 @@ namespace JMail
 
             return matches.FirstOrDefault();
         }
-
-        public MessageHeader Next(MessageHeader msg)
-        {
-            int idx = this.IndexOf(msg);
-            if (idx >= 0 && idx < Count - 1)
-            {
-                return this[idx + 1];
-            }
-            else
-            {
-                return null;
-            }
-        }
-
-        public MessageHeader Prev(MessageHeader msg)
-        {
-            int idx = this.IndexOf(msg);
-            if (idx >= 1 && idx < Count)
-            {
-                return this[idx - 1];
-            }
-            else
-            {
-                return null;
-            }
-        }
     }
 
     public enum MessageFlags
@@ -77,7 +42,7 @@ namespace JMail
     public class MessageHeader: INotifyPropertyChanged
     {
         Folder folder_;
-        int id_;
+    
         List<MessageFlags> flags_;
         List<BodyPart> attachments_;
         List<BodyPart> related_;
@@ -85,19 +50,7 @@ namespace JMail
         MailAddress from_;
         DateTime sent_;
 
-        public int id
-        {
-            get
-            {
-                return id_;
-            }
-            internal set
-            {
-                id_ = value;
-            }
-        }
         public Folder Folder { get { return folder_; } }
-
         public BodyPart Body { get; set; }
         public IEnumerable<BodyPart> Attachments { get { return attachments_; } }
         public IEnumerable<BodyPart> Related { get { return related_; } }
@@ -142,6 +95,7 @@ namespace JMail
         }
         public DateTime Date { get; private set; }
         public int Uid { get; private set; }
+        public int id { get; set; }
         public string MessageId { get; private set; }
         public int Size { get; private set; }
         public bool HasAttachments
@@ -176,10 +130,10 @@ namespace JMail
             }
         }
 
-        public MessageHeader(int id, Folder f)
+        public MessageHeader(int uid, Folder f)
         {
             folder_ = f;
-            id_ = id;
+            Uid = uid;
             flags_ = new List<MessageFlags>();
             attachments_ = new List<BodyPart>();
             related_ = new List<BodyPart>();

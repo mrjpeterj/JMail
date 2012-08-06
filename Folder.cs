@@ -143,12 +143,12 @@ namespace JMail
 
         public MessageHeader FindNext(MessageHeader msg)
         {
-            return messages_.Next(msg);
+            return null;//            messages_.Next(msg);
         }
 
         public MessageHeader FindPrev(MessageHeader msg)
         {
-            return messages_.Prev(msg);
+            return null;//            messages_.Prev(msg);
         }
 
         public void Delete(MessageHeader msg)
