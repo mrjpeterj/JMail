@@ -200,7 +200,7 @@ namespace JMail
         private void NextMessage(object sender, ExecutedRoutedEventArgs e)
         {
             MessageHeader currentMessage = DataContext as MessageHeader;
-            MessageHeader nextMessage = currentMessage.Next();
+            MessageHeader nextMessage = currentMessage.Next(Owner as MainWindow);
             if (nextMessage != null)
             {
                 currentMessage.Body.PropertyChanged -= BodyChanged;
@@ -216,7 +216,7 @@ namespace JMail
         private void PreviousMessage(object sender, ExecutedRoutedEventArgs e)
         {
             MessageHeader currentMessage = DataContext as MessageHeader;
-            MessageHeader nextMessage = currentMessage.Prev();
+            MessageHeader nextMessage = currentMessage.Prev(Owner as MainWindow);
             if (nextMessage != null)
             {
                 currentMessage.Body.PropertyChanged -= BodyChanged;

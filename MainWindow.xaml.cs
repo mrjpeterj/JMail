@@ -26,7 +26,9 @@ namespace JMail
         private System.Windows.Threading.DispatcherTimer poller_;
 
         public static System.Windows.Threading.Dispatcher MainDispatcher;
+
         public IList<AccountInfo> Servers { get; private set; }
+        public Folder CurrentFolder { get; private set; }
 
         public MainWindow()
         {
@@ -74,30 +76,70 @@ namespace JMail
         private void SelectFolder(object sender, RoutedEventArgs e)
         {
             var item = e.OriginalSource as TreeViewItem;
-            var folder = item.DataContext as Folder;
-            
-            if (folder != null)
-            {
-                folder.Select();
+            CurrentFolder = item.DataContext as Folder;
 
-                if (messageList_.ItemsSource is MessageStore)
+            if (CurrentFolder != null)
+            {
+                CurrentFolder.Select();
+
+                if (u_MessageList.ItemsSource is MessageStore)
                 {
-                    ((MessageStore)messageList_.ItemsSource).CollectionChanged -= UpdateSorting;
+                    ((MessageStore)u_MessageList.ItemsSource).CollectionChanged -= UpdateSorting;
                 }
 
-                messageList_.ItemsSource = folder.Messages;
-                folder.Messages.CollectionChanged += UpdateSorting;
+                u_MessageList.ItemsSource = CurrentFolder.Messages;
+                CurrentFolder.Messages.CollectionChanged += UpdateSorting;
 
-                UpdateSorting(folder.Messages, null);
+                UpdateSorting(CurrentFolder.Messages, null);
+            }
+            else
+            {
+                u_MessageList.ItemsSource = null;
             }
         }
 
         private void UpdateSorting(object sender, NotifyCollectionChangedEventArgs e)
         {
             // Make sure it updates the sorting of the list
-            messageList_.Items.SortDescriptions.Clear();
-            messageList_.Items.SortDescriptions.Add(new SortDescription("Sent", ListSortDirection.Ascending));
-            messageList_.Items.SortDescriptions.Add(new SortDescription("id", ListSortDirection.Ascending));
+            u_MessageList.Items.SortDescriptions.Clear();
+            u_MessageList.Items.SortDescriptions.Add(new SortDescription("Sent", ListSortDirection.Ascending));
+            u_MessageList.Items.SortDescriptions.Add(new SortDescription("id", ListSortDirection.Ascending));
+        }
+
+        public MessageHeader NextMessage(MessageHeader current)
+        {
+            if (current.Folder == CurrentFolder)
+            {
+                int pos = u_MessageList.Items.IndexOf(current);
+                if (pos >= 0)
+                {
+                    u_MessageList.SelectedIndex = pos + 1;
+                }
+
+                return u_MessageList.SelectedItem as MessageHeader;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        public MessageHeader PrevMessage(MessageHeader current)
+        {
+            if (current.Folder == CurrentFolder)
+            {
+                int pos = u_MessageList.Items.IndexOf(current);
+                if (pos >= 0)
+                {
+                    u_MessageList.SelectedIndex = pos - 1;
+                }
+
+                return u_MessageList.SelectedItem as MessageHeader;
+            }
+            else
+            {
+                return null;
+            }
         }
 
         private void Account_Create(object sender, RoutedEventArgs e)

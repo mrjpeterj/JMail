@@ -298,9 +298,20 @@ namespace JMail
             }
         }
 
-        public MessageHeader Next()
+        public MessageHeader Next(MainWindow view)
         {
-            var nextMsg = Folder.FindNext(this);
+            MessageHeader nextMsg = null;
+
+            if (view != null)
+            {
+                nextMsg = view.NextMessage(this);
+            }
+
+            if (nextMsg == null)
+            {
+                nextMsg = Folder.FindNext(this);
+            }
+
             if (nextMsg != null)
             {
                 nextMsg.Fetch();
@@ -309,9 +320,20 @@ namespace JMail
             return nextMsg;
         }
 
-        public MessageHeader Prev()
+        public MessageHeader Prev(MainWindow view)
         {
-            var nextMsg = Folder.FindPrev(this);
+            MessageHeader nextMsg = null;
+
+            if (view != null)
+            {
+                nextMsg = view.PrevMessage(this);
+            }
+
+            if (nextMsg == null)
+            {
+                nextMsg = Folder.FindPrev(this);
+            }
+            
             if (nextMsg != null)
             {
                 nextMsg.Fetch();
