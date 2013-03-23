@@ -378,7 +378,7 @@ namespace JMail
                 string folderName = ImapData.StripQuotes(responseLine[4]);
                 string folderShortName = folderName;
 
-                if (currentParent != null)
+                while (currentParent != null)
                 {
                     if (!folderName.Contains(currentParent.FullName))
                     {
@@ -386,6 +386,10 @@ namespace JMail
                         currentParent = (from f in allFolders_
                                          where f.Children != null && f.Children.Contains(currentParent)
                                          select f).FirstOrDefault();
+                    }
+                    else
+                    {
+                        break;
                     }
                 }
 
