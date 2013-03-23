@@ -25,7 +25,7 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-        <Menu Background="White">
+        <Menu Background="White" Margin="8">
             <MenuItem Command="NavigationCommands.PreviousPage" Padding="0">
                 <MenuItem.Header>
                     <StackPanel>
@@ -52,7 +52,7 @@
                 </MenuItem.Header>                
             </MenuItem>
         </Menu>
-        <Grid Grid.Row="1" Margin="4">
+        <Grid Grid.Row="1" Margin="8">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
@@ -134,7 +134,7 @@
             </ListBox>
         </Grid>
 
-        <Border Grid.Row="2" Name="content_" DataContext="{Binding Body}" BorderThickness="0,2,0,0" BorderBrush="Black" >
+        <Border Grid.Row="2" Name="content_" DataContext="{Binding Body}" BorderThickness="0,2,0,0" BorderBrush="Black" Padding="8,0,0,0">
 
         </Border>
     </Grid>
