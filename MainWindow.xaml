@@ -14,7 +14,7 @@
                     <TextBlock.ContextMenu>
                       <ContextMenu>
                         <MenuItem Header="Delete" Click="Account_Delete" />
-                        <MenuItem Header="Edit" Click="Account_Edit"/>
+                        <MenuItem Header="Edit" Click="Account_Edit" />
                       </ContextMenu>        
                     </TextBlock.ContextMenu>
                   </TextBlock>
@@ -22,8 +22,8 @@
                 
                 <HierarchicalDataTemplate DataType="{x:Type local:Folder}" ItemsSource="{Binding Children}" >
                     <StackPanel Orientation="Horizontal">
-                        <Label Content="{Binding Name}" Padding="2" />
-                        <Label Content="{Binding UnseenText}" Padding="2" FontWeight="Bold" Foreground="RoyalBlue" />
+                        <TextBlock Text="{Binding Name}" Padding="2" />
+                        <TextBlock Text="{Binding UnseenText}" Padding="2" FontWeight="Bold" Foreground="RoyalBlue" />
                     </StackPanel>
                 </HierarchicalDataTemplate>
             </ResourceDictionary>
