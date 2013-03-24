@@ -132,6 +132,11 @@ namespace JMail
 
         public MessageHeader(int uid, Folder f)
         {
+            if (uid < 0)
+            {
+                throw new System.ArgumentException("Invalid UID Value", "uid");
+            }
+
             folder_ = f;
             Uid = uid;
             flags_ = new List<MessageFlags>();
