@@ -696,6 +696,10 @@ namespace JMail
             {
                 msg = currentFolder_.Messages.MessageByUID(uid);
             }
+            else if (msgId >= 0)
+            {
+                msg = currentFolder_.Messages.MessageByID(msgId);
+            }
 
             if (msg == null)
             {
