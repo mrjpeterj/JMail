@@ -28,7 +28,7 @@ namespace JMail
         public static System.Windows.Threading.Dispatcher MainDispatcher;
 
         public IList<AccountInfo> Servers { get; private set; }
-        public Folder CurrentFolder { get; private set; }
+        public FolderView CurrentFolder { get; private set; }
 
         public MainWindow()
         {
@@ -76,10 +76,11 @@ namespace JMail
         private void SelectFolder(object sender, RoutedEventArgs e)
         {
             var item = e.OriginalSource as TreeViewItem;
-            CurrentFolder = item.DataContext as Folder;
+            var folder = item.DataContext as Folder;
 
-            if (CurrentFolder != null)
+            if (folder != null)
             {
+                CurrentFolder = new FolderView(folder);
                 CurrentFolder.Select();
 
                 if (u_MessageList.ItemsSource is MessageStore)
@@ -87,14 +88,15 @@ namespace JMail
                     ((MessageStore)u_MessageList.ItemsSource).CollectionChanged -= UpdateSorting;
                 }
 
-                u_MessageList.ItemsSource = CurrentFolder.Messages;
+                u_MessageList.DataContext = CurrentFolder;
                 CurrentFolder.Messages.CollectionChanged += UpdateSorting;
 
                 UpdateSorting(CurrentFolder.Messages, null);
             }
             else
             {
-                u_MessageList.ItemsSource = null;
+                CurrentFolder = null;
+                u_MessageList.DataContext = null;
             }
         }
 
@@ -108,7 +110,7 @@ namespace JMail
 
         public MessageHeader NextMessage(MessageHeader current)
         {
-            if (current.Folder == CurrentFolder)
+            if (current.Folder == CurrentFolder.Folder)
             {
                 int pos = u_MessageList.Items.IndexOf(current);
                 if (pos >= 0)
@@ -126,7 +128,7 @@ namespace JMail
 
         public MessageHeader PrevMessage(MessageHeader current)
         {
-            if (current.Folder == CurrentFolder)
+            if (current.Folder == CurrentFolder.Folder)
             {
                 int pos = u_MessageList.Items.IndexOf(current);
                 if (pos >= 0)
@@ -182,7 +184,13 @@ namespace JMail
             acnt.Connect();
         }
 
-        private void OpenMessage(object sender, MouseButtonEventArgs e)
+        private void SelectMessage(object sender, SelectionChangedEventArgs e)
+        {
+            MessageHeader msg = u_MessageList.SelectedItem as MessageHeader;
+            CurrentFolder.CurrentMessage = msg;
+        }
+
+        private void OpenMessage(object sender, RoutedEventArgs e)
         {
             FrameworkElement ele = sender as FrameworkElement;
             MessageHeader msg = ele.DataContext as MessageHeader;
@@ -194,6 +202,24 @@ namespace JMail
 
             m.Owner = this;
             m.Show();
+        }
+
+        private void KeyboardMessageControl(object sender, KeyEventArgs e)
+        {
+            FrameworkElement ele = sender as FrameworkElement;
+            MessageHeader msg = u_MessageList.SelectedItem as MessageHeader;
+
+            if (msg == null)
+            {
+                return;
+            }
+            
+            if (e.Key == Key.Delete)
+            {
+                msg.Delete();
+
+                e.Handled = true;
+            }
         }
 
         private void MessageListResized(object sender, SizeChangedEventArgs e)

@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:JMail"
-        Title="MainWindow" Height="350" Width="525" Loaded="OnLoaded"
+        Title="MainWindow" Height="600" Width="1000" Loaded="OnLoaded"
         Style="{DynamicResource BaseStyle}">
     <Window.Resources>
     <ResourceDictionary>
@@ -52,7 +52,9 @@
             </TreeView.ItemContainerStyle>
         </TreeView>
 
-        <ListView Grid.Column="1" Grid.Row="1" Name="u_MessageList" Foreground="Black" SizeChanged="MessageListResized">
+        <ListView Grid.Column="1" Grid.Row="1" Name="u_MessageList" Foreground="Black" 
+                  ItemsSource="{Binding Messages}" Selector.SelectionChanged="SelectMessage"
+                  SizeChanged="MessageListResized" KeyUp="KeyboardMessageControl">
             <ListView.ItemContainerStyle>
                 <Style TargetType="ListViewItem">
                     <EventSetter Event="MouseDoubleClick" Handler="OpenMessage" />
@@ -72,6 +74,19 @@
                     </Style.Triggers>
                 </Style>
             </ListView.ItemContainerStyle>
+            <ListView.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Open" FontWeight="Bold" IsEnabled="{Binding IsMessage}" Click="OpenMessage" />
+                    <Separator />
+                    <MenuItem Header="Mark as Read" IsEnabled="{Binding IsUnread}" />
+                    <MenuItem Header="Mark as Unread" IsEnabled="{Binding IsRead}" />
+                    <Separator />
+                    <MenuItem Header="Delete" IsEnabled="{Binding IsNotDeleted}" />
+                    <MenuItem Header="Undelete" IsEnabled="{Binding IsDeleted}" />
+                    <Separator />
+                    <MenuItem Header="Properties" IsEnabled="{Binding IsMessage}" />
+                </ContextMenu>
+            </ListView.ContextMenu>
             <ListView.View>
                 <GridView AllowsColumnReorder="False">
                     <GridViewColumn>

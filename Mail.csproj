@@ -63,6 +63,7 @@
       <DependentUpon>AccountProps.xaml</DependentUpon>
     </Compile>
     <Compile Include="BodyPart.cs" />
+    <Compile Include="FolderView.cs" />
     <Compile Include="Message.xaml.cs">
       <DependentUpon>Message.xaml</DependentUpon>
     </Compile>
