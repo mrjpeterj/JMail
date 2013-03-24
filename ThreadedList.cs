@@ -13,7 +13,7 @@ namespace JMail
         delegate void VoidCall();
 
         Dispatcher dispatcher_;
-        DispatcherOperation op_;
+        DispatcherTimer updateTimer_;
 
         List<NotifyCollectionChangedEventArgs> pending_;
 
@@ -23,6 +23,9 @@ namespace JMail
         public ThreadedList()
         {
             dispatcher_ = MainWindow.MainDispatcher;
+            updateTimer_ = new DispatcherTimer(new TimeSpan(0, 0, 1), DispatcherPriority.Background, FlushPending, dispatcher_);
+            updateTimer_.IsEnabled = false;
+
             items_ = new List<T>();
 
             pending_ = new List<NotifyCollectionChangedEventArgs>();
@@ -36,10 +39,8 @@ namespace JMail
                 {
                     pending_.Add(e);
 
-                    if (op_ == null || op_.Status != DispatcherOperationStatus.Pending)
-                    {
-                        op_ = dispatcher_.BeginInvoke(DispatcherPriority.Send, new VoidCall(FlushPending));
-                    }
+                    // Turn on the flusher
+                    updateTimer_.IsEnabled = true;
                 }
             }
             else
@@ -48,7 +49,7 @@ namespace JMail
             }
         }
 
-        void FlushPending()
+        void FlushPending(object sender, EventArgs args)
         {
             lock (this)
             {
@@ -63,6 +64,8 @@ namespace JMail
                 }
 
                 pending_.Clear();
+
+                updateTimer_.IsEnabled = false;
             }
         }
 
