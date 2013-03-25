@@ -763,7 +763,7 @@ namespace JMail
             string[] cc = ImapData.SplitToken(envItems[6]);
             string[] bcc = ImapData.SplitToken(envItems[7]);
 
-            //var senderAddr = AddressBuilder(ImapData.SplitToken(sender[0], ProtocolText.InternetMail));
+            var senderAddr = AddressBuilder(ImapData.SplitToken(sender[0]));
 
             msg.From = AddressBuilder(ImapData.SplitToken(from[0]));
             msg.ReplyTo = AddressBuilder(ImapData.SplitToken(replyTo[0]));
@@ -951,14 +951,7 @@ namespace JMail
         {
             var bytes = encoder_.GetBytes(ImapData.StripQuotes(data));
 
-            if (body == null)
-            {
-                msg.Body.SetContent(bytes);
-            }
-            else
-            {
-                body.SetContent(bytes);
-            }
+            body.SetContent(bytes);
         }
 
         System.Net.Mail.MailAddress AddressBuilder(string[] addressParts)
@@ -1003,7 +996,11 @@ namespace JMail
 
         public void FetchMessage(MessageHeader m, BodyPart body)
         {
-            if (body == m.Body || body == null)
+            if (body == null)
+            {
+                SendCommand("UID FETCH", m.Uid + " (FLAGS BODY.PEEK[])", ProcessMessage, body);
+            }
+            else if (body == m.Body)
             {
                 SendCommand("UID FETCH", m.Uid + " (FLAGS BODY.PEEK[" + body.PartNumber + "])", ProcessMessage, body);
             }

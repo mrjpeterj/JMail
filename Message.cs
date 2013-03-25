@@ -52,6 +52,7 @@ namespace JMail
 
         public Folder Folder { get { return folder_; } }
         public BodyPart Body { get; set; }
+        public BodyPart FullMessage { get; set; }
         public IEnumerable<BodyPart> Attachments { get { return attachments_; } }
         public IEnumerable<BodyPart> Related { get { return related_; } }
 
@@ -355,6 +356,18 @@ namespace JMail
             if (Body.Text == null)
             {
                 folder_.Server.FetchMessage(this, Body);
+            }
+        }
+
+        public void FetchWhole()
+        {
+            if (FullMessage == null)
+            {
+                // Build the BodyPart required to pull the whole message.
+                FullMessage = new BodyPart(this, "text/plain");
+                FullMessage.PartNumber = "";
+
+                folder_.Server.FetchMessage(this, FullMessage);
             }
         }
 

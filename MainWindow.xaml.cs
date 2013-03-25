@@ -247,7 +247,13 @@ namespace JMail
 
         private void MessageProps(object sender, RoutedEventArgs e)
         {
+            MessageHeader msg = CurrentFolder.CurrentMessage;
+            msg.FetchWhole();
 
+            MessageProps props = new MessageProps();
+            props.DataContext = msg;
+            props.Owner = this;
+            props.Show();
         }
 
         private void MessageListResized(object sender, SizeChangedEventArgs e)
