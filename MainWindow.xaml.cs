@@ -38,7 +38,7 @@ namespace JMail
             }
 
             MainDispatcher = Dispatcher;
-   
+
             Servers = Properties.Settings.Default.Accounts;
 
             DataContext = this;
@@ -106,6 +106,12 @@ namespace JMail
             u_MessageList.Items.SortDescriptions.Clear();
             u_MessageList.Items.SortDescriptions.Add(new SortDescription("Sent", ListSortDirection.Ascending));
             u_MessageList.Items.SortDescriptions.Add(new SortDescription("id", ListSortDirection.Ascending));
+
+            if (u_MessageList.Items.Count == CurrentFolder.Messages.Count)
+            {
+                // Update the column sizes now the messages are all in.
+                ResizeMessageColumns();
+            }
         }
 
         public MessageHeader NextMessage(MessageHeader current)
@@ -187,7 +193,11 @@ namespace JMail
         private void SelectMessage(object sender, SelectionChangedEventArgs e)
         {
             MessageHeader msg = u_MessageList.SelectedItem as MessageHeader;
-            CurrentFolder.CurrentMessage = msg;
+
+            if (CurrentFolder != null)
+            {
+                CurrentFolder.CurrentMessage = msg;
+            }
         }
 
         private void OpenMessage(object sender, RoutedEventArgs e)
@@ -212,7 +222,7 @@ namespace JMail
             {
                 return;
             }
-            
+
             if (e.Key == Key.Delete)
             {
                 msg.Deleted = true;
@@ -260,66 +270,70 @@ namespace JMail
         {
             if (e.WidthChanged)
             {
-                ListView list = sender as ListView;
-                var kids = VisualTreeHelper.GetChildrenCount(list);
-                ScrollViewer scroller = null;
-                for (int i = 0; i < kids; ++i) 
+                ResizeMessageColumns();
+            }
+        }
+
+        private void ResizeMessageColumns()
+        {
+            var kids = VisualTreeHelper.GetChildrenCount(u_MessageList);
+            ScrollViewer scroller = null;
+            for (int i = 0; i < kids; ++i)
+            {
+                var kid = VisualTreeHelper.GetChild(u_MessageList, i) as Decorator;
+
+                if (kid != null)
                 {
-                    var kid = VisualTreeHelper.GetChild(list, i) as Decorator;
+                    scroller = kid.Child as ScrollViewer;
 
-                    if (kid != null)
-                    {
-                        scroller = kid.Child as ScrollViewer;
-
-                        if (scroller != null)
-                        {
-                            break;
-                        }
-                    }
-                }
-
-                GridView view = list.View as GridView;
-                GridViewColumn subjectColumn = null;
-
-                // Reinit columns so that the recalculate the layout
-                foreach (var col in view.Columns)
-                {
-                    col.Width = 0;
-                    col.Width = float.NaN;
-                    
-                    if ((string)col.Header == "Subject")
-                    {
-                        subjectColumn = col;
-                    }
-                }
-
-                list.UpdateLayout();
-
-                if (subjectColumn != null)
-                {
-                    double colWidth = 0;
-                    foreach (var col in view.Columns)
-                    {
-                        colWidth += col.ActualWidth;
-                    }
-
-                    double reqWidth = double.NaN;
                     if (scroller != null)
                     {
-                        reqWidth = ((ItemsPresenter)scroller.Content).ActualWidth;
-                    }
-                    else
-                    {
-                        reqWidth = list.ActualWidth;
-                    }
-                    
-                    reqWidth -= (colWidth - subjectColumn.ActualWidth);
-
-                    if (reqWidth > subjectColumn.ActualWidth)
-                    {
-                        subjectColumn.Width = reqWidth;
+                        break;
                     }
                 }
+            }
+
+            GridView view = u_MessageList.View as GridView;
+            GridViewColumn subjectColumn = null;
+
+            // Re-init columns so that they recalculate the layout
+            foreach (var col in view.Columns)
+            {
+                col.Width = 0;
+                col.Width = float.NaN;
+
+                if ((string)col.Header == "Subject")
+                {
+                    subjectColumn = col;
+                }
+            }
+
+            u_MessageList.UpdateLayout();
+
+            if (subjectColumn != null)
+            {
+                double colWidth = 0;
+                foreach (var col in view.Columns)
+                {
+                    colWidth += col.ActualWidth;
+                }
+
+                double reqWidth = double.NaN;
+                if (scroller != null)
+                {
+                    reqWidth = ((ItemsPresenter)scroller.Content).ActualWidth;
+                }
+                else
+                {
+                    reqWidth = u_MessageList.ActualWidth;
+                }
+
+                reqWidth -= (colWidth - subjectColumn.ActualWidth);
+
+                //if (reqWidth > subjectColumn.ActualWidth)
+                //{
+                    subjectColumn.Width = reqWidth;
+                //}
             }
         }
     }
