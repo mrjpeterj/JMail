@@ -1013,11 +1013,44 @@ namespace JMail
             }
         }
 
-        public void DeleteMessage(MessageHeader m)
+        public void SetFlag(MessageHeader m, MessageFlags flag, bool isSet)
         {
             /// TODO: Ensure current folder selected
 
-            SendCommand("STORE", m.id + " +FLAGS (\\Deleted)", ProcessMessage, null);
+            string command = m.id + " ";
+            if (isSet)
+            {
+                command += "+";
+            } else {
+                command += "-";
+            }
+            command += "FLAGS (\\";
+
+            switch (flag)
+            {
+                case MessageFlags.Answered:
+                    command += "Answered";
+                    break;
+                case MessageFlags.Deleted:
+                    command += "Deleted";
+                    break;
+                case MessageFlags.Draft:
+                    command += "Draft";
+                    break;
+                case MessageFlags.Flagged:
+                    command += "Flagged";
+                    break;
+                case MessageFlags.Recent:
+                    command += "Recent";
+                    break;
+                case MessageFlags.Seen:
+                    command += "Seen";
+                    break;
+            }
+
+            command += ")";
+
+            SendCommand("STORE", command, ProcessMessage, null);
         }
 
         public void Poll()

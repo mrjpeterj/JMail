@@ -78,13 +78,13 @@
                 <ContextMenu>
                     <MenuItem Header="Open" FontWeight="Bold" IsEnabled="{Binding IsMessage}" Click="OpenMessage" />
                     <Separator />
-                    <MenuItem Header="Mark as Read" IsEnabled="{Binding IsUnread}" />
-                    <MenuItem Header="Mark as Unread" IsEnabled="{Binding IsRead}" />
+                    <MenuItem Header="Mark as Read" IsEnabled="{Binding IsUnread}" Click="MessageRead" />
+                    <MenuItem Header="Mark as Unread" IsEnabled="{Binding IsRead}" Click="MessageUnread" />
                     <Separator />
-                    <MenuItem Header="Delete" IsEnabled="{Binding IsNotDeleted}" />
-                    <MenuItem Header="Undelete" IsEnabled="{Binding IsDeleted}" />
+                    <MenuItem Header="Delete" IsEnabled="{Binding IsNotDeleted}" Click="MessageDelete" />
+                    <MenuItem Header="Undelete" IsEnabled="{Binding IsDeleted}" Click="MessageUndelete" />
                     <Separator />
-                    <MenuItem Header="Properties" IsEnabled="{Binding IsMessage}" />
+                    <MenuItem Header="Properties" IsEnabled="{Binding IsMessage}" Click="MessageProps" />
                 </ContextMenu>
             </ListView.ContextMenu>
             <ListView.View>

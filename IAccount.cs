@@ -12,7 +12,7 @@ namespace JMail
 
         void SelectFolder(Folder f);
         void FetchMessage(MessageHeader m, BodyPart p);
-        void DeleteMessage(MessageHeader m);
+        void SetFlag(MessageHeader m, MessageFlags flags, bool isSet);
 
         void Poll();
     }

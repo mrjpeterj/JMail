@@ -141,21 +141,6 @@ namespace JMail
             messages_.Remove(msg);
         }
 
-        public MessageHeader FindNext(MessageHeader msg)
-        {
-            return null;//            messages_.Next(msg);
-        }
-
-        public MessageHeader FindPrev(MessageHeader msg)
-        {
-            return null;//            messages_.Prev(msg);
-        }
-
-        public void Delete(MessageHeader msg)
-        {
-            server_.DeleteMessage(msg);
-        }
-
         #region INotifyPropertyChanged Members
 
         public event PropertyChangedEventHandler PropertyChanged;

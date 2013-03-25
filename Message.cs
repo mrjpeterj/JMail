@@ -112,6 +112,15 @@ namespace JMail
             {
                 return !flags_.Contains(MessageFlags.Seen);
             }
+            set
+            {
+                bool current = !flags_.Contains(MessageFlags.Seen);
+
+                if (value != current)
+                {
+                    Folder.Server.SetFlag(this, MessageFlags.Seen, !value);
+                }
+            }
         }
 
         public bool Deleted
@@ -120,6 +129,15 @@ namespace JMail
             {
                 return flags_.Contains(MessageFlags.Deleted);
             }
+            set
+            {
+                bool current = flags_.Contains(MessageFlags.Deleted);
+
+                if (value != current)
+                {
+                    Folder.Server.SetFlag(this, MessageFlags.Deleted, value);
+                }
+            }
         }
 
         public bool Flagged
@@ -127,6 +145,15 @@ namespace JMail
             get
             {
                 return flags_.Contains(MessageFlags.Flagged);
+            }
+            set
+            {
+                bool current = flags_.Contains(MessageFlags.Flagged);
+
+                if (value != current)
+                {
+                    Folder.Server.SetFlag(this, MessageFlags.Flagged, value);
+                }
             }
         }
 
@@ -196,6 +223,34 @@ namespace JMail
                 PropertyChanged(this, new PropertyChangedEventArgs("UnRead"));
                 PropertyChanged(this, new PropertyChangedEventArgs("Deleted"));
                 PropertyChanged(this, new PropertyChangedEventArgs("Flagged"));
+            }
+        }
+
+        void SetFlag(MessageFlags flag, bool isSet)
+        {
+            if (isSet && !flags_.Contains(flag))
+            {
+                flags_.Add(flag);
+            }
+            else if (!isSet)
+            {
+                flags_.Remove(flag);
+            }
+
+            if (PropertyChanged != null)
+            {
+                if (flag == MessageFlags.Deleted)
+                {
+                    PropertyChanged(this, new PropertyChangedEventArgs("Deleted"));
+                }
+                else if (flag == MessageFlags.Seen)
+                {
+                    PropertyChanged(this, new PropertyChangedEventArgs("UnRead"));
+                }
+                else if (flag == MessageFlags.Flagged)
+                {
+                    PropertyChanged(this, new PropertyChangedEventArgs("Flagged"));
+                }
             }
         }
 
@@ -314,7 +369,7 @@ namespace JMail
 
             if (nextMsg == null)
             {
-                nextMsg = Folder.FindNext(this);
+                //nextMsg = Folder.FindNext(this);
             }
 
             if (nextMsg != null)
@@ -336,7 +391,7 @@ namespace JMail
 
             if (nextMsg == null)
             {
-                nextMsg = Folder.FindPrev(this);
+                //nextMsg = Folder.FindPrev(this);
             }
             
             if (nextMsg != null)
@@ -345,11 +400,6 @@ namespace JMail
             }
 
             return nextMsg;
-        }
-
-        public void Delete()
-        {
-            Folder.Delete(this);
         }
 
         #region INotifyPropertyChanged Members

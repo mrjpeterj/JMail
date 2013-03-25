@@ -233,7 +233,7 @@ namespace JMail
         {
             MessageHeader currentMessage = DataContext as MessageHeader;
             NextMessage(sender, null);
-            currentMessage.Delete();
+            currentMessage.Deleted = true;
         }
     }
 }

@@ -192,8 +192,7 @@ namespace JMail
 
         private void OpenMessage(object sender, RoutedEventArgs e)
         {
-            FrameworkElement ele = sender as FrameworkElement;
-            MessageHeader msg = ele.DataContext as MessageHeader;
+            MessageHeader msg = CurrentFolder.CurrentMessage;
 
             msg.Fetch();
 
@@ -207,7 +206,7 @@ namespace JMail
         private void KeyboardMessageControl(object sender, KeyEventArgs e)
         {
             FrameworkElement ele = sender as FrameworkElement;
-            MessageHeader msg = u_MessageList.SelectedItem as MessageHeader;
+            MessageHeader msg = CurrentFolder.CurrentMessage;
 
             if (msg == null)
             {
@@ -216,10 +215,39 @@ namespace JMail
             
             if (e.Key == Key.Delete)
             {
-                msg.Delete();
+                msg.Deleted = true;
 
                 e.Handled = true;
             }
+            if (e.Key == Key.Q && Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+            {
+                msg.UnRead = !msg.UnRead;
+            }
+        }
+
+        private void MessageRead(object sender, RoutedEventArgs e)
+        {
+            CurrentFolder.CurrentMessage.UnRead = false;
+        }
+
+        private void MessageUnread(object sender, RoutedEventArgs e)
+        {
+            CurrentFolder.CurrentMessage.UnRead = true;
+        }
+
+        private void MessageDelete(object sender, RoutedEventArgs e)
+        {
+            CurrentFolder.CurrentMessage.Deleted = true;
+        }
+
+        private void MessageUndelete(object sender, RoutedEventArgs e)
+        {
+            CurrentFolder.CurrentMessage.Deleted = false;
+        }
+
+        private void MessageProps(object sender, RoutedEventArgs e)
+        {
+
         }
 
         private void MessageListResized(object sender, SizeChangedEventArgs e)
