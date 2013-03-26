@@ -406,7 +406,15 @@ namespace JMail
                 }
                 else
                 {
-                    folders_.Add(folder);
+                    // Inbox should always be first
+                    if (folderName.Equals("Inbox", StringComparison.OrdinalIgnoreCase))
+                    {
+                        folders_.Insert(0, folder);
+                    }
+                    else
+                    {
+                        folders_.Add(folder);
+                    }
                 }
 
                 allFolders_.Add(folder);

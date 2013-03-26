@@ -10,7 +10,7 @@
     <StackPanel Orientation="Vertical">
         <DockPanel>
             <TextBlock DockPanel.Dock="Left">Name</TextBlock>
-            <TextBox DockPanel.Dock="Right" />
+            <TextBox DockPanel.Dock="Right" Text="{Binding Name}" />
         </DockPanel>
         <DockPanel>
             <TextBlock DockPanel.Dock="Left">Server</TextBlock>

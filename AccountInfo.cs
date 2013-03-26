@@ -122,6 +122,7 @@ namespace JMail
         private Protocol proto_;
         private bool encrypt_;
 
+        public string Name { get; set; }
         public string Host { get; set; }
 
         public Protocol Protocol
@@ -221,6 +222,11 @@ namespace JMail
                         Port = 143;
                     }
                     break;
+            }
+
+            if (PropertyChanged != null)
+            {
+                PropertyChanged(this, new PropertyChangedEventArgs("Port"));
             }
         }
 

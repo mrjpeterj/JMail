@@ -10,7 +10,7 @@
             <ResourceDictionary Source="Style.xaml"/>
             <ResourceDictionary>
                 <HierarchicalDataTemplate DataType="{x:Type local:AccountInfo}" ItemsSource="{Binding Connection.FolderList}">
-                  <TextBlock Text="{Binding Host}">
+                  <TextBlock Text="{Binding Name}" MinWidth="100">
                     <TextBlock.ContextMenu>
                       <ContextMenu>
                         <MenuItem Header="Delete" Click="Account_Delete" />
