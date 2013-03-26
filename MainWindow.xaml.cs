@@ -180,14 +180,15 @@ namespace JMail
             AccountInfo acnt = ele.DataContext as AccountInfo;
 
             AccountProps props = new AccountProps(acnt);
-            props.ShowDialog();
+            if (props.ShowDialog() == true)
+            {
+                Servers.Remove(acnt);
+                Servers.Add(acnt);
 
-            Servers.Remove(acnt);
-            Servers.Add(acnt);
+                Properties.Settings.Default.Save();
 
-            Properties.Settings.Default.Save();
-
-            acnt.Connect();
+                acnt.Connect();
+            }
         }
 
         private void SelectMessage(object sender, SelectionChangedEventArgs e)
