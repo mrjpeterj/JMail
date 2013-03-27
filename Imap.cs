@@ -538,7 +538,7 @@ namespace JMail
 
         void UnreadCount(ImapRequest request, IList<string> responseData, object data)
         {
-            string folderName = responseData[2];
+            string folderName =  ImapData.StripQuotes(responseData[2]);
 
             Folder folder = (from f in AllFolders
                              where f.FullName == folderName
