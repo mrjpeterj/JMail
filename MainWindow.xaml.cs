@@ -113,6 +113,11 @@ namespace JMail
                 // Update the column sizes now the messages are all in.
                 ResizeMessageColumns();
             }
+
+            if (u_MessageList.Items.Count > 0)
+            {
+                u_MessageList.ScrollIntoView(u_MessageList.Items[u_MessageList.Items.Count - 1]);
+            }
         }
 
         public MessageHeader NextMessage(MessageHeader current)
