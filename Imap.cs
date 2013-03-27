@@ -398,7 +398,7 @@ namespace JMail
                     folderShortName = folderName.Replace(currentParent.FullName, "").Substring(1);
                 }
 
-                Folder folder = new Folder(this, folderName, folderShortName, hasChildren, realFolder);
+                Folder folder = new Folder(this, folderName, folderShortName, nameSpace, hasChildren, realFolder);
 
                 if (currentParent != null)
                 {
@@ -439,6 +439,20 @@ namespace JMail
             ListMessages(request, responseData);
 
             SendCommand("UID SEARCH", "UNDELETED", AvailableMessages);       
+        }
+
+        void RenamedFolder(ImapRequest request, IEnumerable<string> responseData, object data)
+        {
+            var response = responseData.ToList();
+            if (response[1] == "OK")
+            {
+                SubscribeFolder(data.ToString());
+            }
+        }
+
+        void SubscribedFolder(ImapRequest request, IEnumerable<string> responseData, object data)
+        {
+            ListFolders();
         }
 
         // Returns whether it thinks that the message list should be updated.
@@ -1002,6 +1016,16 @@ namespace JMail
             SendCommand("SELECT", "\"" + f.FullName + "\"", SelectedFolder);
         }
 
+        public void RenameFolder(string oldName, string newName)
+        {
+            SendCommand("RENAME", oldName + " " + newName, RenamedFolder, newName);
+        }
+
+        public void SubscribeFolder(string folderName)
+        {
+            SendCommand("SUBSCRIBE", folderName, SubscribedFolder);
+        }
+
         public void FetchMessage(MessageHeader m, BodyPart body)
         {
             if (body == null)
@@ -1055,7 +1079,7 @@ namespace JMail
 
             command += ")";
 
-            SendCommand("STORE", command, ProcessMessage, null);
+            SendCommand("STORE", command, ProcessMessage);
         }
 
         public void Poll()

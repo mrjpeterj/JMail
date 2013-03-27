@@ -12,7 +12,8 @@ namespace JMail
         IAccount server_;
         string name_;
         string shortName_;
-        
+        string separator_;
+
         ThreadedList<Folder> subFolders_;
         MessageStore messages_;
 
@@ -35,7 +36,7 @@ namespace JMail
             get
             {
                 return shortName_;
-            }
+            }            
         }
 
         public int Exists
@@ -96,11 +97,12 @@ namespace JMail
         public IList<Folder> Children { get { return subFolders_; } }
         public MessageStore Messages { get { return messages_; } }
 
-        public Folder(IAccount server, string name, string shortName, bool hasChildren, bool canHaveMessages)
+        public Folder(IAccount server, string name, string shortName, string separator, bool hasChildren, bool canHaveMessages)
         {
             server_ = server;
             name_ = name;
             shortName_ = shortName;
+            separator_ = separator;
 
             if (hasChildren)
             {
@@ -125,6 +127,13 @@ namespace JMail
             {
                 server_.SelectFolder(this);
             }
+        }
+
+        public void Rename(string newName)
+        {
+            string newFullName = FullName.Replace(Name, "") + newName;
+
+            server_.RenameFolder(FullName, newFullName);
         }
 
         public void Expunge(MessageHeader msg)

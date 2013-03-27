@@ -11,6 +11,9 @@ namespace JMail
         IEnumerable<Folder> AllFolders { get; }
 
         void SelectFolder(Folder f);
+        void RenameFolder(string oldName, string newName);
+        void SubscribeFolder(string folderName);
+
         void FetchMessage(MessageHeader m, BodyPart p);
         void SetFlag(MessageHeader m, MessageFlags flags, bool isSet);
 

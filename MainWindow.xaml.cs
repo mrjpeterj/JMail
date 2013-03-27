@@ -78,15 +78,16 @@ namespace JMail
             var item = e.OriginalSource as TreeViewItem;
             var folder = item.DataContext as Folder;
 
+            if (u_MessageList.ItemsSource is MessageStore)
+            {
+                ((MessageStore)u_MessageList.ItemsSource).CollectionChanged -= UpdateSorting;
+            }
+
+
             if (folder != null)
             {
                 CurrentFolder = new FolderView(folder);
                 CurrentFolder.Select();
-
-                if (u_MessageList.ItemsSource is MessageStore)
-                {
-                    ((MessageStore)u_MessageList.ItemsSource).CollectionChanged -= UpdateSorting;
-                }
 
                 u_MessageList.DataContext = CurrentFolder;
                 CurrentFolder.Messages.CollectionChanged += UpdateSorting;
@@ -188,6 +189,25 @@ namespace JMail
                 Properties.Settings.Default.Save();
 
                 acnt.Connect();
+            }
+        }
+
+        private void Folder_Rename(object sender, RoutedEventArgs e)
+        {
+            var ele = (System.Windows.FrameworkElement)sender;
+            var host = ele.Parent as System.Windows.Controls.ContextMenu;
+            var item = host.PlacementTarget as System.Windows.FrameworkElement;
+            var folder = item.DataContext as Folder;
+
+            var dlg = new Rename();
+            dlg.Text = folder.Name;
+            dlg.Owner = this;
+
+            if (dlg.ShowDialog() == true)
+            {
+                string newName = dlg.Text.ToString();
+
+                folder.Rename(newName);
             }
         }
 

@@ -22,11 +22,17 @@
                 
                 <HierarchicalDataTemplate DataType="{x:Type local:Folder}" ItemsSource="{Binding Children}" >
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="{Binding Name}" Padding="2" />
-                        <TextBlock Text="{Binding UnseenText}" Padding="2" FontWeight="Bold" Foreground="RoyalBlue" />
-                    </StackPanel>
-                </HierarchicalDataTemplate>
-            </ResourceDictionary>
+                            <TextBlock Text="{Binding Name}" Padding="2">
+                                <TextBlock.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Header="Rename" Click="Folder_Rename" />
+                                    </ContextMenu>
+                                </TextBlock.ContextMenu>
+                            </TextBlock>
+                            <TextBlock Text="{Binding UnseenText}" Padding="2" FontWeight="Bold" Foreground="RoyalBlue" />
+                        </StackPanel>
+                    </HierarchicalDataTemplate>
+                </ResourceDictionary>
         </ResourceDictionary.MergedDictionaries>
     </ResourceDictionary>
     </Window.Resources>
