@@ -83,6 +83,11 @@ namespace JMail
                 ((MessageStore)u_MessageList.ItemsSource).CollectionChanged -= UpdateSorting;
             }
 
+            if (CurrentFolder != null)
+            {
+                CurrentFolder.Folder.Expunge();
+            }
+
 
             if (folder != null)
             {

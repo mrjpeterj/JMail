@@ -436,7 +436,7 @@ namespace JMail
 
         void SelectedFolder(ImapRequest request, IEnumerable<string> responseData, object data)
         {
-            ListMessages(request, responseData);
+            ListMessages(request, responseData, data as Folder);
 
             SendCommand("UID SEARCH", "UNDELETED", AvailableMessages);       
         }
@@ -456,19 +456,13 @@ namespace JMail
         }
 
         // Returns whether it thinks that the message list should be updated.
-        bool ListMessages(ImapRequest request, IEnumerable<string> responseData)
+        bool ListMessages(ImapRequest request, IEnumerable<string> responseData, Folder f)
         {
-            Folder folder = currentFolder_;
-
-#if false
-            string folderName = request.Args.Substring(1, request.Args.Length - 2);
-
-            state_ = ImapState.Selected;
-
-            Folder folder = (from f in AllFolders
-                             where f.FullName == folderName
-                             select f).FirstOrDefault();
-#endif
+            Folder folder = f;
+            if (folder == null)
+            {
+                folder = currentFolder_;
+            }
 
             if (folder != null)
             {
@@ -505,14 +499,14 @@ namespace JMail
                     {
                         int msgId = Int32.Parse(lastValue);
 
-                        MessageHeader exMsg = currentFolder_.Messages.MessageByID(msgId);
+                        MessageHeader exMsg = folder.Messages.MessageByID(msgId);
                         folder.Expunge(exMsg);
                     }
                     else if (response == "FETCH")
                     {
                         int msgId = Int32.Parse(lastValue);
 
-                        msg = currentFolder_.Messages.MessageByID(msgId);
+                        msg = folder.Messages.MessageByID(msgId);
                     }
                     else if (response == "OK")
                     {
@@ -580,7 +574,7 @@ namespace JMail
         {
             if (responseData.Any())
             {
-                if (ListMessages(request, responseData))
+                if (ListMessages(request, responseData, data as Folder))
                 {
                     SendCommand("UID SEARCH", "UNDELETED", AvailableMessages);
                 }
@@ -1082,9 +1076,14 @@ namespace JMail
             SendCommand("STORE", command, ProcessMessage);
         }
 
+        public void ExpungeFolder()
+        {
+            SendCommand("EXPUNGE", "", UpdateStatus, currentFolder_);
+        }
+
         public void Poll()
         {
-            SendCommand("NOOP", "", UpdateStatus);
+            SendCommand("NOOP", "", UpdateStatus, currentFolder_);
         }
 
         #endregion

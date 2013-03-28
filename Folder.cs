@@ -136,6 +136,13 @@ namespace JMail
             server_.RenameFolder(FullName, newFullName);
         }
 
+        // Called by the client to start the clean up of deleted messages.
+        public void Expunge()
+        {
+            server_.ExpungeFolder();
+        }        
+
+        // Called by the server to report that a message has been removed.
         public void Expunge(MessageHeader msg)
         {
             var msgLst = from m in messages_
