@@ -246,23 +246,26 @@ namespace JMail
 
         private void KeyboardMessageControl(object sender, KeyEventArgs e)
         {
-            FrameworkElement ele = sender as FrameworkElement;
-            MessageHeader msg = CurrentFolder.CurrentMessage;
+            ListView ele = sender as ListView;
 
-            if (msg == null)
+            foreach (var item in ele.SelectedItems)
             {
-                return;
-            }
+                var msg = item as MessageHeader;
+                if (msg == null)
+                {
+                    continue;
+                }
 
-            if (e.Key == Key.Delete)
-            {
-                msg.Deleted = true;
+                if (e.Key == Key.Delete)
+                {
+                    msg.Deleted = true;
 
-                e.Handled = true;
-            }
-            if (e.Key == Key.Q && Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
-            {
-                msg.UnRead = !msg.UnRead;
+                    e.Handled = true;
+                }
+                if (e.Key == Key.Q && Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+                {
+                    msg.UnRead = !msg.UnRead;
+                }
             }
         }
 
