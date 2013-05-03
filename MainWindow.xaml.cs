@@ -271,22 +271,82 @@ namespace JMail
 
         private void MessageRead(object sender, RoutedEventArgs e)
         {
-            CurrentFolder.CurrentMessage.UnRead = false;
+            var menu = sender as MenuItem;
+            var menuHolder = menu.Parent as FrameworkElement;
+            var popup = menuHolder.Parent as System.Windows.Controls.Primitives.Popup;
+
+            ListView ele = popup.PlacementTarget as ListView;
+
+            foreach (var item in ele.SelectedItems)
+            {
+                var msg = item as MessageHeader;
+                if (msg == null)
+                {
+                    continue;
+                }
+
+                msg.UnRead = false;
+            }
         }
 
         private void MessageUnread(object sender, RoutedEventArgs e)
         {
-            CurrentFolder.CurrentMessage.UnRead = true;
+            var menu = sender as MenuItem;
+            var menuHolder = menu.Parent as FrameworkElement;
+            var popup = menuHolder.Parent as System.Windows.Controls.Primitives.Popup;
+
+            ListView ele = popup.PlacementTarget as ListView;
+
+            foreach (var item in ele.SelectedItems)
+            {
+                var msg = item as MessageHeader;
+                if (msg == null)
+                {
+                    continue;
+                }
+
+                msg.UnRead = true;
+            }
         }
 
         private void MessageDelete(object sender, RoutedEventArgs e)
         {
-            CurrentFolder.CurrentMessage.Deleted = true;
+            var menu = sender as MenuItem;
+            var menuHolder = menu.Parent as FrameworkElement;
+            var popup = menuHolder.Parent as System.Windows.Controls.Primitives.Popup;
+
+            ListView ele = popup.PlacementTarget as ListView;
+
+            foreach (var item in ele.SelectedItems)
+            {
+                var msg = item as MessageHeader;
+                if (msg == null)
+                {
+                    continue;
+                }
+
+                msg.Deleted = true;
+            }
         }
 
         private void MessageUndelete(object sender, RoutedEventArgs e)
         {
-            CurrentFolder.CurrentMessage.Deleted = false;
+            var menu = sender as MenuItem;
+            var menuHolder = menu.Parent as FrameworkElement;
+            var popup = menuHolder.Parent as System.Windows.Controls.Primitives.Popup;
+
+            ListView ele = popup.PlacementTarget as ListView;
+
+            foreach (var item in ele.SelectedItems)
+            {
+                var msg = item as MessageHeader;
+                if (msg == null)
+                {
+                    continue;
+                }
+
+                msg.Deleted = false;
+            }
         }
 
         private void MessageProps(object sender, RoutedEventArgs e)
