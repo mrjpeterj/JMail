@@ -130,6 +130,13 @@ namespace JMail
             if (current.Folder == CurrentFolder.Folder)
             {
                 int pos = u_MessageList.Items.IndexOf(current);
+
+                // If not found or the last one in the list
+                if (pos == u_MessageList.Items.Count - 1 || pos < 0)
+                {
+                    return null;
+                }
+
                 if (pos >= 0)
                 {
                     u_MessageList.SelectedIndex = pos + 1;
@@ -143,12 +150,32 @@ namespace JMail
             }
         }
 
+        public bool IsLastMessage(MessageHeader current)
+        {
+            if (current.Folder == CurrentFolder.Folder)
+            {
+                int pos = u_MessageList.Items.IndexOf(current);
+
+                return pos == u_MessageList.Items.Count - 1;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
         public MessageHeader PrevMessage(MessageHeader current)
         {
             if (current.Folder == CurrentFolder.Folder)
             {
                 int pos = u_MessageList.Items.IndexOf(current);
-                if (pos >= 0)
+
+                // If not found or the first item in the list
+                if (pos <= 0)
+                {
+                    return null;
+                }
+                else 
                 {
                     u_MessageList.SelectedIndex = pos - 1;
                 }
@@ -158,6 +185,20 @@ namespace JMail
             else
             {
                 return null;
+            }
+        }
+
+        public bool IsFirstMessage(MessageHeader current)
+        {
+            if (current.Folder == CurrentFolder.Folder)
+            {
+                int pos = u_MessageList.Items.IndexOf(current);
+
+                return pos == 0;
+            }
+            else
+            {
+                return false;
             }
         }
 

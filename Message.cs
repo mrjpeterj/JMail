@@ -175,6 +175,11 @@ namespace JMail
             Cc = new MailAddressCollection();
         }
 
+        public override string ToString()
+        {
+            return Subject;
+        }
+
         public void SetValue(string field, string value)
         {
             if (value == "NIL")
@@ -413,6 +418,30 @@ namespace JMail
             }
 
             return nextMsg;
+        }
+
+        public bool IsLast(MainWindow view)
+        {
+            if (view != null)
+            {
+                return view.IsLastMessage(this);
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        public bool IsFirst(MainWindow view)
+        {
+            if (view != null)
+            {
+                return view.IsFirstMessage(this);
+            }
+            else
+            {
+                return false;
+            }
         }
 
         #region INotifyPropertyChanged Members

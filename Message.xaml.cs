@@ -189,24 +189,41 @@ namespace JMail
 
         private void NotLastItem(object sender, CanExecuteRoutedEventArgs e)
         {
-            e.CanExecute = true;
+            if (DataContext == null)
+            {
+                e.CanExecute = false;
+            }
+            else
+            {
+                MessageHeader currentMessage = DataContext as MessageHeader;
+                e.CanExecute = !currentMessage.IsLast(Owner as MainWindow);
+            }
         }
 
         private void NotFirstItem(object sender, CanExecuteRoutedEventArgs e)
         {
-            e.CanExecute = true;
+            if (DataContext == null)
+            {
+                e.CanExecute = false;
+            }
+            else
+            {
+                MessageHeader currentMessage = DataContext as MessageHeader;
+                e.CanExecute = !currentMessage.IsFirst(Owner as MainWindow);
+            }
         }
 
         private void NextMessage(object sender, ExecutedRoutedEventArgs e)
         {
             MessageHeader currentMessage = DataContext as MessageHeader;
             MessageHeader nextMessage = currentMessage.Next(Owner as MainWindow);
+
+            currentMessage.Body.PropertyChanged -= BodyChanged;
+
+            DataContext = nextMessage;
+
             if (nextMessage != null)
             {
-                currentMessage.Body.PropertyChanged -= BodyChanged;
-
-                DataContext = nextMessage;
-
                 UpdateContent();
 
                 nextMessage.Body.PropertyChanged += BodyChanged;
@@ -217,12 +234,13 @@ namespace JMail
         {
             MessageHeader currentMessage = DataContext as MessageHeader;
             MessageHeader nextMessage = currentMessage.Prev(Owner as MainWindow);
+
+            currentMessage.Body.PropertyChanged -= BodyChanged;
+
+            DataContext = nextMessage;
+
             if (nextMessage != null)
             {
-                currentMessage.Body.PropertyChanged -= BodyChanged;
-
-                DataContext = nextMessage;
-
                 UpdateContent();
 
                 nextMessage.Body.PropertyChanged += BodyChanged;
@@ -234,6 +252,13 @@ namespace JMail
             MessageHeader currentMessage = DataContext as MessageHeader;
             NextMessage(sender, null);
             currentMessage.Deleted = true;
+
+            if (DataContext == null)
+            {
+                // Didn't have a next message.
+
+                Close();
+            }
         }
     }
 }
