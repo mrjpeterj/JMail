@@ -473,6 +473,8 @@ namespace JMail
                 int prevExists = folder.Exists;
                 folder.Recent = 0;
 
+                bool refreshStatus = false;
+
                 foreach (var response in responseData)
                 {
                     if (subProcessNext)
@@ -483,8 +485,13 @@ namespace JMail
                     }
                     else if (msg != null)
                     {
-                        ExtractValues(-1, msg, null, response);
-                        msg = null;
+                        bool updateFolder = ExtractValues(-1, ref msg, null, response);
+                        if (updateFolder && !refreshStatus)
+                        {
+                            refreshStatus = true;
+                        }
+
+                        msg = null;                        
                     }
 
                     if (response == "EXISTS")
@@ -514,6 +521,11 @@ namespace JMail
                     }
 
                     lastValue = response;
+                }
+
+                if (refreshStatus)
+                {
+                    CheckUnseen(folder);
                 }
 
                 if (folder.Exists != prevExists || folder.Recent > 0)
@@ -600,6 +612,7 @@ namespace JMail
             var currentIds = (from m in currentFolder_.Messages
                               select m.Uid).ToList();
             List<int> newIds = new List<int>();
+            List<int> existingIds = new List<int>();
 
             foreach (var uid in msgIds)
             {
@@ -610,6 +623,7 @@ namespace JMail
                 else
                 {
                     currentIds.Remove(uid);
+                    existingIds.Add(uid);
                 }
             }
 
@@ -619,15 +633,25 @@ namespace JMail
                 currentFolder_.Messages.Remove(currentFolder_.Messages.MessageByUID(uid));
             }
 
-            if (newIds.Count > 0)
+            if (newIds.Any())
             {
-                FetchMessage(newIds);
+                FetchMessage(newIds, false);
+            }
+
+            if (existingIds.Any())
+            {
+                FetchMessage(existingIds, true);
             }
         }
 
-        void FetchMessage(IList<int> ids)
+        void FetchMessage(IList<int> ids, bool flagsOnly)
         {
             string idList = "";
+            string command = "(FLAGS INTERNALDATE RFC822.SIZE ENVELOPE BODYSTRUCTURE)";
+            if (flagsOnly)
+            {
+                command = "(FLAGS)";
+            }
 
             for (int i = 0; i < ids.Count; ++i)
             {
@@ -643,7 +667,7 @@ namespace JMail
                 {
                     // Batch into 50's
 
-                    SendCommand("UID FETCH", idList + " (FLAGS INTERNALDATE RFC822.SIZE ENVELOPE BODYSTRUCTURE)", ProcessMessage);
+                    SendCommand("UID FETCH", idList + " " + command, ProcessMessage);
 
                     idList = "";
                 }
@@ -651,7 +675,7 @@ namespace JMail
 
             if (idList.Length > 0)
             {
-                SendCommand("UID FETCH", idList + " (FLAGS INTERNALDATE RFC822.SIZE ENVELOPE BODYSTRUCTURE)", ProcessMessage);
+                SendCommand("UID FETCH", idList + " " + command, ProcessMessage);
             }
         }
 
@@ -665,6 +689,8 @@ namespace JMail
 
             int msgId = -1;
             BodyPart body = data as BodyPart;
+
+            Folder refreshFolder = null;
 
             foreach (var response in responseData)
             {
@@ -684,14 +710,24 @@ namespace JMail
                 }
                 else if (isResponse)
                 {
-                    ExtractValues(msgId, null, body, response);
-
+                    MessageHeader msg = null;
+                    bool updateFolder = ExtractValues(msgId, ref msg, body, response);
+                    if (updateFolder && refreshFolder == null)
+                    {
+                        refreshFolder = msg.Folder;
+                    }
+                    
                     isResponse = false;
                 }
             }
+
+            if (refreshFolder != null)
+            {
+                CheckUnseen(refreshFolder);
+            }
         }
 
-        void ExtractValues(int msgId, MessageHeader msgHdr, BodyPart body, string data)
+        bool ExtractValues(int msgId, ref MessageHeader msgHdr, BodyPart body, string data)
         {
             string[] values = ImapData.SplitToken(data);
             Dictionary<string, string> dictValues = new Dictionary<string, string>();
@@ -707,24 +743,25 @@ namespace JMail
                 Int32.TryParse(uidStr, out uid);
             }
 
-            MessageHeader msg = msgHdr;
             if (uid >= 0)
             {
-                msg = currentFolder_.Messages.MessageByUID(uid);
+                msgHdr = currentFolder_.Messages.MessageByUID(uid);
             }
             else if (msgId >= 0)
             {
-                msg = currentFolder_.Messages.MessageByID(msgId);
+                msgHdr = currentFolder_.Messages.MessageByID(msgId);
             }
 
-            if (msg == null)
+            if (msgHdr == null)
             {
-                msg = new MessageHeader(uid, currentFolder_);
-                currentFolder_.Messages.Add(msg);
+                msgHdr = new MessageHeader(uid, currentFolder_);
+                currentFolder_.Messages.Add(msgHdr);
 
-                msg.id = msgId;
+                msgHdr.id = msgId;
             }
 
+            bool updateFolder = false;
+            
             foreach (var val in dictValues)
             {
                 string key = val.Key;
@@ -732,29 +769,35 @@ namespace JMail
 
                 if (key == "FLAGS")
                 {
-                    ExtractFlags(msg, value);
+                    ExtractFlags(msgHdr, value);
+
+                    // If we have flags values (well more like, if they have changed)
+                    // the we need to update the status of the Folder.
+                    updateFolder = true;
                 }
                 else if (key.StartsWith("BODY["))
                 {
-                    ExtractBodyInfo(msg, body, value);
+                    ExtractBodyInfo(msgHdr, body, value);
                 }
                 else if (key == "INTERNALDATE")
                 {
-                    ExtractDate(msg, value);
+                    ExtractDate(msgHdr, value);
                 }
                 else if (key == "RFC822.SIZE")
                 {
-                    ExtractSingle(msg, value, "SIZE");
+                    ExtractSingle(msgHdr, value, "SIZE");
                 }
                 else if (key == "ENVELOPE")
                 {
-                    ParseEnvelope(msg, value);
+                    ParseEnvelope(msgHdr, value);
                 }
                 else if (key == "BODYSTRUCTURE")
                 {
-                    ParseBodyStructure(msg, value, "");
+                    ParseBodyStructure(msgHdr, value, "");
                 }
             }
+
+            return updateFolder;
         }
 
         void ParseEnvelope(MessageHeader msg, string envData)
