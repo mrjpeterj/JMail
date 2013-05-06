@@ -500,7 +500,7 @@ namespace JMail
                         int msgId = Int32.Parse(lastValue);
 
                         MessageHeader exMsg = folder.Messages.MessageByID(msgId);
-                        folder.Expunge(exMsg);
+                        folder.Expunge(exMsg, msgId);
                     }
                     else if (response == "FETCH")
                     {

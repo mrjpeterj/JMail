@@ -143,10 +143,10 @@ namespace JMail
         }        
 
         // Called by the server to report that a message has been removed.
-        public void Expunge(MessageHeader msg)
+        public void Expunge(MessageHeader msg, int msgId)
         {
             var msgLst = from m in messages_
-                         where m.id > msg.id
+                         where m.id > msgId
                          select m;
 
             foreach (var m in msgLst)
@@ -154,7 +154,10 @@ namespace JMail
                 m.id = m.id - 1;
             }
 
-            messages_.Remove(msg);
+            if (msg != null)
+            {
+                messages_.Remove(msg);
+            }
         }
 
         #region INotifyPropertyChanged Members
