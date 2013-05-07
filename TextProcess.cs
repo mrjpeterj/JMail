@@ -343,6 +343,16 @@ namespace JMail
 
                 string res = Encoding.GetEncoding(charset).GetString(data);
 
+
+                // Now if there is more encoding to come and it starts straight away, then it should be separated by whitespace.
+                if (input.Length > encodingEnd)
+                {
+                    if (Char.IsWhiteSpace(input, encodingEnd))
+                    {
+                        ++encodingEnd;
+                    }
+                }
+
                 input = input.Substring(0, encodingStart) + res + input.Substring(encodingEnd, input.Length - encodingEnd);
             }
 
