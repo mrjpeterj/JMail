@@ -14,7 +14,7 @@ namespace JMail
     /// Used for serializing the settings
     /// </summary>
     [XmlInclude(typeof(AccountInfo))]
-    public class AccountList: System.Collections.ArrayList, IList<AccountInfo>, INotifyCollectionChanged
+    public class AccountList: System.Collections.ArrayList, IList<AccountInfo>
     {
         #region IList<AccountInfo> Members
         public int IndexOf(AccountInfo item)
@@ -25,10 +25,6 @@ namespace JMail
         public void Insert(int index, AccountInfo item)
         {
             base.Insert(index, item);
-
-            if (CollectionChanged != null) {
-                CollectionChanged(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
-            }
         }
 
         public new AccountInfo this[int index]
@@ -41,12 +37,6 @@ namespace JMail
             {
                 var oldItem = base[index];
                 base[index] = value;
-
-                if (CollectionChanged != null)
-                {
-                    CollectionChanged(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Replace, 
-                                                                                 value, oldItem));
-                }
             }
         }
 
@@ -57,11 +47,6 @@ namespace JMail
         public void Add(AccountInfo item)
         {
             base.Add(item);
-
-            if (CollectionChanged != null)
-            {
-                CollectionChanged(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, item));
-            }
         }
 
         public bool Contains(AccountInfo item)
@@ -79,11 +64,6 @@ namespace JMail
             bool exists = Contains(item);
 
             base.Remove(item);
-
-            if (exists && CollectionChanged != null)
-            {
-                CollectionChanged(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, item));
-            }
 
             return exists;
         }
@@ -104,12 +84,6 @@ namespace JMail
         }
 
         #endregion
-
-        #region INotifyCollectionChanged Members
-
-        public event NotifyCollectionChangedEventHandler CollectionChanged;
-
-        #endregion
     }
 
     public enum Protocol
@@ -117,7 +91,7 @@ namespace JMail
         IMAP4
     }
 
-    public class AccountInfo: INotifyPropertyChanged
+    public class AccountInfo
     {
         private Protocol proto_;
         private bool encrypt_;
@@ -223,28 +197,11 @@ namespace JMail
                     }
                     break;
             }
-
-            if (PropertyChanged != null)
-            {
-                PropertyChanged(this, new PropertyChangedEventArgs("Port"));
-            }
         }
 
         public void Connect()
         {
             Connection = new Imap(this);
-
-            if (PropertyChanged != null)
-            {
-                PropertyChanged(this, new PropertyChangedEventArgs("Connection"));
-            }
         }
-
-
-        #region INotifyPropertyChanged Members
-
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        #endregion
     }
 }

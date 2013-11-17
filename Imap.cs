@@ -64,8 +64,8 @@ namespace JMail
         private List<string> currentCommand_;
         private bool lastTokenIsComplete_;
 
-        private ThreadedList<Folder> allFolders_;
-        private ThreadedList<Folder> folders_;
+        private List<Folder> allFolders_;
+        private List<Folder> folders_;
 
         private Folder currentFolder_;       
 
@@ -79,8 +79,8 @@ namespace JMail
             currentCommand_ = new List<string>();
             lastTokenIsComplete_ = true;
 
-            allFolders_ = new ThreadedList<Folder>();
-            folders_ = new ThreadedList<Folder>();
+            allFolders_ = new List<Folder>();
+            folders_ = new List<Folder>();
 
             try
             {
@@ -432,6 +432,11 @@ namespace JMail
 
                 responseLine.Clear();
             }
+
+            if (FoldersChanged != null)
+            {
+                FoldersChanged(this, null);
+            }
         }
 
         void SelectedFolder(ImapRequest request, IEnumerable<string> responseData, object data)
@@ -506,14 +511,14 @@ namespace JMail
                     {
                         int msgId = Int32.Parse(lastValue);
 
-                        MessageHeader exMsg = folder.Messages.MessageByID(msgId);
+                        MessageHeader exMsg = folder.MessageByID(msgId);
                         folder.Expunge(exMsg, msgId);
                     }
                     else if (response == "FETCH")
                     {
                         int msgId = Int32.Parse(lastValue);
 
-                        msg = folder.Messages.MessageByID(msgId);
+                        msg = folder.MessageByID(msgId);
                     }
                     else if (response == "OK")
                     {
@@ -526,6 +531,11 @@ namespace JMail
                 if (refreshStatus)
                 {
                     CheckUnseen(folder);
+
+                    if (MessagesChanged != null)
+                    {
+                        MessagesChanged(this, new MessagesChangedEventArgs(folder));
+                    }
                 }
 
                 if (folder.Exists != prevExists || folder.Recent > 0)
@@ -630,7 +640,7 @@ namespace JMail
             foreach (var uid in currentIds)
             {
                 // These are no longer in the folder
-                currentFolder_.Messages.Remove(currentFolder_.Messages.MessageByUID(uid));
+                currentFolder_.Messages.Remove(currentFolder_.MessageByUID(uid));
             }
 
             if (newIds.Any())
@@ -641,6 +651,11 @@ namespace JMail
             if (existingIds.Any())
             {
                 FetchMessage(existingIds, true);
+            }
+
+            if (MessagesChanged != null)
+            {
+                MessagesChanged(this, new MessagesChangedEventArgs(currentFolder_));
             }
         }
 
@@ -724,6 +739,11 @@ namespace JMail
             if (refreshFolder != null)
             {
                 CheckUnseen(refreshFolder);
+
+                if (MessagesChanged != null)
+                {
+                    MessagesChanged(this, new MessagesChangedEventArgs(refreshFolder));
+                }
             }
         }
 
@@ -745,12 +765,14 @@ namespace JMail
 
             if (uid >= 0)
             {
-                msgHdr = currentFolder_.Messages.MessageByUID(uid);
+                msgHdr = currentFolder_.MessageByUID(uid);
             }
             else if (msgId >= 0)
             {
-                msgHdr = currentFolder_.Messages.MessageByID(msgId);
+                msgHdr = currentFolder_.MessageByID(msgId);
             }
+
+            bool updateFolder = false;
 
             if (msgHdr == null)
             {
@@ -758,9 +780,9 @@ namespace JMail
                 currentFolder_.Messages.Add(msgHdr);
 
                 msgHdr.id = msgId;
-            }
 
-            bool updateFolder = false;
+                updateFolder = true;
+            }
             
             foreach (var val in dictValues)
             {
@@ -1036,6 +1058,9 @@ namespace JMail
         }
 
         #region IAccount Members
+
+        public event EventHandler FoldersChanged;
+        public event EventHandler<MessagesChangedEventArgs> MessagesChanged;
 
         public IEnumerable<Folder> FolderList
         {

@@ -20,15 +20,18 @@ namespace JMail
     /// </summary>
     public partial class Message: Window
     {
-        public Message()
+        FolderView folder_;
+
+        public Message(FolderView folder)
         {
+            folder_ = folder;
+
             InitializeComponent();
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             MessageHeader currentMessage = DataContext as MessageHeader;
-            currentMessage.Body.PropertyChanged += BodyChanged;
 
             UpdateContent();
         }
@@ -196,7 +199,7 @@ namespace JMail
             else
             {
                 MessageHeader currentMessage = DataContext as MessageHeader;
-                e.CanExecute = !currentMessage.IsLast(Owner as MainWindow);
+                e.CanExecute = !folder_.IsLast(Owner as MainWindow, currentMessage);
             }
         }
 
@@ -209,41 +212,33 @@ namespace JMail
             else
             {
                 MessageHeader currentMessage = DataContext as MessageHeader;
-                e.CanExecute = !currentMessage.IsFirst(Owner as MainWindow);
+                e.CanExecute = !folder_.IsFirst(Owner as MainWindow, currentMessage);
             }
         }
 
         private void NextMessage(object sender, ExecutedRoutedEventArgs e)
         {
             MessageHeader currentMessage = DataContext as MessageHeader;
-            MessageHeader nextMessage = currentMessage.Next(Owner as MainWindow);
-
-            currentMessage.Body.PropertyChanged -= BodyChanged;
+            MessageHeader nextMessage = folder_.Next(Owner as MainWindow, currentMessage);
 
             DataContext = nextMessage;
 
             if (nextMessage != null)
             {
                 UpdateContent();
-
-                nextMessage.Body.PropertyChanged += BodyChanged;
             }
         }
 
         private void PreviousMessage(object sender, ExecutedRoutedEventArgs e)
         {
             MessageHeader currentMessage = DataContext as MessageHeader;
-            MessageHeader nextMessage = currentMessage.Prev(Owner as MainWindow);
-
-            currentMessage.Body.PropertyChanged -= BodyChanged;
+            MessageHeader nextMessage = folder_.Prev(Owner as MainWindow, currentMessage);
 
             DataContext = nextMessage;
 
             if (nextMessage != null)
             {
                 UpdateContent();
-
-                nextMessage.Body.PropertyChanged += BodyChanged;
             }
         }
 

@@ -4,31 +4,13 @@ using System.Linq;
 using System.Text;
 
 using System.ComponentModel;
+
+#if !NETFX_CORE
 using System.Net.Mail;
+#endif
 
 namespace JMail
 {
-    public class MessageStore: ThreadedList<MessageHeader>
-    {
-        public MessageHeader MessageByID(int id)
-        {
-            var matches = from m in this
-                          where m.id == id
-                          select m;
-
-            return matches.FirstOrDefault();
-        }
-
-        public MessageHeader MessageByUID(int id)
-        {
-            var matches = from m in this
-                          where m.Uid == id
-                          select m;
-
-            return matches.FirstOrDefault();
-        }
-    }
-
     public enum MessageFlags
     {
         Seen,
@@ -39,7 +21,7 @@ namespace JMail
         Recent
     }
 
-    public class MessageHeader: INotifyPropertyChanged
+    public class MessageHeader
     {
         Folder folder_;
     
@@ -65,10 +47,6 @@ namespace JMail
             set
             {
                 from_ = value;
-                if (PropertyChanged != null)
-                {
-                    PropertyChanged(this, new PropertyChangedEventArgs("From"));
-                }
             }
         }
         public MailAddress ReplyTo { get; set; }
@@ -213,23 +191,11 @@ namespace JMail
             {
                 MessageId = value;
             }
-
-            if (PropertyChanged != null)
-            {
-                PropertyChanged(this, new PropertyChangedEventArgs(TextProcessing.CamelCase(field)));
-            }
         }
 
         public void ClearFlags()
         {
             flags_.Clear();
-
-            if (PropertyChanged != null)
-            {
-                PropertyChanged(this, new PropertyChangedEventArgs("UnRead"));
-                PropertyChanged(this, new PropertyChangedEventArgs("Deleted"));
-                PropertyChanged(this, new PropertyChangedEventArgs("Flagged"));
-            }
         }
 
         void SetFlag(MessageFlags flag, bool isSet)
@@ -242,22 +208,6 @@ namespace JMail
             {
                 flags_.Remove(flag);
             }
-
-            if (PropertyChanged != null)
-            {
-                if (flag == MessageFlags.Deleted)
-                {
-                    PropertyChanged(this, new PropertyChangedEventArgs("Deleted"));
-                }
-                else if (flag == MessageFlags.Seen)
-                {
-                    PropertyChanged(this, new PropertyChangedEventArgs("UnRead"));
-                }
-                else if (flag == MessageFlags.Flagged)
-                {
-                    PropertyChanged(this, new PropertyChangedEventArgs("Flagged"));
-                }
-            }
         }
 
         public void SetFlag(string flag)
@@ -269,10 +219,6 @@ namespace JMail
             else if (flag.Equals(MessageFlags.Deleted.ToString(), StringComparison.CurrentCultureIgnoreCase))
             {
                 flags_.Add(MessageFlags.Deleted);
-                if (PropertyChanged != null)
-                {
-                    PropertyChanged(this, new PropertyChangedEventArgs("Deleted"));
-                }
             }
             else if (flag.Equals(MessageFlags.Draft.ToString(), StringComparison.CurrentCultureIgnoreCase))
             {
@@ -281,11 +227,6 @@ namespace JMail
             else if (flag.Equals(MessageFlags.Flagged.ToString(), StringComparison.CurrentCultureIgnoreCase))
             {
                 flags_.Add(MessageFlags.Flagged);
-
-                if (PropertyChanged != null)
-                {
-                    PropertyChanged(this, new PropertyChangedEventArgs("Flagged"));
-                }
             }
             else if (flag.Equals(MessageFlags.Recent.ToString(), StringComparison.CurrentCultureIgnoreCase))
             {
@@ -294,11 +235,6 @@ namespace JMail
             else if (flag.Equals(MessageFlags.Seen.ToString(), StringComparison.CurrentCultureIgnoreCase))
             {
                 flags_.Add(MessageFlags.Seen);
-
-                if (PropertyChanged != null)
-                {
-                    PropertyChanged(this, new PropertyChangedEventArgs("UnRead"));
-                }
             }
         }
 
@@ -340,10 +276,6 @@ namespace JMail
             }
 
             attachments_.Add(b);
-            if (PropertyChanged != null)
-            {
-                PropertyChanged(this, new PropertyChangedEventArgs("HasAttachments"));
-            }
         }
 
         public void AddRelated(BodyPart b)
@@ -375,114 +307,5 @@ namespace JMail
                 folder_.Server.FetchMessage(this, FullMessage);
             }
         }
-
-        public MessageHeader Next(MainWindow view)
-        {
-            MessageHeader nextMsg = null;
-
-            if (view != null)
-            {
-                nextMsg = view.NextMessage(this);
-            }
-
-            if (nextMsg == null)
-            {
-                //nextMsg = Folder.FindNext(this);
-            }
-
-            if (nextMsg != null)
-            {
-                nextMsg.Fetch();
-            }
-
-            return nextMsg;
-        }
-
-        public MessageHeader Prev(MainWindow view)
-        {
-            MessageHeader nextMsg = null;
-
-            if (view != null)
-            {
-                nextMsg = view.PrevMessage(this);
-            }
-
-            if (nextMsg == null)
-            {
-                //nextMsg = Folder.FindPrev(this);
-            }
-            
-            if (nextMsg != null)
-            {
-                nextMsg.Fetch();
-            }
-
-            return nextMsg;
-        }
-
-        public bool IsLast(MainWindow view)
-        {
-            if (view != null)
-            {
-                return view.IsLastMessage(this);
-            }
-            else
-            {
-                return false;
-            }
-        }
-
-        public bool IsFirst(MainWindow view)
-        {
-            if (view != null)
-            {
-                return view.IsFirstMessage(this);
-            }
-            else
-            {
-                return false;
-            }
-        }
-
-        #region INotifyPropertyChanged Members
-
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        #endregion
-    }
-
-    public class AddressDisplay : System.Windows.Data.IValueConverter
-    {
-        #region IValueConverter Members
-
-        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
-        {
-            MailAddress addr = value as MailAddress;
-            if (addr == null)
-            {
-                return null;
-            }
-
-            if (targetType != typeof(string))
-            {
-                return null;
-            }
-
-            if (addr.DisplayName.Length > 0)
-            {
-                return addr.DisplayName;
-            }
-            else
-            {
-                return addr.Address;
-            }
-        }
-
-        public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
-        {
-            throw new NotImplementedException();
-        }
-
-        #endregion
     }
 }

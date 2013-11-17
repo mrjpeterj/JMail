@@ -8,7 +8,7 @@ using System.Net.Mime;
 
 namespace JMail
 {
-    public class BodyPart: INotifyPropertyChanged
+    public class BodyPart
     {
         private MessageHeader owner_;
         private string saveLocation_;
@@ -89,18 +89,10 @@ namespace JMail
                 string text = encoder.GetString(bytes);
 
                 text_ = ImapData.StripQuotes(text);
-                if (PropertyChanged != null)
-                {
-                    PropertyChanged(this, new PropertyChangedEventArgs("Text"));
-                }
             }
             else
             {
                 data_ = bytes;
-                if (PropertyChanged != null)
-                {
-                    PropertyChanged(this, new PropertyChangedEventArgs("Data"));
-                }
             }
         }
 
@@ -156,7 +148,6 @@ namespace JMail
 
             if (Text == null && Data == null)
             {
-                PropertyChanged += new PropertyChangedEventHandler((obj, e) => { SaveFile(saveComplete); });
                 owner_.Folder.Server.FetchMessage(owner_, this);
             }
             else
@@ -207,12 +198,6 @@ namespace JMail
                 saveComplete(this);
             }
         }
-
-        #region INotifyPropertyChanged Members
-
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        #endregion
     }
 
     internal class ImapBodyPart: BodyPart

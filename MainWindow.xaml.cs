@@ -25,11 +25,10 @@ namespace JMail
     {
         private System.Windows.Threading.DispatcherTimer poller_;
 
+        private MailView mailView_;
+
         public static System.Windows.Threading.Dispatcher MainDispatcher;
-
-        public IList<AccountInfo> Servers { get; private set; }
-        public FolderView CurrentFolder { get; private set; }
-
+        
         public MainWindow()
         {
             if (Properties.Settings.Default.Accounts == null)
@@ -37,11 +36,11 @@ namespace JMail
                 Properties.Settings.Default.Accounts = new AccountList();
             }
 
+            mailView_ = new MailView(Properties.Settings.Default.Accounts);
+
             MainDispatcher = Dispatcher;
 
-            Servers = Properties.Settings.Default.Accounts;
-
-            DataContext = this;
+            DataContext = mailView_;
             InitializeComponent();
 
             poller_ = new System.Windows.Threading.DispatcherTimer();
@@ -53,67 +52,48 @@ namespace JMail
 
         void PollServers(object sender, EventArgs e)
         {
-            foreach (var server in Servers)
-            {
-                if (server.Connection != null)
-                {
-                    server.Connection.Poll();
-                }
-            }
+            mailView_.Poll();
         }
 
         void OnLoaded(object sender, RoutedEventArgs e)
         {
-            if (Servers != null)
-            {
-                foreach (var s in Servers)
-                {
-                    s.Connect();
-                }
-            }
         }
 
         private void SelectFolder(object sender, RoutedEventArgs e)
         {
             var item = e.OriginalSource as TreeViewItem;
-            var folder = item.DataContext as Folder;
+            var folder = item.DataContext as FolderView;
 
-            if (u_MessageList.ItemsSource is MessageStore)
+            if (mailView_.CurrentFolder != null)
             {
-                ((MessageStore)u_MessageList.ItemsSource).CollectionChanged -= UpdateSorting;
+                mailView_.CurrentFolder.Messages.CollectionChanged -= UpdateSorting;
             }
 
-            if (CurrentFolder != null)
-            {
-                CurrentFolder.Folder.Expunge();
-            }
-
+            mailView_.Select(folder);
 
             if (folder != null)
             {
-                CurrentFolder = new FolderView(folder);
-                CurrentFolder.Select();
-
-                u_MessageList.DataContext = CurrentFolder;
-                CurrentFolder.Messages.CollectionChanged += UpdateSorting;
-
-                UpdateSorting(CurrentFolder.Messages, null);
-            }
-            else
-            {
-                CurrentFolder = null;
-                u_MessageList.DataContext = null;
+                folder.Messages.CollectionChanged += UpdateSorting;
             }
         }
 
         private void UpdateSorting(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    SortMessageList();
+                }
+            ));
+        }
+
+        private void SortMessageList()
         {
             // Make sure it updates the sorting of the list
             u_MessageList.Items.SortDescriptions.Clear();
             u_MessageList.Items.SortDescriptions.Add(new SortDescription("Sent", ListSortDirection.Ascending));
             u_MessageList.Items.SortDescriptions.Add(new SortDescription("id", ListSortDirection.Ascending));
 
-            if (u_MessageList.Items.Count == CurrentFolder.Messages.Count)
+            if (u_MessageList.Items.Count == mailView_.CurrentFolder.Messages.Count())
             {
                 // Update the column sizes now the messages are all in.
                 ResizeMessageColumns();
@@ -127,7 +107,7 @@ namespace JMail
 
         public MessageHeader NextMessage(MessageHeader current)
         {
-            if (current.Folder == CurrentFolder.Folder)
+            if (current.Folder == mailView_.CurrentFolder.Folder)
             {
                 int pos = u_MessageList.Items.IndexOf(current);
 
@@ -152,7 +132,7 @@ namespace JMail
 
         public bool IsLastMessage(MessageHeader current)
         {
-            if (current.Folder == CurrentFolder.Folder)
+            if (current.Folder == mailView_.CurrentFolder.Folder)
             {
                 int pos = u_MessageList.Items.IndexOf(current);
 
@@ -166,7 +146,7 @@ namespace JMail
 
         public MessageHeader PrevMessage(MessageHeader current)
         {
-            if (current.Folder == CurrentFolder.Folder)
+            if (current.Folder == mailView_.CurrentFolder.Folder)
             {
                 int pos = u_MessageList.Items.IndexOf(current);
 
@@ -190,7 +170,7 @@ namespace JMail
 
         public bool IsFirstMessage(MessageHeader current)
         {
-            if (current.Folder == CurrentFolder.Folder)
+            if (current.Folder == mailView_.CurrentFolder.Folder)
             {
                 int pos = u_MessageList.Items.IndexOf(current);
 
@@ -208,7 +188,7 @@ namespace JMail
             dialog.Owner = this;
             if (dialog.ShowDialog() == true)
             {
-                Servers.Add(dialog.Account);
+                mailView_.Servers.Add(dialog.Account);
 
                 Properties.Settings.Default.Save();
 
@@ -221,7 +201,7 @@ namespace JMail
             FrameworkElement ele = sender as FrameworkElement;
             AccountInfo acnt = ele.DataContext as AccountInfo;
 
-            Servers.Remove(acnt);
+            mailView_.Servers.Remove(acnt);
 
             Properties.Settings.Default.Save();
         }
@@ -234,8 +214,8 @@ namespace JMail
             AccountProps props = new AccountProps(acnt);
             if (props.ShowDialog() == true)
             {
-                Servers.Remove(acnt);
-                Servers.Add(acnt);
+                mailView_.Servers.Remove(acnt);
+                mailView_.Servers.Add(acnt);
 
                 Properties.Settings.Default.Save();
 
@@ -248,7 +228,7 @@ namespace JMail
             var ele = (System.Windows.FrameworkElement)sender;
             var host = ele.Parent as System.Windows.Controls.ContextMenu;
             var item = host.PlacementTarget as System.Windows.FrameworkElement;
-            var folder = item.DataContext as Folder;
+            var folder = item.DataContext as FolderView;
 
             var dlg = new Rename();
             dlg.Text = folder.Name;
@@ -266,19 +246,19 @@ namespace JMail
         {
             MessageHeader msg = u_MessageList.SelectedItem as MessageHeader;
 
-            if (CurrentFolder != null)
+            if (mailView_.CurrentFolder != null)
             {
-                CurrentFolder.CurrentMessage = msg;
+                mailView_.CurrentFolder.CurrentMessage = msg;
             }
         }
 
         private void OpenMessage(object sender, RoutedEventArgs e)
         {
-            MessageHeader msg = CurrentFolder.CurrentMessage;
+            MessageHeader msg = mailView_.CurrentFolder.CurrentMessage;
 
             msg.Fetch();
 
-            Message m = new Message();
+            Message m = new Message(mailView_.CurrentFolder);
             m.DataContext = msg;
 
             m.Owner = this;
@@ -392,7 +372,7 @@ namespace JMail
 
         private void MessageProps(object sender, RoutedEventArgs e)
         {
-            MessageHeader msg = CurrentFolder.CurrentMessage;
+            MessageHeader msg = mailView_.CurrentFolder.CurrentMessage;
             msg.FetchWhole();
 
             MessageProps props = new MessageProps();

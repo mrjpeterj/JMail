@@ -9,7 +9,7 @@
         <ResourceDictionary.MergedDictionaries>
             <ResourceDictionary Source="Style.xaml"/>
             <ResourceDictionary>
-                <HierarchicalDataTemplate DataType="{x:Type local:AccountInfo}" ItemsSource="{Binding Connection.FolderList}">
+                <HierarchicalDataTemplate DataType="{x:Type local:ServerView}" ItemsSource="{Binding Path=Folders}">
                   <TextBlock Text="{Binding Name}" MinWidth="100">
                     <TextBlock.ContextMenu>
                       <ContextMenu>
@@ -20,7 +20,7 @@
                   </TextBlock>
                 </HierarchicalDataTemplate>
                 
-                <HierarchicalDataTemplate DataType="{x:Type local:Folder}" ItemsSource="{Binding Children}" >
+                <HierarchicalDataTemplate DataType="{x:Type local:FolderView}" ItemsSource="{Binding Path=Folders}" >
                     <StackPanel Orientation="Horizontal">
                             <TextBlock Text="{Binding Name}" Padding="2">
                                 <TextBlock.ContextMenu>
@@ -50,7 +50,9 @@
                 <MenuItem Header="Create" Click="Account_Create"/>
             </MenuItem>
         </Menu>
-        <TreeView Grid.Column="0" Grid.Row="1" Name="u_FolderList" ItemsSource="{Binding Servers}" TreeViewItem.Selected="SelectFolder">
+        <TreeView Grid.Column="0" Grid.Row="1" Name="u_FolderList"
+                  ItemsSource="{Binding Servers}"
+                  TreeViewItem.Selected="SelectFolder">
             <TreeView.ItemContainerStyle>
                 <Style TargetType="TreeViewItem">
                     <Setter Property="IsExpanded" Value="True" />
@@ -58,8 +60,8 @@
             </TreeView.ItemContainerStyle>
         </TreeView>
 
-        <ListView Grid.Column="1" Grid.Row="1" Name="u_MessageList" Foreground="Black" 
-                  ItemsSource="{Binding Messages}" Selector.SelectionChanged="SelectMessage"
+        <ListView Grid.Column="1" Grid.Row="1" Name="u_MessageList" Foreground="Black"
+                  ItemsSource="{Binding Path=CurrentFolder.Messages}" Selector.SelectionChanged="SelectMessage"
                   SizeChanged="MessageListResized" KeyUp="KeyboardMessageControl">
             <ListView.ItemContainerStyle>
                 <Style TargetType="ListViewItem">

@@ -7,15 +7,15 @@ using System.ComponentModel;
 
 namespace JMail
 {
-    public class Folder: INotifyPropertyChanged
+    public class Folder
     {
         IAccount server_;
         string name_;
         string shortName_;
         string separator_;
 
-        ThreadedList<Folder> subFolders_;
-        MessageStore messages_;
+        List<Folder> subFolders_;
+        List<MessageHeader> messages_;
 
         bool canHaveMessages_;
 
@@ -45,11 +45,6 @@ namespace JMail
             set
             {
                 exists_ = value;
-
-                if (PropertyChanged != null)
-                {
-                    PropertyChanged(this, new PropertyChangedEventArgs("Exists"));
-                }
             }
         }
 
@@ -69,12 +64,6 @@ namespace JMail
             set
             {
                 unseen_ = value;
-
-                if (PropertyChanged != null)
-                {
-                    PropertyChanged(this, new PropertyChangedEventArgs("Unseen"));
-                    PropertyChanged(this, new PropertyChangedEventArgs("UnseenText"));
-                }                
             }
         }
 
@@ -95,7 +84,7 @@ namespace JMail
 
         public IAccount Server { get { return server_; } }
         public IList<Folder> Children { get { return subFolders_; } }
-        public MessageStore Messages { get { return messages_; } }
+        public IList<MessageHeader> Messages { get { return messages_; } }
 
         public Folder(IAccount server, string name, string shortName, string separator, bool hasChildren, bool canHaveMessages)
         {
@@ -106,19 +95,37 @@ namespace JMail
 
             if (hasChildren)
             {
-                subFolders_ = new ThreadedList<Folder>();
+                subFolders_ = new List<Folder>();
             }
 
             canHaveMessages_ = canHaveMessages;
             if (canHaveMessages)
             {
-                messages_ = new MessageStore();
+                messages_ = new List<MessageHeader>();
             }
         }
 
         public override string ToString()
         {
             return name_;
+        }
+
+        public MessageHeader MessageByID(int id)
+        {
+            var matches = from m in Messages
+                          where m.id == id
+                          select m;
+
+            return matches.FirstOrDefault();
+        }
+
+        public MessageHeader MessageByUID(int id)
+        {
+            var matches = from m in Messages
+                          where m.Uid == id
+                          select m;
+
+            return matches.FirstOrDefault();
         }
 
         public void Select()
@@ -159,11 +166,5 @@ namespace JMail
                 messages_.Remove(msg);
             }
         }
-
-        #region INotifyPropertyChanged Members
-
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        #endregion
     }
 }

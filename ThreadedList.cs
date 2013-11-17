@@ -17,12 +17,11 @@ namespace JMail
 
         List<NotifyCollectionChangedEventArgs> pending_;
 
-
         List<T> items_;
 
         public ThreadedList()
         {
-            dispatcher_ = MainWindow.MainDispatcher;
+            dispatcher_ = Dispatcher.FromThread(System.Threading.Thread.CurrentThread);
             updateTimer_ = new DispatcherTimer(new TimeSpan(0, 0, 1), DispatcherPriority.Background, FlushPending, dispatcher_);
             updateTimer_.IsEnabled = false;
 
