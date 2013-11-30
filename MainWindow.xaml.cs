@@ -498,7 +498,7 @@ namespace JMail
             culture = System.Globalization.CultureInfo.CurrentCulture;
 
             DateTime valueStr = (DateTime)value;
-            return valueStr.ToString(culture);
+            return valueStr.ToString(culture.DateTimeFormat.ShortDatePattern + " " + culture.DateTimeFormat.ShortTimePattern);
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
