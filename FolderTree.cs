@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 
@@ -43,7 +44,7 @@ namespace JMail
         }
     }
 
-    public class ServerView: INotifyCollectionChanged
+    public class ServerView: INotifyPropertyChanged
     {
         AccountInfo server_;
         IEnumerable<FolderView> folders_;
@@ -69,15 +70,15 @@ namespace JMail
             folders_ = from f in server_.Connection.FolderList
                        select new FolderView(f);
 
-            if (CollectionChanged != null)
+            if (PropertyChanged != null)
             {
-                CollectionChanged(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
+                PropertyChanged(this, new PropertyChangedEventArgs("Folders"));
             }
         }
 
-        #region INotifyCollectionChanged Members
+        #region INotifyPropertyChanged Members
 
-        public event NotifyCollectionChangedEventHandler CollectionChanged;
+        public event PropertyChangedEventHandler PropertyChanged;
 
         #endregion
     }
