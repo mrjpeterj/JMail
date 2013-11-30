@@ -10,8 +10,11 @@ namespace JMail
 {
     public class BodyPart
     {
+        public event EventHandler Updated;
+
         private MessageHeader owner_;
         private string saveLocation_;
+        private Action<BodyPart> saveCompletion_;
 
         private string text_;
         private byte[] data_;
@@ -94,6 +97,17 @@ namespace JMail
             {
                 data_ = bytes;
             }
+
+            if (Updated != null)
+            {
+                Updated(this, null);
+            }
+
+            if (saveLocation_ != null)
+            {
+                SaveFile(saveCompletion_);
+                saveCompletion_ = null;
+            }
         }
 
         public void Save(Action<BodyPart> saveComplete, string location = "")
@@ -148,7 +162,12 @@ namespace JMail
 
             if (Text == null && Data == null)
             {
+                saveCompletion_ = saveComplete;
+
                 owner_.Folder.Server.FetchMessage(owner_, this);
+                
+                // This will return into SetContent and then if saveLocation_ != null, SaveFile gets called to complete
+                // the task.
             }
             else
             {

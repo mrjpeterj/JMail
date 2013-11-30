@@ -32,8 +32,17 @@ namespace JMail
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             MessageHeader currentMessage = DataContext as MessageHeader;
+            currentMessage.Body.Updated += BodyUpdated;
 
             UpdateContent();
+        }
+
+        private void BodyUpdated(object sender, EventArgs e)
+        {
+            Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    UpdateContent();
+                }));
         }
 
         private void UpdateContent()
@@ -147,21 +156,20 @@ namespace JMail
             }
         }
 
-        private void BodyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
-        {
-            Dispatcher.BeginInvoke(new Action(() =>
-                {
-                    UpdateContent();
-                }));
-        }
-
         private void SaveAttachment(object sender, RoutedEventArgs e)
         {
             FrameworkElement ele = (FrameworkElement)sender;
 
             BodyPart part = ele.DataContext as BodyPart;
 
-            //part.Save();
+            var dlg = new Microsoft.Win32.SaveFileDialog();
+            dlg.FileName = part.Disposition.FileName;
+
+            if (dlg.ShowDialog() == true)
+            {
+                string location = dlg.FileName;
+                part.Save(null, location);
+            }
         }
 
         private void OpenAttachment(object sender, RoutedEventArgs e)
@@ -223,9 +231,16 @@ namespace JMail
 
             DataContext = nextMessage;
 
+            if (currentMessage != null)
+            {
+                currentMessage.Body.Updated -= BodyUpdated;
+            }
+
             if (nextMessage != null)
             {
                 UpdateContent();
+
+                nextMessage.Body.Updated += BodyUpdated;
             }
         }
 
@@ -236,9 +251,16 @@ namespace JMail
 
             DataContext = nextMessage;
 
+            if (currentMessage != null)
+            {
+                currentMessage.Body.Updated -= BodyUpdated;
+            }
+
             if (nextMessage != null)
             {
                 UpdateContent();
+
+                nextMessage.Body.Updated += BodyUpdated;
             }
         }
 
@@ -247,6 +269,11 @@ namespace JMail
             MessageHeader currentMessage = DataContext as MessageHeader;
             NextMessage(sender, null);
             currentMessage.Deleted = true;
+
+            if (currentMessage != null)
+            {
+                currentMessage.Body.Updated -= BodyUpdated;
+            }
 
             if (DataContext == null)
             {
