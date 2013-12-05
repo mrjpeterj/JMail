@@ -82,6 +82,8 @@ namespace JMail
             }
         }
 
+        public bool CanHaveMessages { get { return canHaveMessages_; } }
+
         public IAccount Server { get { return server_; } }
         public IList<Folder> Children { get { return subFolders_; } }
         public IList<MessageHeader> Messages { get { return messages_; } }

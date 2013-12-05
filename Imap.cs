@@ -67,7 +67,10 @@ namespace JMail
         private List<Folder> allFolders_;
         private List<Folder> folders_;
 
-        private Folder currentFolder_;       
+        private Folder currentFolder_;
+
+        private bool supportsIdle_;
+        private bool idling_;
 
         public Imap(AccountInfo account)
         {
@@ -81,6 +84,8 @@ namespace JMail
 
             allFolders_ = new List<Folder>();
             folders_ = new List<Folder>();
+
+            supportsIdle_ = false;
 
             try
             {
@@ -172,6 +177,7 @@ namespace JMail
                         }
                         else if (result == "BAD")
                         {
+                            int a = 0;
                         }
 
                         request.Process(currentCommand_);
@@ -221,8 +227,12 @@ namespace JMail
                 // Remember whether the last token in the split was a complete one,
                 // so that we know whether to append to it in the next round.
 
-
                 lastTokenIsComplete_ = lastIsComplete;
+            }
+            else if (idling_ && currentCommand_.Any())
+            {
+                // IDLE doesn't have a completion command until it kicks you off the end.
+                UpdateStatus(null, currentCommand_, null);
             }
         }
 
@@ -238,6 +248,20 @@ namespace JMail
 
         void SendCommand(string command, string args, ImapRequest.ResponseHandler handler, object data = null)
         {
+            if (idling_)
+            {
+                idling_ = false;
+
+                // Need to terminate the idle first.
+                string endIdle = "DONE\r\n";
+
+                byte[] bytes = encoder_.GetBytes(endIdle);
+
+                stream_.Write(bytes, 0, bytes.Length);
+                stream_.Flush();
+            }
+
+
             string commandId = NextCommand();
 
             var request = new ImapRequest(commandId, command, args, handler, data);
@@ -290,6 +314,11 @@ namespace JMail
 
         void HandleCaps(ImapRequest request, IEnumerable<string> resultData, object data)
         {
+            if (resultData.Contains("IDLE"))
+            {
+                supportsIdle_ = true;
+            }
+
             // Looks like 
             // * CAPABILITY <cap1> <cap2> <cap3>
             if (resultData.Contains("STARTTLS"))
@@ -1057,6 +1086,11 @@ namespace JMail
             }
         }
 
+        void IdleComplete(ImapRequest req, IEnumerable<string> data, object state)
+        {
+            idling_ = false;
+        }
+
         #region IAccount Members
 
         public event EventHandler FoldersChanged;
@@ -1151,7 +1185,26 @@ namespace JMail
 
         public void Poll()
         {
-            SendCommand("NOOP", "", UpdateStatus, currentFolder_);
+            if (supportsIdle_ == false)
+            {
+                if (currentFolder_ != null)
+                {
+                    SendCommand("NOOP", "", UpdateStatus, currentFolder_);
+                }
+
+                foreach (var folder in AllFolders)
+                {
+                    if (folder.CanHaveMessages)
+                    {
+                        CheckUnseen(folder);
+                    }
+                }
+            }
+            else if (currentFolder_ != null && idling_ == false)
+            {
+                SendCommand("IDLE", "", IdleComplete, currentFolder_);
+                idling_ = true;
+            }
         }
 
         #endregion
