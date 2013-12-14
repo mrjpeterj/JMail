@@ -3,8 +3,8 @@
                     xmlns:local="clr-namespace:JMail"
                     >
     <Style TargetType="{x:Type Window}" x:Key="BaseStyle">
-        <Setter Property="FontFamily" Value="Arial" />
-        <Setter Property="FontStretch" Value="SemiExpanded" />
+        <Setter Property="FontFamily" Value="Segoe UI" />
+        <Setter Property="FontWeight" Value="Normal" />
     </Style>
 
     <Style TargetType="TextBox" x:Key="PlainTextStyle">
