@@ -138,6 +138,14 @@ namespace JMail
             }
         }
 
+        public void Unselect()
+        {
+            if (canHaveMessages_)
+            {
+                server_.UnselectFolder(this);
+            }            
+        }
+
         public void Rename(string newName)
         {
             string newFullName = FullName.Replace(Name, "") + newName;

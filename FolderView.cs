@@ -88,6 +88,16 @@ namespace JMail
             Folder.Select();
         }
 
+        public void Unselect()
+        {
+            Folder.Unselect();
+        }
+
+        public void Expunge()
+        {
+            Folder.Expunge();
+        }
+
         public void Refresh()
         {
             messages_.Refresh();

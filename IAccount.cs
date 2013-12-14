@@ -25,6 +25,7 @@ namespace JMail
 
         // Actions on folders
         void SelectFolder(Folder f);
+        void UnselectFolder(Folder f);
         void RenameFolder(string oldName, string newName);
         void SubscribeFolder(string folderName);
         
@@ -34,6 +35,6 @@ namespace JMail
         void ExpungeFolder();        
 
         // General server actions
-        void Poll();
+        void PollFolders();
     }
 }

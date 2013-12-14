@@ -72,6 +72,8 @@ namespace JMail
         private bool supportsIdle_;
         private bool idling_;
 
+        private System.Timers.Timer folderCheckTimer_;
+
         public Imap(AccountInfo account)
         {
             account_ = account;
@@ -86,6 +88,9 @@ namespace JMail
             folders_ = new List<Folder>();
 
             supportsIdle_ = false;
+
+            folderCheckTimer_ = new System.Timers.Timer(30 * 1000);
+            folderCheckTimer_.Elapsed += CheckCurrent;
 
             try
             {
@@ -234,6 +239,17 @@ namespace JMail
                 // IDLE doesn't have a completion command until it kicks you off the end.
                 UpdateStatus(null, currentCommand_, null);
             }
+
+            if (idling_ && pendingResponses_.Any())
+            {
+                // The IDLE command can end up expecting a response, when it doesn't get one.
+            }
+            
+            if (!pendingRequests_.Any() && !pendingResponses_.Any() && 
+                !folderCheckTimer_.Enabled && currentFolder_ != null)
+            {
+                folderCheckTimer_.Start();
+            }
         }
 
         string NextCommand()
@@ -248,6 +264,12 @@ namespace JMail
 
         void SendCommand(string command, string args, ImapRequest.ResponseHandler handler, object data = null)
         {
+            if (folderCheckTimer_.Enabled)
+            {
+                // We are off to do some other requests, so don't run the folder updater.
+                folderCheckTimer_.Stop();
+            }
+
             if (idling_)
             {
                 idling_ = false;
@@ -1091,6 +1113,25 @@ namespace JMail
             idling_ = false;
         }
 
+        void CheckCurrent(object state, EventArgs e)
+        {
+            if (currentFolder_ != null)
+            {
+                if (supportsIdle_ && !idling_)
+                {
+                    SendCommand("IDLE", "", IdleComplete, currentFolder_);
+                    idling_ = true;
+                }
+                else
+                {
+                    SendCommand("NOOP", "", UpdateStatus, currentFolder_);
+
+                    // We have to poll in this case, to start the timer again.
+                    folderCheckTimer_.Start();
+                }
+            }
+        }
+
         #region IAccount Members
 
         public event EventHandler FoldersChanged;
@@ -1110,6 +1151,16 @@ namespace JMail
         {
             currentFolder_ = f;
             SendCommand("SELECT", "\"" + f.FullName + "\"", SelectedFolder);
+        }
+
+        public void UnselectFolder(Folder f)
+        {
+            if (currentFolder_ == f)
+            {
+                currentFolder_ = null;
+
+                folderCheckTimer_.Stop();
+            }
         }
 
         public void RenameFolder(string oldName, string newName)
@@ -1183,27 +1234,14 @@ namespace JMail
             SendCommand("EXPUNGE", "", UpdateStatus, currentFolder_);
         }
 
-        public void Poll()
+        public void PollFolders()
         {
-            if (supportsIdle_ == false)
+            foreach (var folder in AllFolders)
             {
-                if (currentFolder_ != null)
+                if (folder.CanHaveMessages)
                 {
-                    SendCommand("NOOP", "", UpdateStatus, currentFolder_);
+                    CheckUnseen(folder);
                 }
-
-                foreach (var folder in AllFolders)
-                {
-                    if (folder.CanHaveMessages)
-                    {
-                        CheckUnseen(folder);
-                    }
-                }
-            }
-            else if (currentFolder_ != null && idling_ == false)
-            {
-                SendCommand("IDLE", "", IdleComplete, currentFolder_);
-                idling_ = true;
             }
         }
 

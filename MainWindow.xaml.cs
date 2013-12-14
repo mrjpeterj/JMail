@@ -44,7 +44,7 @@ namespace JMail
             InitializeComponent();
 
             poller_ = new System.Windows.Threading.DispatcherTimer();
-            poller_.Interval = new TimeSpan(0, 0, 20);
+            poller_.Interval = new TimeSpan(0, 10, 0);
             poller_.Tick += PollServers;
 
             poller_.Start();

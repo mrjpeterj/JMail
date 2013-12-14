@@ -31,7 +31,7 @@ namespace JMail
             {
                 if (server.Server != null)
                 {
-                    server.Server.Poll();
+                    server.Server.PollFolders();
                 }
             }
         }
@@ -40,7 +40,8 @@ namespace JMail
         {
             if (CurrentFolder != null)
             {
-                CurrentFolder.Folder.Expunge();
+                CurrentFolder.Expunge();
+                CurrentFolder.Unselect();
             }
 
             CurrentFolder = folder;
