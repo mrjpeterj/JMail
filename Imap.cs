@@ -616,6 +616,8 @@ namespace JMail
                 string info = responseData[3];
                 var infoData = ImapData.SplitToken(info);
 
+                bool changed = false;
+
                 for (int i = 0; i < infoData.Length; i = i + 2) 
                 {
                     string key = infoData[i];
@@ -627,18 +629,38 @@ namespace JMail
 
                         if (key == "UNSEEN")
                         {
+                            if (folder.Unseen != value)
+                            {
+                                changed = true;
+                            }
+
                             folder.Unseen = value;
                         }
                         else if (key == "MESSAGES")
                         {
+                            if (folder.Exists != value)
+                            {
+                                changed = true;
+                            }
+
                             folder.Exists = value;
                         }
                         else if (key == "RECENT")
                         {
+                            if (folder.Recent != value)
+                            {
+                                changed = true;
+                            }
+
                             folder.Recent = value;
                         }
                     }
                     catch (FormatException) { }
+                }
+
+                if (changed && MessagesChanged != null)
+                {
+                    MessagesChanged(this, new MessagesChangedEventArgs(folder));
                 }
             }            
         }

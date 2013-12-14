@@ -67,21 +67,6 @@ namespace JMail
             }
         }
 
-        public string UnseenText
-        {
-            get
-            {
-                if (Unseen == 0)
-                {
-                    return string.Empty;
-                }
-                else
-                {
-                    return "(" + Unseen + ")";
-                }
-            }
-        }
-
         public bool CanHaveMessages { get { return canHaveMessages_; } }
 
         public IAccount Server { get { return server_; } }

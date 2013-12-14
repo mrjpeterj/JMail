@@ -14,15 +14,6 @@ namespace JMail
         public MailView(AccountList accounts)
         {
             Servers = new FolderTree(accounts);
-
-            foreach (var server in Servers)
-            {
-                if (server.Server != null)
-                {
-                    server.Server.MessagesChanged += DirtyFolder;
-                }
-            }
-
         }
 
         public void Poll()
@@ -54,14 +45,6 @@ namespace JMail
             if (PropertyChanged != null)
             {
                 PropertyChanged(this, new PropertyChangedEventArgs("CurrentFolder"));
-            }
-        }
-
-        void DirtyFolder(object sender, MessagesChangedEventArgs e)
-        {
-            if (CurrentFolder.Folder == e.Folder)
-            {
-                CurrentFolder.Refresh();
             }
         }
 

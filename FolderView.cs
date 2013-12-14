@@ -30,6 +30,8 @@ namespace JMail
 
     public class FolderView: INotifyPropertyChanged
     {
+        private bool selected_;
+
         private MessageList messages_;
         private MessageHeader currentMessage_;
 
@@ -68,7 +70,20 @@ namespace JMail
 
         public string Name { get { return Folder.Name; } }
 
-        public string UnseenText { get { return Folder.UnseenText; } }
+        public string UnseenText
+        {
+            get
+            {
+                if (Folder.Unseen == 0)
+                {
+                    return string.Empty;
+                }
+                else
+                {
+                    return "(" + Folder.Unseen + ")";
+                }
+            }
+        }
         
         public FolderView(Folder f)
         {
@@ -81,15 +96,21 @@ namespace JMail
             }
 
             messages_ = new MessageList(f);
+
+            f.Server.MessagesChanged += Refresh;
         }
 
         public void Select()
         {
+            selected_ = true;
+
             Folder.Select();
         }
 
         public void Unselect()
         {
+            selected_ = false;
+
             Folder.Unselect();
         }
 
@@ -98,9 +119,17 @@ namespace JMail
             Folder.Expunge();
         }
 
-        public void Refresh()
+        public void Refresh(object sender, MessagesChangedEventArgs e)
         {
-            messages_.Refresh();
+            if (e.Folder != Folder)
+            {
+                return;
+            }
+
+            if (selected_)
+            {
+                messages_.Refresh();
+            }
 
             ReportChange();
         }
@@ -196,6 +225,8 @@ namespace JMail
                 PropertyChanged(this, new PropertyChangedEventArgs("IsRead"));
                 PropertyChanged(this, new PropertyChangedEventArgs("IsNotDeleted"));
                 PropertyChanged(this, new PropertyChangedEventArgs("IsDeleted"));
+
+                PropertyChanged(this, new PropertyChangedEventArgs("UnseenText"));
             }
         }
 
