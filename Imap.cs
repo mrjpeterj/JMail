@@ -92,23 +92,27 @@ namespace JMail
             folderCheckTimer_ = new System.Timers.Timer(30 * 1000);
             folderCheckTimer_.Elapsed += CheckCurrent;
 
+            incoming_ = new byte[8 * 1024];
+        }
+
+        void Connect()
+        {
+            System.Diagnostics.Debug.WriteLine("Attempting connect to " + account_.Host);
+
             try
             {
-                client_ = new TcpClient(account.Host, account.Port);
+                client_ = new TcpClient(account_.Host, account_.Port);
             } catch (SocketException e)
             {
                 return;
             }
-
 
             if (client_.Connected)
             {
                 state_ = ImapState.Connected;
                 stream_ = client_.GetStream();
 
-                incoming_ = new byte[8 * 1024];
-
-                if (account.Encrypt)
+                if (account_.Encrypt)
                 {
                     var sslStream = new System.Net.Security.SslStream(client_.GetStream(), false,
                         new System.Net.Security.RemoteCertificateValidationCallback(GotRemoteCert));
@@ -123,7 +127,25 @@ namespace JMail
 
         void HandleRead(IAsyncResult res)
         {
-            int bytesRead = stream_.EndRead(res);
+            int bytesRead = 0;
+
+            try
+            {
+                bytesRead = stream_.EndRead(res);
+            }
+            catch (System.IO.IOException)
+            {
+                // Socket read failure.
+                // Reconnect.
+
+                stream_.Close();
+                client_.Close();
+
+                state_ = ImapState.None;
+
+                Connect();
+                return;
+            }
 
             if (bytesRead > 0)
             {
