@@ -93,6 +93,8 @@ namespace JMail
             folderCheckTimer_.Elapsed += CheckCurrent;
 
             incoming_ = new byte[8 * 1024];
+
+            Connect();
         }
 
         void Connect()
