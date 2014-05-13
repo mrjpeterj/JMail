@@ -300,6 +300,9 @@ namespace JMail
             }
         }
 
+        // Encoded text is of the form:
+        //
+        // =?charset?encoding?encoded_text?=
         public static string DecodeWord(string input)
         {
             while (true)
@@ -310,7 +313,19 @@ namespace JMail
                     break;
                 }
 
-                int encodingEnd = input.IndexOf("?=", encodingStart);
+                int charsetEnd = input.IndexOf("?", encodingStart + 2);
+                if (charsetEnd < 0)
+                {
+                    break;
+                }
+
+                int encEnd = input.IndexOf("?", charsetEnd + 1);
+                if (encEnd < 0)
+                {
+                    break;
+                }
+
+                int encodingEnd = input.IndexOf("?=", encEnd + 1);
                 if (encodingEnd < 0)
                 {
                     break;
@@ -321,14 +336,9 @@ namespace JMail
                     encodingEnd += 2;
                 }
 
-                string encoded = input.Substring(encodingStart, encodingEnd - encodingStart);
-
-
-                string[] pieces = encoded.Split(new char[] { '?' });
-                string charset = pieces[1];
-                string encoding = pieces[2];
-
-                string rest = string.Join("?", pieces.ToList().GetRange(3, pieces.Length - 4));
+                string charset = input.Substring(encodingStart + 2, charsetEnd - encodingStart - 2);
+                string encoding = input.Substring(charsetEnd + 1, encEnd - charsetEnd - 1);
+                string rest = input.Substring(encEnd + 1, encodingEnd - encEnd - 3);
                 byte[] data;
 
                 if (encoding == "B")
