@@ -282,7 +282,9 @@ namespace JMail
             {
                 ++cmdId_;
 
-                return string.Format("__XX__X_{0:D4}", cmdId_);
+                string accountName = account_.Name.Replace(' ', '_');                
+
+                return string.Format("__{1}__X_{0:D4}", cmdId_, accountName);
             }
         }
 
@@ -704,6 +706,17 @@ namespace JMail
         {
             // Each line is of the form:
             // * SEARCH <list of ids>
+
+            if (currentFolder_ == null)
+            {
+                // Got out of sync somewhere.
+
+                // TODO: This can happen when we expunge a folder on leaving it, which
+                // then wrongly causes a refresh on the folder, even though we no longer care
+                // about it.
+
+                return;
+            }
 
             List<int> msgIds = new List<int>();
 
@@ -1165,6 +1178,11 @@ namespace JMail
             {
                 if (supportsIdle_ && !idling_)
                 {
+                    // Check the current status first before going into
+                    // idle otherwise things that happened since the
+                    // previous poll won't get noticed.
+                    SendCommand("NOOP", "", UpdateStatus, currentFolder_);
+
                     SendCommand("IDLE", "", IdleComplete, currentFolder_);
                     idling_ = true;
                 }
