@@ -84,15 +84,15 @@
             </ListView.ItemContainerStyle>
             <ListView.ContextMenu>
                 <ContextMenu>
-                    <MenuItem Header="Open" FontWeight="Bold" IsEnabled="{Binding IsMessage}" Click="OpenMessage" />
+                    <MenuItem Header="Open" FontWeight="Bold" IsEnabled="{Binding CurrentFolder.IsMessage}" Click="OpenMessage" />
                     <Separator />
-                    <MenuItem Header="Mark as Read" IsEnabled="{Binding IsUnread}" Click="MessageRead" />
-                    <MenuItem Header="Mark as Unread" IsEnabled="{Binding IsRead}" Click="MessageUnread" />
+                    <MenuItem Header="Mark as Read" IsEnabled="{Binding CurrentFolder.IsUnread}" Click="MessageRead" />
+                    <MenuItem Header="Mark as Unread" IsEnabled="{Binding CurrentFolder.IsRead}" Click="MessageUnread" />
                     <Separator />
-                    <MenuItem Header="Delete" IsEnabled="{Binding IsNotDeleted}" Click="MessageDelete" />
-                    <MenuItem Header="Undelete" IsEnabled="{Binding IsDeleted}" Click="MessageUndelete" />
+                    <MenuItem Header="Delete" IsEnabled="{Binding CurrentFolder.IsNotDeleted}" Click="MessageDelete" />
+                    <MenuItem Header="Undelete" IsEnabled="{Binding CurrentFolder.IsDeleted}" Click="MessageUndelete" />
                     <Separator />
-                    <MenuItem Header="Properties" IsEnabled="{Binding IsMessage}" Click="MessageProps" />
+                    <MenuItem Header="Properties" IsEnabled="{Binding CurrentFolder.IsMessage}" Click="MessageProps" />
                 </ContextMenu>
             </ListView.ContextMenu>
             <ListView.View>

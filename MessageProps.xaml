@@ -4,7 +4,7 @@
         Title="MessageProps" Height="500" Width="500">
     <DockPanel>
         <ScrollViewer HorizontalScrollBarVisibility="Auto">
-            <TextBlock Text="{Binding FullMessage.Text}" FontFamily="Consolas" />
+            <TextBlock Name="u_body" FontFamily="Consolas" />
         </ScrollViewer>
     </DockPanel>
 </Window>

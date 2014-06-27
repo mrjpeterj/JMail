@@ -375,9 +375,7 @@ namespace JMail
             MessageHeader msg = mailView_.CurrentFolder.CurrentMessage;
             msg.FetchWhole();
 
-            MessageProps props = new MessageProps();
-            props.DataContext = msg;
-            props.Owner = this;
+            MessageProps props = new MessageProps(msg, this);
             props.Show();
         }
 

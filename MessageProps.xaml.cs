@@ -18,9 +18,26 @@ namespace JMail
     /// </summary>
     public partial class MessageProps: Window
     {
-        public MessageProps()
+        MessageHeader msg_;
+
+        public MessageProps(MessageHeader msg, Window owner)
         {
+            msg_ = msg;
+            Owner = owner;
+
+            msg.FullMessage.Updated += BodyUpdated;
+
             InitializeComponent();
+
+            u_body.Text = msg_.FullMessage.Text;
+        }
+
+        void BodyUpdated(object sender, EventArgs e)
+        {
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                u_body.Text = msg_.FullMessage.Text;
+            }));
         }
     }
 }
