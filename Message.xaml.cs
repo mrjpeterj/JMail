@@ -110,6 +110,22 @@ namespace JMail
                     }
                 }
             }
+            else
+            {
+                // TODO: Check that this is correct.
+
+                if (content_.Child != null)
+                {
+                    IDisposable disposableChild = content_.Child as IDisposable;
+
+                    if (disposableChild != null)
+                    {
+                        disposableChild.Dispose();
+                    }
+
+                    content_.Child = null;
+                }
+            }
         }
 
         void htmlText_Navigating(object sender, System.Windows.Forms.WebBrowserNavigatingEventArgs e)
