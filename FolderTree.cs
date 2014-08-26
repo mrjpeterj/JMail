@@ -17,30 +17,27 @@ namespace JMail
 
             foreach (var info in servers)
             {
-                Add(info);
+                base.Add(new ServerView(info));
             }
         }
 
         public void Add(AccountInfo info)
         {
-            infos_.Add(info);
-
-            var view = new ServerView(info);
-            //view.CollectionChanged += UpdateCollection;
-            Add(view);
+            Add(new ServerView(info));
         }
 
-        public void Remove(AccountInfo info)
+        public new void Add(ServerView srv)
         {
-            infos_.Remove(info);
+            infos_.Add(srv.Info);
 
-            var view = (from v in this
-                        where v.Info == info
-                        select v).SingleOrDefault();
-            if (view != null)
-            {
-                Remove(view);
-            }
+            base.Add(srv);
+        }
+
+        public new void Remove(ServerView srv)
+        {
+            infos_.Remove(srv.Info);
+
+            base.Remove(srv);
         }
     }
 

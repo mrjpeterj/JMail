@@ -199,7 +199,7 @@ namespace JMail
         private void Account_Delete(object sender, RoutedEventArgs e)
         {
             FrameworkElement ele = sender as FrameworkElement;
-            AccountInfo acnt = ele.DataContext as AccountInfo;
+            ServerView acnt = ele.DataContext as ServerView;
 
             mailView_.Servers.Remove(acnt);
 
@@ -209,9 +209,9 @@ namespace JMail
         private void Account_Edit(object sender, RoutedEventArgs e)
         {
             FrameworkElement ele = sender as FrameworkElement;
-            AccountInfo acnt = ele.DataContext as AccountInfo;
+            ServerView acnt = ele.DataContext as ServerView;
 
-            AccountProps props = new AccountProps(acnt);
+            AccountProps props = new AccountProps(acnt.Info);
             if (props.ShowDialog() == true)
             {
                 mailView_.Servers.Remove(acnt);
@@ -219,7 +219,7 @@ namespace JMail
 
                 Properties.Settings.Default.Save();
 
-                acnt.Connect();
+                acnt.Info.Connect();
             }
         }
 
