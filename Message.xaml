@@ -30,7 +30,7 @@
                 <MenuItem.Header>
                     <StackPanel>
                         <Image Source="/JMail;component/Images/prev.png" Stretch="None" />
-                        <Label Padding="4">Prev</Label>
+                        <TextBlock HorizontalAlignment="Center">Prev</TextBlock>
                     </StackPanel>
                 </MenuItem.Header>
             </MenuItem>
@@ -38,7 +38,7 @@
                 <MenuItem.Header>
                     <StackPanel>
                         <Image Source="/JMail;component/Images/next.png" Stretch="None" />
-                        <Label Padding="4">Next</Label>
+                        <TextBlock HorizontalAlignment="Center">Next</TextBlock>
                     </StackPanel>
                 </MenuItem.Header>                
             </MenuItem>
@@ -46,8 +46,8 @@
             <MenuItem Command="NavigationCommands.BrowseStop" Padding="0">
                 <MenuItem.Header>
                     <StackPanel>
-                        <Image Source="/JMail;component/Images/delete.png"  Stretch="None"/>
-                        <Label Padding="4">Delete</Label>
+                        <Image Source="/JMail;component/Images/delete.png"  Stretch="Uniform" Width="32" Height="32"/>
+                        <TextBlock HorizontalAlignment="Center">Delete</TextBlock>
                     </StackPanel>
                 </MenuItem.Header>                
             </MenuItem>
