@@ -99,6 +99,9 @@ namespace JMail
 
         void Connect()
         {
+            // On reconnect, we might have requests in the pending queue that prevent the connect from happen.
+            // We need to find a solution for this.
+
             System.Diagnostics.Debug.WriteLine("Attempting connect to " + account_.Host);
 
             try
@@ -163,7 +166,7 @@ namespace JMail
         {
             System.Diagnostics.Debug.WriteLine(">>>>>>>> " + account_.Host + " <<<<<<<");
             System.Diagnostics.Debug.Write(responseText);
-            System.Diagnostics.Debug.WriteLine("<<<<<<<<");
+            System.Diagnostics.Debug.WriteLine("========");
 
             if (!lastTokenIsComplete_)
             {
@@ -243,11 +246,15 @@ namespace JMail
                         StartUp();
                         currentCommand_.Clear();
                         return;
-                    }                    
+                    }
                     else if (currentCommand_.Any() || response == "*")
                     {
                         currentCommand_.Add(response);
                     }
+                }
+                else
+                {
+                    currentCommand_.Add(response);
                 }
             }
 
