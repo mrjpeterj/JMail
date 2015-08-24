@@ -263,6 +263,7 @@ namespace JMail
 
             m.Owner = this;
             m.Show();
+            m.Focus();
         }
 
         private void KeyboardMessageControl(object sender, KeyEventArgs e)

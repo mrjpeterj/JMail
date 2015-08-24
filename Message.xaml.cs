@@ -109,6 +109,9 @@ namespace JMail
                         htmlText.DocumentText = currentMessage.Body.Text;
                     }
                 }
+
+                // Now mark the message as read
+                currentMessage.UnRead = false;
             }
             else
             {
