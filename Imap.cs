@@ -25,6 +25,7 @@ namespace JMail
         string id_;
         string commandName_;
         string args_;
+        DateTime requestStart_;
         ResponseHandler response_;
 
         object data_;
@@ -32,12 +33,14 @@ namespace JMail
         public string Key { get { return id_; } }
         public string Command { get { return commandName_; } }
         public string Args { get { return args_; } }
+        public DateTime RequestStart { get { return requestStart_; } }
 
         public ImapRequest(string id, string commandName, string args, ResponseHandler handler, object data)
         {
             id_ = id;
             commandName_ = commandName;
             args_ = args;
+            requestStart_ = DateTime.Now;
             response_ = handler;
             data_ = data;
         }
@@ -279,7 +282,7 @@ namespace JMail
             if (!pendingRequests_.Any() && !pendingResponses_.Any() && 
                 !folderCheckTimer_.Enabled && currentFolder_ != null)
             {
-                folderCheckTimer_.Start();
+                CheckCurrent(this, null);
             }
         }
 
