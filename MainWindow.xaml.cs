@@ -59,6 +59,14 @@ namespace JMail
         {
         }
 
+        void OnClosed(object sender, EventArgs e)
+        {
+            // Unselect the folder, so that we clean up 
+            mailView_.Select(null);
+
+            mailView_.Shutdown();
+        }
+
         private void SelectFolder(object sender, RoutedEventArgs e)
         {
             var item = e.OriginalSource as TreeViewItem;

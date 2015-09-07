@@ -44,5 +44,6 @@ namespace JMail
 
         // General server actions
         void PollFolders();
+        void Shutdown();
     }
 }

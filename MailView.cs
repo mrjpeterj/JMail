@@ -27,6 +27,17 @@ namespace JMail
             }
         }
 
+        public void Shutdown()
+        {
+            foreach (var server in Servers)
+            {
+                if (server.Server != null)
+                {
+                    server.Server.Shutdown();
+                }
+            }
+        }
+
         public void Select(FolderView folder)
         {
             if (CurrentFolder != null)

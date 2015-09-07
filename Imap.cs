@@ -154,6 +154,15 @@ namespace JMail
                 Connect();
                 return;
             }
+            catch (System.ObjectDisposedException)
+            {
+                // Most likely shutdown happened
+
+                state_ = ImapState.None;
+
+                return;
+            }
+
 
             if (bytesRead > 0)
             {
@@ -1316,6 +1325,32 @@ namespace JMail
                 {
                     CheckUnseen(folder);
                 }
+            }
+        }
+
+        public void Shutdown()
+        {
+            // Try to shutdown cleanly for 10s
+
+            for (int i = 0; i < 10; ++i)
+            {
+                if (!pendingRequests_.Any() && !pendingResponses_.Any())
+                {
+                    try
+                    {
+                        stream_.Close();
+                        client_.Close();
+                    }
+                    catch (Exception)
+                    {
+                    }
+
+                    state_ = ImapState.None;
+
+                    break;
+                }
+
+                System.Threading.Thread.Sleep(1000);
             }
         }
 
