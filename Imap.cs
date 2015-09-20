@@ -247,7 +247,7 @@ namespace JMail
                         }
                     }
                 }
-                
+
                 // match it to the request command of this name.
                 pendingResponses_.TryGetValue(response, out request);
 
@@ -258,7 +258,7 @@ namespace JMail
                         StartUp();
                         currentCommand_.Clear();
                         return;
-                    }
+                    }                  
                     else if (currentCommand_.Any() || response == "*")
                     {
                         currentCommand_.Add(response);
@@ -287,8 +287,8 @@ namespace JMail
             {
                 // The IDLE command can end up expecting a response, when it doesn't get one.
             }
-            
-            if (!pendingRequests_.Any() && !pendingResponses_.Any() && 
+
+            if (!pendingRequests_.Any() && !pendingResponses_.Any() &&
                 !folderCheckTimer_.Enabled && currentFolder_ != null)
             {
                 CheckCurrent(this, null);
@@ -301,7 +301,7 @@ namespace JMail
             {
                 ++cmdId_;
 
-                string accountName = account_.Name.Replace(' ', '_');                
+                string accountName = account_.Name.Replace(' ', '_');
 
                 return string.Format("__{1}__X_{0:D4}", cmdId_, accountName);
             }
@@ -340,6 +340,21 @@ namespace JMail
             }
         }
 
+        void SendRawResponse(string response)
+        {
+            System.Diagnostics.Debug.WriteLine("++++++++");
+            System.Diagnostics.Debug.WriteLine(response);
+            System.Diagnostics.Debug.WriteLine("++++++++");
+
+            response += "\r\n";
+
+
+            byte[] bytes = encoder_.GetBytes(response);
+
+            stream_.Write(bytes, 0, bytes.Length);
+            stream_.Flush();
+        }
+
         void ProcessPending()
         {
             if (!pendingRequests_.Any())
@@ -354,19 +369,11 @@ namespace JMail
             {
                 cmd += " " + request.Args;
             }
-            
-            System.Diagnostics.Debug.WriteLine("++++++++");
-            System.Diagnostics.Debug.WriteLine(cmd);
-            System.Diagnostics.Debug.WriteLine("++++++++");            
-
-            cmd += "\r\n";
 
             pendingResponses_[request.Key] = request;
 
-            byte[] bytes = encoder_.GetBytes(cmd);
 
-            stream_.Write(bytes, 0, bytes.Length);
-            stream_.Flush();
+            SendRawResponse(cmd);
         }
 
         void StartUp()
@@ -422,7 +429,21 @@ namespace JMail
 
         void Login()
         {
-            SendCommand("LOGIN", account_.Username + " " + account_.GetPassword(), HandleLogin);
+            SendCommand("AUTHENTICATE", "PLAIN", HandleAuth);
+
+            string response = '\0' + account_.Username + '\0' + account_.GetPassword();
+
+            string encResponse = Convert.ToBase64String(Encoding.UTF8.GetBytes(response));
+
+            SendRawResponse(encResponse);
+
+            //SendCommand("LOGIN", account_.Username + " " + account_.GetPassword(), HandleLogin);
+        }
+
+        void HandleAuth(ImapRequest request, IEnumerable<string> resultData, object data)
+        {
+            state_ = ImapState.LoggedIn;
+            ListFolders();
         }
 
         void HandleLogin(ImapRequest request, IEnumerable<string> resultData, object data)
