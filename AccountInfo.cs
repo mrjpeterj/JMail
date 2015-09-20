@@ -99,6 +99,8 @@ namespace JMail
         public string Name { get; set; }
         public string Host { get; set; }
 
+        public bool Enabled { get; set; }
+
         public Protocol Protocol
         {
             get { return proto_; }

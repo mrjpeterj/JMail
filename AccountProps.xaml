@@ -6,37 +6,56 @@
         <Style TargetType="TextBlock">
             <Setter Property="Padding" Value="5" />
         </Style>
+        <Style TargetType="TextBox">
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style TargetType="PasswordBox">
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
     </Window.Resources>
-    <StackPanel Orientation="Vertical">
-        <DockPanel>
-            <TextBlock DockPanel.Dock="Left">Name</TextBlock>
-            <TextBox DockPanel.Dock="Right" Text="{Binding Name}" />
-        </DockPanel>
-        <DockPanel>
-            <TextBlock DockPanel.Dock="Left">Server</TextBlock>
-            <TextBox DockPanel.Dock="Right" Text="{Binding Host}" />
-        </DockPanel>
-        <DockPanel>
-            <TextBlock DockPanel.Dock="Left">Username</TextBlock>
-            <TextBox DockPanel.Dock="Right" Text="{Binding Username}" />
-        </DockPanel>
-        <DockPanel>
-            <TextBlock DockPanel.Dock="Left">Password</TextBlock>
-            <PasswordBox DockPanel.Dock="Right" Name="passwordBox_"/>
-        </DockPanel>
-        <DockPanel>
-            <TextBlock DockPanel.Dock="Left">Protocol</TextBlock>
-            <ComboBox HorizontalAlignment="Left" Name="proto_" SelectedItem="{Binding Protocol}" />
-        </DockPanel>
-        <DockPanel>
-            <TextBlock DockPanel.Dock="Left">Port</TextBlock>
-            <TextBox DockPanel.Dock="Right" Text="{Binding Port}" />
-        </DockPanel>
-        <DockPanel>
-            <TextBlock DockPanel.Dock="Left">Requires Encryption</TextBlock>
-            <CheckBox DockPanel.Dock="Right" VerticalAlignment="Center" IsChecked="{Binding Encrypt}" />
-        </DockPanel>
-        <Grid>
+    <Grid Margin="8">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Grid.Column="0">Name</TextBlock>
+        <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Name}" />
+            
+        <TextBlock Grid.Row="1" Grid.Column="0">Server</TextBlock>
+        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Host}" />
+
+        <TextBlock Grid.Row="2" Grid.Column="0">Username</TextBlock>
+        <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Username}" />
+
+        <TextBlock Grid.Row="3" Grid.Column="0">Password</TextBlock>
+        <PasswordBox Grid.Row="3" Grid.Column="1" Name="passwordBox_"/>
+
+        <TextBlock Grid.Row="4" Grid.Column="0">Protocol</TextBlock>
+        <ComboBox Grid.Row="4" Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Center" Name="proto_" SelectedItem="{Binding Protocol}" />
+
+        <TextBlock Grid.Row="5" Grid.Column="0">Port</TextBlock>
+        <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding Port}" />
+
+        <TextBlock Grid.Row="6" Grid.Column="0">Requires Encryption</TextBlock>
+        <CheckBox Grid.Row="6" Grid.Column="1" VerticalAlignment="Center" IsChecked="{Binding Encrypt}" />
+
+        <TextBlock Grid.Row="7" Grid.Column="0">Enabled</TextBlock>
+        <CheckBox Grid.Row="7" Grid.Column="1" VerticalAlignment="Center" IsChecked="{Binding Enabled}" />
+
+        <Grid Grid.Row="8" Grid.ColumnSpan="2" Margin="0,3,0,0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="*"/>
@@ -44,5 +63,5 @@
             <Button Grid.Column="0" HorizontalAlignment="Center" IsDefault="True" Click="Ok_Clicked">OK</Button>
             <Button Grid.Column="1" HorizontalAlignment="Center" IsCancel="True" Click="Cancel_Clicked">Cancel</Button>
         </Grid>
-    </StackPanel>
+    </Grid>
 </Window>

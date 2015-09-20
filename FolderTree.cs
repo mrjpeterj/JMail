@@ -57,9 +57,12 @@ namespace JMail
         {
             server_ = server;
 
-            server_.Connect();
+            if (server_.Enabled)
+            {
+                server_.Connect();
 
-            server_.Connection.FoldersChanged += UpdateFolderList;
+                server_.Connection.FoldersChanged += UpdateFolderList;
+            }
         }
 
         void UpdateFolderList(object sender, EventArgs e)
