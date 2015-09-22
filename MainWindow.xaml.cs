@@ -227,7 +227,7 @@ namespace JMail
 
                 Properties.Settings.Default.Save();
 
-                acnt.Info.Connect();
+                acnt.Reset();
             }
         }
 

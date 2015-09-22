@@ -57,6 +57,13 @@ namespace JMail
         {
             server_ = server;
 
+            Reset();   
+        }
+
+        public void Reset()
+        {
+            folders_ = null;
+
             if (server_.Enabled)
             {
                 server_.Connect();
