@@ -1068,7 +1068,7 @@ namespace JMail
                     }
                 }
 
-                if (multiType == "ALTERNATIVE")
+                if (multiType.Equals("ALTERNATIVE", StringComparison.InvariantCultureIgnoreCase))
                 {
                     for (int i = 0; i < typePos; ++i)
                     {
@@ -1077,7 +1077,7 @@ namespace JMail
                         ParseBodyStructure(msg, dataPieces[i], subLoc);
                     }
                 }
-                else if (multiType == "RELATED")
+                else if (multiType.Equals("RELATED", StringComparison.InvariantCultureIgnoreCase))
                 {
                     int relTypePos = paramList.IndexOf("TYPE");
                     string relatedType = paramList[relTypePos + 1];
@@ -1137,7 +1137,7 @@ namespace JMail
                 {
                     string textType = ImapData.StripQuotes(dataPieces[1]);
 
-                    if (textType == "HTML")
+                    if (textType.Equals("HTML", StringComparison.InvariantCultureIgnoreCase))
                     {
                         msg.Body = bodyPart;
                     }

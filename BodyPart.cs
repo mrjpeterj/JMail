@@ -238,7 +238,7 @@ namespace JMail
                 extensionStart += 3;
             }
 
-            string[] partParams = ImapData.SplitToken(partDesc[2]);
+            string[] partParams = ImapData.SplitToken(partDesc[2].ToUpper());
             if (partParams != null)
             {
                 List<string> paramList = partParams.ToList();
