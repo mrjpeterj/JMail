@@ -135,11 +135,19 @@ namespace JMail
 
         void HandleRead(IAsyncResult res)
         {
-            int bytesRead = 0;
-
             try
             {
-                bytesRead = stream_.EndRead(res);
+                int bytesRead = stream_.EndRead(res);
+
+
+                if (bytesRead > 0)
+                {
+                    string response = encoder_.GetString(incoming_, 0, bytesRead);
+
+                    ProcessResponse(response);
+                }
+
+                stream_.BeginRead(incoming_, 0, incoming_.Length, HandleRead, null);
             }
             catch (System.IO.IOException)
             {
@@ -162,16 +170,6 @@ namespace JMail
 
                 return;
             }
-
-
-            if (bytesRead > 0)
-            {
-                string response = encoder_.GetString(incoming_, 0, bytesRead);
-
-                ProcessResponse(response);
-            }
-
-            stream_.BeginRead(incoming_, 0, incoming_.Length, HandleRead, null);
         }
 
         void ProcessResponse(string responseText)
@@ -586,6 +584,8 @@ namespace JMail
                 folder = currentFolder_;
             }
 
+            bool updated = false;
+
             if (folder != null)
             {
                 string lastValue = null;
@@ -630,6 +630,8 @@ namespace JMail
 
                         MessageHeader exMsg = folder.MessageByID(msgId);
                         folder.Expunge(exMsg, msgId);
+
+                        updated = true;
                     }
                     else if (response == "FETCH")
                     {
@@ -657,11 +659,11 @@ namespace JMail
 
                 if (folder.Exists != prevExists || folder.Recent > 0)
                 {
-                    return true;
+                    updated = true;
                 }
             }
 
-            return false;
+            return updated;
         }
 
         void CheckUnseen(Folder f)
@@ -1230,7 +1232,7 @@ namespace JMail
                 {
                     SendCommand("NOOP", "", UpdateStatus, currentFolder_);
 
-                    // We have to poll in this case, to start the timer again.
+                    // We have to poll in this case, so start the timer again.
                     folderCheckTimer_.Start();
                 }
             }
