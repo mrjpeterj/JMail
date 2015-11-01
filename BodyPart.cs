@@ -149,14 +149,16 @@ namespace JMail
                 var info = new System.IO.FileInfo(saveLocation_);
                 if (info.Length > 0)
                 {
-                    // File already here, load it.
-                    if (Data == null || Data.Length != info.Length)
-                    {
-                        SetContentInternal(System.IO.File.ReadAllBytes(saveLocation_));
-                    }
-
+                    // File already here, don't try and save it.
                     CacheFile = saveLocation_;
                     saveLocation_ = null;
+
+                    // Now Load it if required.
+                    // We might be here because the file already exists on disk from a previous run
+                    if (Data == null || Data.Length != info.Length)
+                    {
+                        SetContentInternal(System.IO.File.ReadAllBytes(CacheFile));
+                    }
                 }
             }
 
