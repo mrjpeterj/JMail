@@ -282,7 +282,6 @@ namespace JMail
             Message m = new Message(mailView_.CurrentFolder);
             m.DataContext = msg;
 
-            m.Owner = this;
             m.Show();
             m.Focus();
         }
