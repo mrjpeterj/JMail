@@ -20,10 +20,13 @@ namespace JMail
     /// </summary>
     public partial class Message: Window
     {
+        MainWindow owner_; // Not used as the Window.Owner as we don't want them attached
+
         FolderView folder_;
 
-        public Message(FolderView folder)
+        public Message(FolderView folder, MainWindow owner)
         {
+            owner_ = owner;
             folder_ = folder;
 
             InitializeComponent();
@@ -241,7 +244,7 @@ namespace JMail
             else
             {
                 MessageHeader currentMessage = DataContext as MessageHeader;
-                e.CanExecute = !folder_.IsLast(Owner as MainWindow, currentMessage);
+                e.CanExecute = !folder_.IsLast(owner_, currentMessage);
             }
         }
 
@@ -254,14 +257,14 @@ namespace JMail
             else
             {
                 MessageHeader currentMessage = DataContext as MessageHeader;
-                e.CanExecute = !folder_.IsFirst(Owner as MainWindow, currentMessage);
+                e.CanExecute = !folder_.IsFirst(owner_, currentMessage);
             }
         }
 
         private void NextMessage(object sender, ExecutedRoutedEventArgs e)
         {
             MessageHeader currentMessage = DataContext as MessageHeader;
-            MessageHeader nextMessage = folder_.Next(Owner as MainWindow, currentMessage);
+            MessageHeader nextMessage = folder_.Next(owner_, currentMessage);
 
             DataContext = nextMessage;
 
@@ -281,7 +284,7 @@ namespace JMail
         private void PreviousMessage(object sender, ExecutedRoutedEventArgs e)
         {
             MessageHeader currentMessage = DataContext as MessageHeader;
-            MessageHeader nextMessage = folder_.Prev(Owner as MainWindow, currentMessage);
+            MessageHeader nextMessage = folder_.Prev(owner_, currentMessage);
 
             DataContext = nextMessage;
 

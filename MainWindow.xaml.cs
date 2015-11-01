@@ -279,7 +279,7 @@ namespace JMail
 
             msg.Fetch();
 
-            Message m = new Message(mailView_.CurrentFolder);
+            Message m = new Message(mailView_.CurrentFolder, this);
             m.DataContext = msg;
 
             m.Show();
