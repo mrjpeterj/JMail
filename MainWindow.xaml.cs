@@ -199,8 +199,6 @@ namespace JMail
                 mailView_.Servers.Add(dialog.Account);
 
                 Properties.Settings.Default.Save();
-
-                dialog.Account.Connect();
             }
         }
 
