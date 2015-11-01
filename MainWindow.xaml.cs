@@ -55,12 +55,27 @@ namespace JMail
             mailView_.Poll();
         }
 
+        protected override void OnSourceInitialized(EventArgs e)
+        {
+            base.OnSourceInitialized(e);
+
+            this.SetPlacement(Properties.Settings.Default.MainWinPos);
+        }
+
         void OnLoaded(object sender, RoutedEventArgs e)
         {
         }
 
-        void OnClosed(object sender, EventArgs e)
+        void OnClosing(object sender, CancelEventArgs e)
         {
+            e.Cancel = false;
+
+            Properties.Settings.Default.MainWinPos = this.GetPlacement();
+            Properties.Settings.Default.Save();
+        }
+
+        void OnClosed(object sender, EventArgs e)
+        {            
             // Unselect the folder, so that we clean up 
             mailView_.Select(null);
 

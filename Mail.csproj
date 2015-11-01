@@ -94,6 +94,7 @@
     </Compile>
     <Compile Include="Settings.cs" />
     <Compile Include="ThreadedList.cs" />
+    <Compile Include="WindowPlacement.cs" />
     <Page Include="AccountProps.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -145,6 +146,7 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <None Include="app.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>

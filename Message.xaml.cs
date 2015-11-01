@@ -29,12 +29,27 @@ namespace JMail
             InitializeComponent();
         }
 
+        protected override void OnSourceInitialized(EventArgs e)
+        {
+            base.OnSourceInitialized(e);
+
+            this.SetPlacement(Properties.Settings.Default.MsgWinPos);
+        }
+
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             MessageHeader currentMessage = DataContext as MessageHeader;
             currentMessage.Body.Updated += BodyUpdated;
 
             UpdateContent();
+        }
+
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            e.Cancel = false;
+
+            Properties.Settings.Default.MsgWinPos = this.GetPlacement();
+            Properties.Settings.Default.Save();            
         }
 
         private void BodyUpdated(object sender, EventArgs e)

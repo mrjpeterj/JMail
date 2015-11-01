@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Width="600" Height="500" Title="{Binding Subject}"
         Style="{DynamicResource BaseStyle}"
-        Loaded="Window_Loaded"
+        Loaded="Window_Loaded" Closing="Window_Closing"
         >
     <Window.Resources>
         <ResourceDictionary Source="Style.xaml" />
