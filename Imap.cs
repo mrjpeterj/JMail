@@ -903,15 +903,12 @@ namespace JMail
 
             if (refreshFolder != null || refreshMessages.Any())
             {
-                // Force the folder view list to update, so that it is in sync with what the message list shows
                 if (refreshFolder == null)
                 {
                     // If we just have a list of messages, then we didn't want to indicate a full 
                     // folder update, but now we need to know what the folder is.
                     refreshFolder = refreshMessages.First().Folder;
                 }
-
-                CheckUnseen(refreshFolder);
 
                 if (MessagesChanged != null)
                 {
@@ -964,7 +961,7 @@ namespace JMail
 
                 if (key == "FLAGS")
                 {
-                    ExtractFlags(res.Message, value);
+                    ExtractFlags(res, value);
 
                     // This message needs to be marked as updated for the UI.
                     res.IsModified = true;
@@ -1178,9 +1175,15 @@ namespace JMail
             msg.SetValue(key, value);
         }
 
-        void ExtractFlags(MessageHeader msg, string flagString)
+        void ExtractFlags(MessageHeaderProcessResult res, string flagString)
         {
             // Process flags here
+            var msg = res.Message;
+
+            // To avoid always having to update the folder list, we try and manage the UnRead count.
+
+            bool wasRead = !msg.UnRead;
+
             msg.ClearFlags();
 
             string[] flags = ImapData.SplitToken(flagString);
@@ -1191,6 +1194,26 @@ namespace JMail
                 {
                     // Standard flag
                     msg.SetFlag(flag.Substring(1));
+                }
+            }
+
+            bool isRead = !msg.UnRead;
+
+            if (isRead != wasRead)
+            {
+                if (res.IsNew)
+                {
+                }
+                else
+                {
+                    if (isRead)
+                    {
+                        --msg.Folder.Unseen;
+                    }
+                    else
+                    {
+                        ++msg.Folder.Unseen;
+                    }
                 }
             }
         }
