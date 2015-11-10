@@ -113,8 +113,8 @@ namespace JMail
         {
             // Make sure it updates the sorting of the list
             u_MessageList.Items.SortDescriptions.Clear();
-            u_MessageList.Items.SortDescriptions.Add(new SortDescription("Sent", ListSortDirection.Ascending));
-            u_MessageList.Items.SortDescriptions.Add(new SortDescription("id", ListSortDirection.Ascending));
+            u_MessageList.Items.SortDescriptions.Add(new SortDescription("Message.Sent", ListSortDirection.Ascending));
+            u_MessageList.Items.SortDescriptions.Add(new SortDescription("Message.id", ListSortDirection.Ascending));
 
             if (u_MessageList.Items.Count == mailView_.CurrentFolder.Messages.Count())
             {
@@ -128,9 +128,9 @@ namespace JMail
             }
         }
 
-        public MessageHeader NextMessage(MessageHeader current)
+        public MessageHeaderView NextMessage(MessageHeaderView current)
         {
-            if (current.Folder == mailView_.CurrentFolder.Folder)
+            if (current.Message.Folder == mailView_.CurrentFolder.Folder)
             {
                 int pos = u_MessageList.Items.IndexOf(current);
 
@@ -145,7 +145,7 @@ namespace JMail
                     u_MessageList.SelectedIndex = pos + 1;
                 }
 
-                return u_MessageList.SelectedItem as MessageHeader;
+                return u_MessageList.SelectedItem as MessageHeaderView;
             }
             else
             {
@@ -153,9 +153,9 @@ namespace JMail
             }
         }
 
-        public bool IsLastMessage(MessageHeader current)
+        public bool IsLastMessage(MessageHeaderView current)
         {
-            if (current.Folder == mailView_.CurrentFolder.Folder)
+            if (current.Message.Folder == mailView_.CurrentFolder.Folder)
             {
                 int pos = u_MessageList.Items.IndexOf(current);
 
@@ -167,9 +167,9 @@ namespace JMail
             }
         }
 
-        public MessageHeader PrevMessage(MessageHeader current)
+        public MessageHeaderView PrevMessage(MessageHeaderView current)
         {
-            if (current.Folder == mailView_.CurrentFolder.Folder)
+            if (current.Message.Folder == mailView_.CurrentFolder.Folder)
             {
                 int pos = u_MessageList.Items.IndexOf(current);
 
@@ -183,7 +183,7 @@ namespace JMail
                     u_MessageList.SelectedIndex = pos - 1;
                 }
 
-                return u_MessageList.SelectedItem as MessageHeader;
+                return u_MessageList.SelectedItem as MessageHeaderView;
             }
             else
             {
@@ -191,9 +191,9 @@ namespace JMail
             }
         }
 
-        public bool IsFirstMessage(MessageHeader current)
+        public bool IsFirstMessage(MessageHeaderView current)
         {
-            if (current.Folder == mailView_.CurrentFolder.Folder)
+            if (current.Message.Folder == mailView_.CurrentFolder.Folder)
             {
                 int pos = u_MessageList.Items.IndexOf(current);
 
@@ -265,7 +265,7 @@ namespace JMail
 
         private void SelectMessage(object sender, SelectionChangedEventArgs e)
         {
-            MessageHeader msg = u_MessageList.SelectedItem as MessageHeader;
+            MessageHeaderView msg = u_MessageList.SelectedItem as MessageHeaderView;
 
             if (mailView_.CurrentFolder != null)
             {
@@ -275,12 +275,12 @@ namespace JMail
 
         private void OpenMessage(object sender, RoutedEventArgs e)
         {
-            MessageHeader msg = mailView_.CurrentFolder.CurrentMessage;
+            MessageHeaderView msg = mailView_.CurrentFolder.CurrentMessage;
 
-            msg.Fetch();
+            msg.Message.Fetch();
 
             Message m = new Message(mailView_.CurrentFolder, this);
-            m.DataContext = msg;
+            m.CurrentMessageView = msg;
 
             m.Show();
             m.Focus();
@@ -292,7 +292,7 @@ namespace JMail
 
             foreach (var item in ele.SelectedItems)
             {
-                var msg = item as MessageHeader;
+                var msg = item as MessageHeaderView;
                 if (msg == null)
                 {
                     continue;
@@ -300,13 +300,13 @@ namespace JMail
 
                 if (e.Key == Key.Delete)
                 {
-                    msg.Deleted = true;
+                    msg.Message.Deleted = true;
 
                     e.Handled = true;
                 }
                 if (e.Key == Key.Q && Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
                 {
-                    msg.UnRead = !msg.UnRead;
+                    msg.Message.UnRead = !msg.Message.UnRead;
                 }
             }
         }
@@ -321,13 +321,13 @@ namespace JMail
 
             foreach (var item in ele.SelectedItems)
             {
-                var msg = item as MessageHeader;
+                var msg = item as MessageHeaderView;
                 if (msg == null)
                 {
                     continue;
                 }
 
-                msg.UnRead = false;
+                msg.Message.UnRead = false;
             }
         }
 
@@ -341,13 +341,13 @@ namespace JMail
 
             foreach (var item in ele.SelectedItems)
             {
-                var msg = item as MessageHeader;
+                var msg = item as MessageHeaderView;
                 if (msg == null)
                 {
                     continue;
                 }
 
-                msg.UnRead = true;
+                msg.Message.UnRead = true;
             }
         }
 
@@ -361,13 +361,13 @@ namespace JMail
 
             foreach (var item in ele.SelectedItems)
             {
-                var msg = item as MessageHeader;
+                var msg = item as MessageHeaderView;
                 if (msg == null)
                 {
                     continue;
                 }
 
-                msg.Deleted = true;
+                msg.Message.Deleted = true;
             }
         }
 
@@ -381,22 +381,22 @@ namespace JMail
 
             foreach (var item in ele.SelectedItems)
             {
-                var msg = item as MessageHeader;
+                var msg = item as MessageHeaderView;
                 if (msg == null)
                 {
                     continue;
                 }
 
-                msg.Deleted = false;
+                msg.Message.Deleted = false;
             }
         }
 
         private void MessageProps(object sender, RoutedEventArgs e)
         {
-            MessageHeader msg = mailView_.CurrentFolder.CurrentMessage;
-            msg.FetchWhole();
+            MessageHeaderView msg = mailView_.CurrentFolder.CurrentMessage;
+            msg.Message.FetchWhole();
 
-            MessageProps props = new MessageProps(msg, this);
+            MessageProps props = new MessageProps(msg.Message, this);
             props.Show();
         }
 

@@ -21,6 +21,19 @@ namespace JMail
         Recent
     }
 
+    internal class MessageHeaderProcessResult
+    {
+        public MessageHeader Message { get; set; }
+        public bool IsNew { get; set; }
+        public bool IsModified { get; set; }
+
+        public MessageHeaderProcessResult()
+        {
+            IsNew = false;
+            IsModified = false;
+        }
+    }
+
     public class MessageHeader
     {
         Folder folder_;

@@ -1,7 +1,7 @@
 ﻿<Window x:Class="JMail.Message"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Width="600" Height="500" Title="{Binding Subject}"
+        Width="600" Height="500" Title="{Binding Message.Subject}"
         Style="{DynamicResource BaseStyle}"
         Loaded="Window_Loaded" Closing="Window_Closing"
         >
@@ -70,13 +70,13 @@
             </StackPanel>
             <Border Grid.Column="1" Padding="3,0">
                 <StackPanel>
-                    <TextBlock Text="{Binding Subject}" />
-                    <ContentControl Content="{Binding From}" ContentTemplate="{StaticResource addressDisplay}" />
+                    <TextBlock Text="{Binding Message.Subject}" />
+                    <ContentControl Content="{Binding Message.From}" ContentTemplate="{StaticResource addressDisplay}" />
                 </StackPanel>
             </Border>
 
             <TextBlock Grid.Row="1" Grid.Column="0">To:</TextBlock>
-            <ListBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3"  MaxHeight="100" ItemsSource="{Binding To}" 
+            <ListBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3"  MaxHeight="100" ItemsSource="{Binding Message.To}" 
                      BorderThickness="0"
                      ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto" >
                 <ListBox.ItemsPanel>
@@ -86,10 +86,7 @@
                 </ListBox.ItemsPanel>
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <StackPanel Orientation="Horizontal">
-                            <ContentControl Content="{Binding}" ContentTemplate="{StaticResource addressDisplay}" />
-                            <TextBlock>;</TextBlock>
-                        </StackPanel>
+                        <ContentControl Content="{Binding}" ContentTemplate="{StaticResource addressDisplay}" />
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
@@ -99,14 +96,14 @@
                 <TextBlock>Sent:</TextBlock>
             </StackPanel>
             <StackPanel Grid.Column="3">
-                <TextBlock Text="{Binding Date, Converter={StaticResource dateDisplay}}" HorizontalAlignment="Right" />
-                <TextBlock Text="{Binding Sent, Converter={StaticResource dateDisplay}}" HorizontalAlignment="Right" />
+                <TextBlock Text="{Binding Message.Date, Converter={StaticResource dateDisplay}}" HorizontalAlignment="Right" />
+                <TextBlock Text="{Binding Message.Sent, Converter={StaticResource dateDisplay}}" HorizontalAlignment="Right" />
             </StackPanel>
 
-            <TextBlock Grid.Row="2" Visibility="{Binding HasAttachments, Converter={StaticResource isVisible}}">Attachments:</TextBlock>
+            <TextBlock Grid.Row="2" Visibility="{Binding Message.HasAttachments, Converter={StaticResource isVisible}}">Attachments:</TextBlock>
             <ListBox Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="3" 
-                     Visibility="{Binding HasAttachments, Converter={StaticResource isVisible}}"
-                     MaxHeight="100" ItemsSource="{Binding Attachments}" 
+                     Visibility="{Binding Message.HasAttachments, Converter={StaticResource isVisible}}"
+                     MaxHeight="100" ItemsSource="{Binding Message.Attachments}" 
                      BorderThickness="0"
                      ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto" >
                 <ListBox.ItemsPanel>
@@ -134,7 +131,7 @@
             </ListBox>
         </Grid>
 
-        <Border Grid.Row="2" Name="content_" DataContext="{Binding Body}" BorderThickness="0,2,0,0" BorderBrush="Black" Padding="8,0,0,0">
+        <Border Grid.Row="2" Name="content_" DataContext="{Binding Message.Body}" BorderThickness="0,2,0,0" BorderBrush="Black" Padding="8,0,0,0">
 
         </Border>
     </Grid>

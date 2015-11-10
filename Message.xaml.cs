@@ -24,6 +24,37 @@ namespace JMail
 
         FolderView folder_;
 
+        MessageHeaderView currentMessage_;
+        
+        public MessageHeaderView CurrentMessageView
+        {
+            get
+            {
+                return currentMessage_;
+            }
+
+            set
+            {
+                currentMessage_ = value;
+
+                DataContext = currentMessage_;
+            }
+        }
+
+        public MessageHeader CurrentMessage
+        {
+            get
+            {
+                return currentMessage_.Message;
+            }
+        }
+
+        public new object DataContext
+        {
+            get { return base.DataContext; }
+            protected set { base.DataContext = value; }
+        }
+
         public Message(FolderView folder, MainWindow owner)
         {
             owner_ = owner;
@@ -41,8 +72,7 @@ namespace JMail
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            MessageHeader currentMessage = DataContext as MessageHeader;
-            currentMessage.Body.Updated += BodyUpdated;
+            CurrentMessage.Body.Updated += BodyUpdated;
 
             UpdateContent();
         }
@@ -65,12 +95,11 @@ namespace JMail
 
         private void UpdateContent()
         {
-            MessageHeader currentMessage = DataContext as MessageHeader;
-            if (currentMessage.Body.Text != null)
+            if (CurrentMessage.Body.Text != null)
             {
                 UIElement existingChild = content_.Child;
 
-                if (currentMessage.Body.ContentType.MediaType.EndsWith("/plain"))
+                if (CurrentMessage.Body.ContentType.MediaType.EndsWith("/plain"))
                 {
                     TextBox plainText = existingChild as TextBox;
 
@@ -86,7 +115,7 @@ namespace JMail
                         content_.Child = plainText;
                     }
 
-                    plainText.Text = currentMessage.Body.Text;
+                    plainText.Text = CurrentMessage.Body.Text;
                 }
                 else
                 {
@@ -119,17 +148,17 @@ namespace JMail
                     {
                         // Doing this avoids the window playing the navigation sounds 
                         htmlText.Document.OpenNew(true);
-                        htmlText.Document.Write(currentMessage.Body.Text);
+                        htmlText.Document.Write(CurrentMessage.Body.Text);
                         htmlText_Ready(htmlText, null);
                     }
                     else
                     {
-                        htmlText.DocumentText = currentMessage.Body.Text;
+                        htmlText.DocumentText = CurrentMessage.Body.Text;
                     }
                 }
 
                 // Now mark the message as read
-                currentMessage.UnRead = false;
+                CurrentMessage.UnRead = false;
             }
             else
             {
@@ -176,8 +205,7 @@ namespace JMail
                     // Need to fixup from related component of the message.
                     string refId = "<" + imgSrcUri.PathAndQuery + ">";
 
-                    MessageHeader msg = DataContext as MessageHeader;
-                    var imgPart = from r in msg.Related
+                    var imgPart = from r in CurrentMessage.Related
                                   where r.Id == refId
                                   select r;
 
@@ -243,8 +271,7 @@ namespace JMail
             }
             else
             {
-                MessageHeader currentMessage = DataContext as MessageHeader;
-                e.CanExecute = !folder_.IsLast(owner_, currentMessage);
+                e.CanExecute = !folder_.IsLast(owner_, CurrentMessageView);
             }
         }
 
@@ -256,63 +283,54 @@ namespace JMail
             }
             else
             {
-                MessageHeader currentMessage = DataContext as MessageHeader;
-                e.CanExecute = !folder_.IsFirst(owner_, currentMessage);
+                e.CanExecute = !folder_.IsFirst(owner_, CurrentMessageView);
             }
         }
 
         private void NextMessage(object sender, ExecutedRoutedEventArgs e)
         {
-            MessageHeader currentMessage = DataContext as MessageHeader;
-            MessageHeader nextMessage = folder_.Next(owner_, currentMessage);
-
-            DataContext = nextMessage;
-
-            if (currentMessage != null)
+            if (CurrentMessage != null)
             {
-                currentMessage.Body.Updated -= BodyUpdated;
+                CurrentMessage.Body.Updated -= BodyUpdated;
             }
 
-            if (nextMessage != null)
+            CurrentMessageView = folder_.Next(owner_, CurrentMessageView);
+
+            if (CurrentMessage != null)
             {
                 UpdateContent();
 
-                nextMessage.Body.Updated += BodyUpdated;
+                CurrentMessage.Body.Updated += BodyUpdated;
             }
         }
 
         private void PreviousMessage(object sender, ExecutedRoutedEventArgs e)
         {
-            MessageHeader currentMessage = DataContext as MessageHeader;
-            MessageHeader nextMessage = folder_.Prev(owner_, currentMessage);
-
-            DataContext = nextMessage;
-
-            if (currentMessage != null)
+            if (CurrentMessage != null)
             {
-                currentMessage.Body.Updated -= BodyUpdated;
+                CurrentMessage.Body.Updated -= BodyUpdated;
             }
 
-            if (nextMessage != null)
+            CurrentMessageView = folder_.Prev(owner_, CurrentMessageView);
+
+            if (CurrentMessage != null)
             {
                 UpdateContent();
 
-                nextMessage.Body.Updated += BodyUpdated;
+                CurrentMessage.Body.Updated += BodyUpdated;
             }
         }
 
         private void DeleteMessage(object sender, ExecutedRoutedEventArgs e)
         {
-            MessageHeader currentMessage = DataContext as MessageHeader;
-            NextMessage(sender, null);
-            currentMessage.Deleted = true;
-
-            if (currentMessage != null)
+            if (CurrentMessage != null)
             {
-                currentMessage.Body.Updated -= BodyUpdated;
+                CurrentMessage.Deleted = true;
             }
 
-            if (DataContext == null)
+            NextMessage(sender, null);
+
+            if (CurrentMessageView == null)
             {
                 // Didn't have a next message.
 

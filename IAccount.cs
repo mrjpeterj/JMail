@@ -8,10 +8,12 @@ namespace JMail
     public class MessagesChangedEventArgs: EventArgs
     {
         public Folder Folder { get; private set; }
-
-        public MessagesChangedEventArgs(Folder f)
+        public IEnumerable<MessageHeader> Messages { get; private set; }
+        
+        public MessagesChangedEventArgs(Folder f, IEnumerable<MessageHeader> msgs)
         {
             Folder = f;
+            Messages = msgs;
         }
     }
 

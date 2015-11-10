@@ -7,23 +7,47 @@ using System.Text;
 
 namespace JMail
 {
-    public class MessageList: ThreadedList<MessageHeader>
+    public class MessageList: ThreadedList<MessageHeaderView>
     {
         Folder folder_;
 
         internal MessageList(Folder f)
         {
             folder_ = f;
-
         }
 
-        public void Refresh()
+        public void Refresh(IEnumerable<MessageHeader> changedMessages)
         {
-            Clear();
-
-            foreach (var msg in folder_.Messages)
+            if (changedMessages == null || !changedMessages.Any())
             {
-                Add(msg);
+                Clear();
+
+                foreach (var msg in folder_.Messages)
+                {
+                    Add(new MessageHeaderView(msg));
+                }
+            }
+            else
+            {
+                // Don't need to rebuild the list, just update the specific messages.
+                // But we have to find them in the list
+
+                int noFound = 0;
+                
+                foreach (var msg in this)
+                {
+                    if (changedMessages.Contains(msg.Message))
+                    {
+                        msg.Dirty();
+
+                        ++noFound;
+                    }
+
+                    if (noFound == changedMessages.Count())
+                    {
+                        break;
+                    }
+                }                
             }
         }
     }
@@ -33,7 +57,7 @@ namespace JMail
         private bool selected_;
 
         private MessageList messages_;
-        private MessageHeader currentMessage_;
+        private MessageHeaderView currentMessage_;
 
         public Folder Folder { get; private set; }
 
@@ -47,7 +71,7 @@ namespace JMail
             }
         }
 
-        public MessageHeader CurrentMessage
+        public MessageHeaderView CurrentMessage
         {
             get
             {
@@ -63,10 +87,10 @@ namespace JMail
         }
 
         public bool IsMessage { get { return CurrentMessage != null; } }
-        public bool IsUnread { get { return IsMessage && CurrentMessage.UnRead; } }
-        public bool IsRead { get { return IsMessage && !CurrentMessage.UnRead; } }
-        public bool IsNotDeleted { get { return IsMessage && !CurrentMessage.Deleted; } }
-        public bool IsDeleted { get { return IsMessage && CurrentMessage.Deleted; } }
+        public bool IsUnread { get { return IsMessage && CurrentMessage.Message.UnRead; } }
+        public bool IsRead { get { return IsMessage && !CurrentMessage.Message.UnRead; } }
+        public bool IsNotDeleted { get { return IsMessage && !CurrentMessage.Message.Deleted; } }
+        public bool IsDeleted { get { return IsMessage && CurrentMessage.Message.Deleted; } }
 
         public string Name { get { return Folder.Name; } }
 
@@ -128,7 +152,7 @@ namespace JMail
 
             if (selected_)
             {
-                messages_.Refresh();
+                messages_.Refresh(e.Messages);
             }
 
             ReportChange();
@@ -139,9 +163,9 @@ namespace JMail
             Folder.Rename(newName);
         }
 
-        public MessageHeader Next(MainWindow view, MessageHeader msg)
+        public MessageHeaderView Next(MainWindow view, MessageHeaderView msg)
         {
-            MessageHeader nextMsg = null;
+            MessageHeaderView nextMsg = null;
 
             if (view != null)
             {
@@ -155,15 +179,15 @@ namespace JMail
 
             if (nextMsg != null)
             {
-                nextMsg.Fetch();
+                nextMsg.Message.Fetch();
             }
 
             return nextMsg;
         }
 
-        public MessageHeader Prev(MainWindow view, MessageHeader msg)
+        public MessageHeaderView Prev(MainWindow view, MessageHeaderView msg)
         {
-            MessageHeader nextMsg = null;
+            MessageHeaderView nextMsg = null;
 
             if (view != null)
             {
@@ -177,13 +201,13 @@ namespace JMail
             
             if (nextMsg != null)
             {
-                nextMsg.Fetch();
+                nextMsg.Message.Fetch();
             }
 
             return nextMsg;
         }
 
-        public bool IsLast(MainWindow view, MessageHeader msg)
+        public bool IsLast(MainWindow view, MessageHeaderView msg)
         {
             if (view != null)
             {
@@ -195,7 +219,7 @@ namespace JMail
             }
         }
 
-        public bool IsFirst(MainWindow view, MessageHeader msg)
+        public bool IsFirst(MainWindow view, MessageHeaderView msg)
         {
             if (view != null)
             {

@@ -70,13 +70,13 @@
                     <Setter Property="FontWeight" Value="Regular" />
                     <Setter Property="FontStyle"  Value="Normal" />
                     <Style.Triggers>
-                        <DataTrigger Binding="{Binding UnRead}" Value="true">
+                        <DataTrigger Binding="{Binding Message.UnRead}" Value="true">
                             <Setter Property="FontWeight" Value="Bold" />
                         </DataTrigger>
-                        <DataTrigger Binding="{Binding Deleted}" Value="true">
+                        <DataTrigger Binding="{Binding Message.Deleted}" Value="true">
                             <Setter Property="FontStyle" Value="Italic" />
                         </DataTrigger>
-                        <DataTrigger Binding="{Binding Flagged}" Value="true">
+                        <DataTrigger Binding="{Binding Message.Flagged}" Value="true">
                             <Setter Property="Foreground" Value="Red" />
                         </DataTrigger>
                     </Style.Triggers>
@@ -105,7 +105,7 @@
                                         <Style TargetType="Image">
                                             <Setter Property="Visibility" Value="Hidden"/>
                                             <Style.Triggers>
-                                                <DataTrigger Binding="{Binding HasAttachments}" Value="true">
+                                                <DataTrigger Binding="{Binding Message.HasAttachments}" Value="true">
                                                     <Setter Property="Visibility" Value="Visible"/>
                                                 </DataTrigger>
                                             </Style.Triggers>
@@ -115,14 +115,14 @@
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding From, Converter={StaticResource addressText}}" Header="From" />
-                    <GridViewColumn DisplayMemberBinding="{Binding Subject}" Header="Subject" />
-                    <GridViewColumn DisplayMemberBinding="{Binding Sent, Converter={StaticResource dateDisplay}}" Header="Sent" />
-                    <GridViewColumn DisplayMemberBinding="{Binding Date, Converter={StaticResource dateDisplay}}" Header="Date" />
+                    <GridViewColumn DisplayMemberBinding="{Binding Message.From, Converter={StaticResource addressText}}" Header="From" />
+                    <GridViewColumn DisplayMemberBinding="{Binding Message.Subject}" Header="Subject" />
+                    <GridViewColumn DisplayMemberBinding="{Binding Message.Sent, Converter={StaticResource dateDisplay}}" Header="Sent" />
+                    <GridViewColumn DisplayMemberBinding="{Binding Message.Date, Converter={StaticResource dateDisplay}}" Header="Date" />
                     <GridViewColumn Header="Size">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock TextAlignment="Right" Text="{Binding Size, Converter={StaticResource sizeDisplay}}" />
+                                <TextBlock TextAlignment="Right" Text="{Binding Message.Size, Converter={StaticResource sizeDisplay}}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
