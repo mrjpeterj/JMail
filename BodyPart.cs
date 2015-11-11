@@ -122,6 +122,13 @@ namespace JMail
                 if (filename == null)
                 {
                     filename = Id;
+
+                    // Id can have random non-file characters in it.
+                    // For example it can be an email address.
+                    foreach (var badChar in System.IO.Path.GetInvalidFileNameChars())
+                    {
+                        filename = filename.Replace(badChar, '_');
+                    }
                 }
                 if (filename.Length == 0)
                 {
