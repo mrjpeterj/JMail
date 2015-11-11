@@ -116,6 +116,8 @@ namespace JMail
                     }
 
                     plainText.Text = CurrentMessage.Body.Text;
+
+                    plainText.Focus();
                 }
                 else
                 {
