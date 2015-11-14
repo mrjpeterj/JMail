@@ -291,14 +291,14 @@ namespace JMail
 
         private void NextMessage(object sender, ExecutedRoutedEventArgs e)
         {
-            if (CurrentMessage != null)
+            if (CurrentMessageView != null)
             {
                 CurrentMessage.Body.Updated -= BodyUpdated;
             }
 
             CurrentMessageView = folder_.Next(owner_, CurrentMessageView);
 
-            if (CurrentMessage != null)
+            if (CurrentMessageView != null)
             {
                 UpdateContent();
 
@@ -308,14 +308,14 @@ namespace JMail
 
         private void PreviousMessage(object sender, ExecutedRoutedEventArgs e)
         {
-            if (CurrentMessage != null)
+            if (CurrentMessageView != null)
             {
                 CurrentMessage.Body.Updated -= BodyUpdated;
             }
 
             CurrentMessageView = folder_.Prev(owner_, CurrentMessageView);
 
-            if (CurrentMessage != null)
+            if (CurrentMessageView != null)
             {
                 UpdateContent();
 
@@ -325,7 +325,7 @@ namespace JMail
 
         private void DeleteMessage(object sender, ExecutedRoutedEventArgs e)
         {
-            if (CurrentMessage != null)
+            if (CurrentMessageView != null)
             {
                 CurrentMessage.Deleted = true;
             }
