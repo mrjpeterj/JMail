@@ -79,6 +79,9 @@ namespace JMail
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
+            // This stops the command bindings still trying to do stuff
+            DataContext = null;
+
             e.Cancel = false;
 
             Properties.Settings.Default.MsgWinPos = this.GetPlacement();
