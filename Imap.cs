@@ -268,7 +268,7 @@ namespace JMail
                 {
                     if (state_ == ImapState.Connected && response == "OK")
                     {
-                        StartUp();
+                        StartUp(responses);
                         currentCommand_.Clear();
                         return;
                     }
@@ -389,8 +389,24 @@ namespace JMail
             SendRawResponse(cmd);
         }
 
-        void StartUp()
+        void StartUp(IEnumerable<string> responseData)
         {
+            foreach (var resp in responseData)
+            {
+                if (resp.StartsWith("[CAPABILITY "))
+                {
+                    // Look to see if STARTTLS is supported before asking for caps
+                    // as caps might be different after TLS.
+
+                    if (resp.Contains(" STARTTLS "))
+                    {
+                        StartTLS(Caps);
+                    }
+
+                    return;
+                }
+            }
+
             Caps();
         }
 
@@ -433,7 +449,7 @@ namespace JMail
 
             if (hasTLS)
             {
-                StartTLS();
+                StartTLS(Login);
             }
             else
             {
@@ -441,9 +457,17 @@ namespace JMail
             }
         }
 
-        void StartTLS()
+        void StartTLS(Action continuation)
         {
-            SendCommand("STARTTLS", "", HandleTLS, null, null);
+            if (stream_ is System.Net.Security.SslStream)
+            {
+                // TLS already started
+                continuation();
+            }
+            else
+            {
+                SendCommand("STARTTLS", "", HandleTLS, null, continuation);
+            }
         }
 
         void HandleTLS(ImapRequest request, IEnumerable<string> responseData, object data)
@@ -454,7 +478,13 @@ namespace JMail
 
             stream_ = sslStream;
 
-            Login();
+            // Data should be the follow function
+            Action continuation = data as Action;
+
+            if (continuation != null)
+            {
+                continuation();
+            }
         }
 
         bool GotRemoteCert(object sender, System.Security.Cryptography.X509Certificates.X509Certificate cert,
