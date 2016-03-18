@@ -400,12 +400,7 @@ namespace JMail
         }
 
         void HandleCaps(ImapRequest request, IEnumerable<string> resultData, object data)
-        {
-            if (resultData.Contains("IDLE"))
-            {
-                supportsIdle_ = true;
-            }
-
+        {            
             // Looks like 
             // * CAPABILITY <cap1> <cap2> <cap3>
 
@@ -426,10 +421,13 @@ namespace JMail
                         authPlain_ = true;
                     }
                 }
-
-                if (cap == ("STARTTLS"))
+                else if (cap == ("STARTTLS"))
                 {
                     hasTLS = true;
+                }
+                else if (cap == "IDLE")
+                {
+                    supportsIdle_ = true;
                 }
             }
 
