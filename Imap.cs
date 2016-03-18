@@ -27,6 +27,7 @@ namespace JMail
         string args_;
         DateTime requestStart_;
         ResponseHandler response_;
+        ResponseHandler errorResponse_;
 
         object data_;
 
@@ -35,19 +36,30 @@ namespace JMail
         public string Args { get { return args_; } }
         public DateTime RequestStart { get { return requestStart_; } }
 
-        public ImapRequest(string id, string commandName, string args, ResponseHandler handler, object data)
+        public ImapRequest(string id, string commandName, string args, ResponseHandler handler, ResponseHandler errorHandler, object data)
         {
             id_ = id;
             commandName_ = commandName;
             args_ = args;
             requestStart_ = DateTime.Now;
             response_ = handler;
+            errorResponse_ = errorHandler;
             data_ = data;
         }
 
-        public void Process(IList<string> resultData)
+        public void Process(IList<string> resultData, bool success)
         {
-            response_(this, resultData, data_);
+            if (success)
+            {
+                response_(this, resultData, data_);
+            }
+            else
+            {
+                if (errorResponse_ != null)
+                {
+                    errorResponse_(this, resultData, data_);
+                }
+            }
         }
     }
 
@@ -72,6 +84,8 @@ namespace JMail
 
         private Folder currentFolder_;
 
+        private bool authPlain_;
+
         private bool supportsIdle_;
         private bool idling_;
 
@@ -90,6 +104,7 @@ namespace JMail
             allFolders_ = new List<Folder>();
             folders_ = new List<Folder>();
 
+            authPlain_ = false;
             supportsIdle_ = false;
 
             folderCheckTimer_ = new System.Timers.Timer(30 * 1000);
@@ -222,7 +237,7 @@ namespace JMail
                             int a = 0;
                         }
 
-                        request.Process(currentCommand_);
+                        request.Process(currentCommand_, success);
 
                         currentCommand_.Clear();
                         pendingResponses_.Remove(request.Key);
@@ -256,7 +271,7 @@ namespace JMail
                         StartUp();
                         currentCommand_.Clear();
                         return;
-                    }                  
+                    }
                     else if (currentCommand_.Any() || response == "*")
                     {
                         currentCommand_.Add(response);
@@ -305,7 +320,7 @@ namespace JMail
             }
         }
 
-        void SendCommand(string command, string args, ImapRequest.ResponseHandler handler, object data = null)
+        void SendCommand(string command, string args, ImapRequest.ResponseHandler handler, ImapRequest.ResponseHandler errorHandler, object data)
         {
             if (folderCheckTimer_.Enabled)
             {
@@ -329,7 +344,7 @@ namespace JMail
 
             string commandId = NextCommand();
 
-            var request = new ImapRequest(commandId, command, args, handler, data);
+            var request = new ImapRequest(commandId, command, args, handler, errorHandler, data);
             pendingRequests_.Enqueue(request);
 
             if (pendingResponses_.Count < 5)
@@ -381,7 +396,7 @@ namespace JMail
 
         void Caps()
         {
-            SendCommand("CAPABILITY", "", HandleCaps);
+            SendCommand("CAPABILITY", "", HandleCaps, null, null);
         }
 
         void HandleCaps(ImapRequest request, IEnumerable<string> resultData, object data)
@@ -393,7 +408,32 @@ namespace JMail
 
             // Looks like 
             // * CAPABILITY <cap1> <cap2> <cap3>
-            if (resultData.Contains("STARTTLS"))
+
+            bool hasTLS = false;
+
+            foreach (var cap in resultData)
+            {
+                if (cap == "*" || cap == "CAPABILITY")
+                {
+                    continue;
+                }
+
+
+                if (cap.StartsWith("AUTH="))
+                {
+                    if (cap.EndsWith("=PLAIN"))
+                    {
+                        authPlain_ = true;
+                    }
+                }
+
+                if (cap == ("STARTTLS"))
+                {
+                    hasTLS = true;
+                }
+            }
+
+            if (hasTLS)
             {
                 StartTLS();
             }
@@ -405,7 +445,7 @@ namespace JMail
 
         void StartTLS()
         {
-            SendCommand("STARTTLS", "", HandleTLS);
+            SendCommand("STARTTLS", "", HandleTLS, null, null);
         }
 
         void HandleTLS(ImapRequest request, IEnumerable<string> responseData, object data)
@@ -427,21 +467,41 @@ namespace JMail
 
         void Login()
         {
-            SendCommand("AUTHENTICATE", "PLAIN", HandleAuth);
+            if (authPlain_)
+            {
+                DoAuthPlain();
+            }
+            else
+            {
+                DoLogin();
+            }
+        }
+
+        void DoAuthPlain()
+        {
+            SendCommand("AUTHENTICATE", "PLAIN", HandleAuth, AuthFailed, null);
 
             string response = '\0' + account_.Username + '\0' + account_.GetPassword();
 
             string encResponse = Convert.ToBase64String(Encoding.UTF8.GetBytes(response));
 
             SendRawResponse(encResponse);
+        }
 
-            //SendCommand("LOGIN", account_.Username + " " + account_.GetPassword(), HandleLogin);
+        void DoLogin()
+        {
+            SendCommand("LOGIN", account_.Username + " " + account_.GetPassword(), HandleLogin, AuthFailed, null);
         }
 
         void HandleAuth(ImapRequest request, IEnumerable<string> resultData, object data)
         {
             state_ = ImapState.LoggedIn;
             ListFolders();
+        }
+
+        void AuthFailed(ImapRequest request, IEnumerable<string> resultData, object data)
+        {
+            // TODO: Report to user
         }
 
         void HandleLogin(ImapRequest request, IEnumerable<string> resultData, object data)
@@ -452,8 +512,10 @@ namespace JMail
 
         void ListFolders()
         {
+            allFolders_.Clear();
             folders_.Clear();
-            SendCommand("LSUB", "\"\" \"*\"", ListedFolder);
+
+            SendCommand("LSUB", "\"\" \"*\"", ListedFolder, null, null);
         }
 
         void ListedFolder(ImapRequest request, IEnumerable<string> responseData, object data)
@@ -558,7 +620,7 @@ namespace JMail
         {
             ListMessages(request, responseData, data as Folder);
 
-            SendCommand("UID SEARCH", "UNDELETED", AvailableMessages);       
+            SendCommand("UID SEARCH", "UNDELETED", AvailableMessages, null, null);
         }
 
         void RenamedFolder(ImapRequest request, IEnumerable<string> responseData, object data)
@@ -613,7 +675,7 @@ namespace JMail
                             refreshStatus = true;
                         }
 
-                        msg = null;                        
+                        msg = null;
                     }
 
                     if (response == "EXISTS")
@@ -668,12 +730,12 @@ namespace JMail
 
         void CheckUnseen(Folder f)
         {
-            SendCommand("STATUS", "\"" + f.FullName + "\"" + " (MESSAGES UNSEEN RECENT)", UnreadCount);
+            SendCommand("STATUS", "\"" + f.FullName + "\"" + " (MESSAGES UNSEEN RECENT)", UnreadCount, StatusFailed, f);
         }
 
         void UnreadCount(ImapRequest request, IList<string> responseData, object data)
         {
-            string folderName =  ImapData.StripQuotes(responseData[2]);
+            string folderName = ImapData.StripQuotes(responseData[2]);
 
             Folder folder = (from f in AllFolders
                              where f.FullName == folderName
@@ -686,7 +748,7 @@ namespace JMail
 
                 bool changed = false;
 
-                for (int i = 0; i < infoData.Length; i = i + 2) 
+                for (int i = 0; i < infoData.Length; i = i + 2)
                 {
                     string key = infoData[i];
                     string valueStr = infoData[i + 1];
@@ -730,7 +792,22 @@ namespace JMail
                 {
                     MessagesChanged(this, new MessagesChangedEventArgs(folder, null));
                 }
-            }            
+            }
+        }
+
+        void StatusFailed(ImapRequest request, IList<string> responseData, object data)
+        {
+            // This folder can't be polled for a status, so it probably doesn't really exist.
+
+            Folder f = data as Folder;
+
+            folders_.Remove(f);
+            allFolders_.Remove(f);
+
+            if (FoldersChanged != null)
+            {
+                FoldersChanged(this, null);
+            }
         }
 
         void UpdateStatus(ImapRequest request, IEnumerable<string> responseData, object data)
@@ -739,7 +816,7 @@ namespace JMail
             {
                 if (ListMessages(request, responseData, data as Folder))
                 {
-                    SendCommand("UID SEARCH", "UNDELETED", AvailableMessages);
+                    SendCommand("UID SEARCH", "UNDELETED", AvailableMessages, null, null);
                 }
             }
         }
@@ -834,7 +911,7 @@ namespace JMail
                 {
                     // Batch into 50's
 
-                    SendCommand("UID FETCH", idList + " " + command, ProcessMessage);
+                    SendCommand("UID FETCH", idList + " " + command, ProcessMessage, null, null);
 
                     idList = "";
                 }
@@ -842,7 +919,7 @@ namespace JMail
 
             if (idList.Length > 0)
             {
-                SendCommand("UID FETCH", idList + " " + command, ProcessMessage);
+                SendCommand("UID FETCH", idList + " " + command, ProcessMessage, null, null);
             }
         }
 
@@ -1266,14 +1343,14 @@ namespace JMail
                     // Check the current status first before going into
                     // idle otherwise things that happened since the
                     // previous poll won't get noticed.
-                    SendCommand("NOOP", "", UpdateStatus, currentFolder_);
+                    SendCommand("NOOP", "", UpdateStatus, null, currentFolder_);
 
-                    SendCommand("IDLE", "", IdleComplete, currentFolder_);
+                    SendCommand("IDLE", "", IdleComplete, null, currentFolder_);
                     idling_ = true;
                 }
                 else
                 {
-                    SendCommand("NOOP", "", UpdateStatus, currentFolder_);
+                    SendCommand("NOOP", "", UpdateStatus, null, currentFolder_);
 
                     // We have to poll in this case, so start the timer again.
                     folderCheckTimer_.Start();
@@ -1299,7 +1376,7 @@ namespace JMail
         public void SelectFolder(Folder f)
         {
             currentFolder_ = f;
-            SendCommand("SELECT", "\"" + f.FullName + "\"", SelectedFolder);
+            SendCommand("SELECT", "\"" + f.FullName + "\"", SelectedFolder, null, null);
         }
 
         public void UnselectFolder(Folder f)
@@ -1314,27 +1391,27 @@ namespace JMail
 
         public void RenameFolder(string oldName, string newName)
         {
-            SendCommand("RENAME", oldName + " " + newName, RenamedFolder, newName);
+            SendCommand("RENAME", oldName + " " + newName, RenamedFolder, null, newName);
         }
 
         public void SubscribeFolder(string folderName)
         {
-            SendCommand("SUBSCRIBE", folderName, SubscribedFolder);
+            SendCommand("SUBSCRIBE", folderName, SubscribedFolder, null, null);
         }
 
         public void FetchMessage(MessageHeader m, BodyPart body)
         {
             if (body == null)
             {
-                SendCommand("UID FETCH", m.Uid + " (FLAGS BODY.PEEK[])", ProcessMessage, body);
+                SendCommand("UID FETCH", m.Uid + " (FLAGS BODY.PEEK[])", ProcessMessage, null, body);
             }
             else if (body == m.Body)
             {
-                SendCommand("UID FETCH", m.Uid + " (FLAGS BODY.PEEK[" + body.PartNumber + "])", ProcessMessage, body);
+                SendCommand("UID FETCH", m.Uid + " (FLAGS BODY.PEEK[" + body.PartNumber + "])", ProcessMessage, null, body);
             }
             else
             {
-                SendCommand("UID FETCH", m.Uid + " (BODY.PEEK[" + body.PartNumber + "])", ProcessMessage, body);
+                SendCommand("UID FETCH", m.Uid + " (BODY.PEEK[" + body.PartNumber + "])", ProcessMessage, null, body);
             }
         }
 
@@ -1375,12 +1452,12 @@ namespace JMail
 
             command += ")";
 
-            SendCommand("STORE", command, ProcessMessage);
+            SendCommand("STORE", command, ProcessMessage, null, null);
         }
 
         public void ExpungeFolder()
         {
-            SendCommand("EXPUNGE", "", UpdateStatus, currentFolder_);
+            SendCommand("EXPUNGE", "", UpdateStatus, null, currentFolder_);
         }
 
         public void PollFolders()
