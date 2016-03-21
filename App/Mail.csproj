@@ -165,7 +165,7 @@
     <Resource Include="Images\delete.png" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="MrJ.Mail.csproj">
+    <ProjectReference Include="..\Lib\MrJ.Mail.csproj">
       <Project>{1602b651-f544-4a45-8186-8f9133d2add7}</Project>
       <Name>MrJ.Mail</Name>
     </ProjectReference>

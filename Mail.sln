@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
 VisualStudioVersion = 12.0.40629.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mail", "Mail.csproj", "{E9C46DCC-036E-4499-B8C1-CBEAE80EB850}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mail", "App\Mail.csproj", "{E9C46DCC-036E-4499-B8C1-CBEAE80EB850}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MrJ.Mail", "MrJ.Mail.csproj", "{1602B651-F544-4A45-8186-8F9133D2ADD7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MrJ.Mail", "Lib\MrJ.Mail.csproj", "{1602B651-F544-4A45-8186-8F9133D2ADD7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
