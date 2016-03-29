@@ -149,6 +149,8 @@ namespace JMail
             }
         }
 
+        public bool TrustedSender { get; private set; }
+
         public MessageHeader(int uid, Folder f)
         {
             if (uid < 0)
@@ -288,7 +290,33 @@ namespace JMail
                 return;
             }
 
+            if (b.ContentType.MediaType == "application/pkcs7-signature")
+            {
+                b.Updated += TestPKCS7Signature;
+                folder_.Server.FetchMessage(this, b);
+            }
+
             attachments_.Add(b);
+        }
+
+        private void TestPKCS7Signature(object sender, EventArgs e)
+        {
+            BodyPart b = sender as BodyPart;
+
+            // Now look at the contents of the body as a signature
+            System.Security.Cryptography.Pkcs.SignedCms cms = new System.Security.Cryptography.Pkcs.SignedCms();
+
+            cms.Decode(b.Data);
+
+            foreach (var sig in cms.SignerInfos)
+            {
+                if (sig.Certificate.Subject.Contains(From.Address))
+                {
+                    TrustedSender = true;
+
+                    break;
+                }
+            }
         }
 
         public void AddRelated(BodyPart b)

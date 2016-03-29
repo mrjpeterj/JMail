@@ -79,6 +79,9 @@
                         <DataTrigger Binding="{Binding Message.Flagged}" Value="true">
                             <Setter Property="Foreground" Value="Red" />
                         </DataTrigger>
+                        <DataTrigger Binding="{Binding Message.TrustedSender}" Value="true">
+                            <Setter Property="Background" Value="LightGreen" />
+                        </DataTrigger>
                     </Style.Triggers>
                 </Style>
             </ListView.ItemContainerStyle>
