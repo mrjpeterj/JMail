@@ -28,31 +28,72 @@ namespace JMail
             return data[0] == '(' && data.Last() == ')';
         }
 
+        /// <summary>
+        /// Used to take a token that has already been extracted from the input and split it again.
+        /// This implies that is has array characters around it.
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
         public static string[] SplitToken(string token)
         {
             if (token == "NIL")
             {
                 return null;
             }
-            else
-            {
-                List<string> tokens = new List<string>();
-                SplitTokens(token.Substring(1, token.Length - 2), tokens);
 
-                return tokens.ToArray();
+            string splitStr = token.Substring(1, token.Length - 2);
+
+            var data = System.Text.Encoding.ASCII.GetBytes(splitStr);
+            List<byte[]> tokens = new List<byte[]>();
+
+            SplitTokens(data, tokens);
+
+            List<string> res = new List<string>();
+            foreach (var t in tokens)
+            {
+                res.Add(System.Text.Encoding.ASCII.GetString(t));
             }
+
+            return res.ToArray();
         }
 
-        public static bool SplitTokens(string data, IList<string> tokens)
+        public static IList<byte[]> SplitToken(byte[] token)
+        {
+            string tokenStr = System.Text.Encoding.ASCII.GetString(token);
+            if (tokenStr == "NIL")
+            {
+                return null;
+            }
+
+
+            byte[] dataToken = new byte[token.Length - 2];
+            Array.Copy(token, 1, dataToken, 0, token.Length - 2);
+            List<byte[]> tokens = new List<byte[]>();
+
+            SplitTokens(dataToken, tokens);
+
+            return tokens;
+        }
+
+        public static bool SplitTokens(byte[] data, IList<byte[]> tokens)
         {
             bool lastIsComplete = false;
             int token = 0;
             while (true)
             {
-                string tokenStr = NextToken(data, token, out token);
+                var tokenStr = NextToken(data, token, out token);
 
-                if (tokenStr.Trim().Length != 0)
+                // Check for is string just whitespace
+                if (tokenStr.Length != 0)
                 {
+                    string tokenT = System.Text.Encoding.ASCII.GetString(tokenStr);
+                    if (string.IsNullOrWhiteSpace(tokenT))
+                    {
+                        int a = 0;
+                    }
+
+
+
                     tokens.Add(tokenStr);
                 }
 
@@ -71,7 +112,7 @@ namespace JMail
             return lastIsComplete;
         }
 
-        static string NextToken(string data, int start, out int end)
+        static byte[] NextToken(byte[] data, int start, out int end)
         {
             if (start < 0)
             {
@@ -79,18 +120,18 @@ namespace JMail
                 return null;
             }
 
-            StringBuilder output = new StringBuilder();
+            List<byte> output = new List<byte>();
             int pos = start;
             int byteCounterStart = 0;
-            char prevChar = '\0';
+            var prevChar = '\0';
 
             Stack<char> toMatch = new Stack<char>();
 
             while (pos != data.Length)
             {
-                char current = data[pos];
+                var current = System.Text.Encoding.ASCII.GetChars(data, pos, 1)[0];
 
-                char matchFor = '\0';
+                var matchFor = '\0';
                 if (toMatch.Any())
                 {
                     matchFor = toMatch.Peek();
@@ -112,9 +153,10 @@ namespace JMail
                         if (foundMatch)
                         {
                             int bytesLenLen = pos - byteCounterStart;
-
                             char[] destination = new char[bytesLenLen];
-                            data.CopyTo(byteCounterStart, destination, 0, bytesLenLen);
+
+                            Array.Copy(data, byteCounterStart, destination, 0, bytesLenLen);
+
                             int bytesLen = Int32.Parse(new string(destination));
 
                             if (bytesLen <= data.Length - pos - 3)
@@ -122,18 +164,23 @@ namespace JMail
                                 if (toMatch.Count == 1)
                                 {
                                     int charsToRemove = bytesLenLen + 1;
-                                    output.Remove(output.Length - charsToRemove, charsToRemove);
+                                    output.RemoveRange(output.Count() - charsToRemove, charsToRemove);
 
-                                    string dataStr = data.Substring(pos + 3, bytesLen);
-                                    output.Append('\"');
-                                    output.Append(dataStr);
-                                    output.Append('\"');
+                                    var dataStr = new byte[bytesLen];
+                                    Array.Copy(data, pos + 3, dataStr, 0, bytesLen);
+
+                                    output.Add((byte)'\"');
+                                    output = output.Concat(dataStr).ToList();
+                                    output.Add((byte)'\"');
                                 }
                                 else
                                 {
                                     // Add the string on, but don't remove the length
                                     // identifier, until we are a top level token.
-                                    output.Append(data.Substring(pos, bytesLen + 3));
+                                    var subData = new byte[bytesLen + 3];
+                                    Array.Copy(data, pos, subData, 0, bytesLen + 3);
+
+                                    output = output.Concat(subData).ToList();
                                 }
 
                                 pos += bytesLen + 2;
@@ -142,10 +189,11 @@ namespace JMail
                             else
                             {
                                 // Append all of the rest of input data, to return an incomplete token.
-                                output.Append(data.Substring(pos));
+                                var subData = data.Skip(pos);
+                                output = output.Concat(subData).ToList();
 
                                 end = -1;
-                                return output.ToString();
+                                return output.ToArray();
                             }
                         }
                         break;
@@ -174,7 +222,7 @@ namespace JMail
                     // However, we don't want to do this substitution until we are at the last level 
                     // of splitting, otherwise the next time that we come in here we won't have
                     // backslashed quotes and they will be parsed wrongly.
-                    output.Remove(output.Length - 1, 1);
+                    output.RemoveRange(output.Count() - 1, 1);
                     prevChar = '\0';
                 }
                 else
@@ -184,7 +232,7 @@ namespace JMail
 
                     if (foundMatch)
                     {
-                        char lastChar = toMatch.Pop();
+                        var lastChar = toMatch.Pop();
                         if (toMatch.Count == 0)
                         {
                             end = pos + 1;
@@ -193,9 +241,9 @@ namespace JMail
                             if (lastChar != ' ' && current != '\0')
                             {
                                 // If the closing token wasn't <space> then we want to include it.
-                                output.Append(current);
+                                output.Add((byte)current);
                             }
-                            return output.ToString();
+                            return output.ToArray();
                         }
                     }
                     else if (current == '\"')
@@ -239,11 +287,11 @@ namespace JMail
 
                 if (current != '\0')
                 {
-                    output.Append(current);
+                    output.Add((byte)current);
                 }
             }
 
-            if (output.Length > 0)
+            if (output.Count() > 0)
             {
                 end = -1;
             }
@@ -252,7 +300,7 @@ namespace JMail
                 end = pos;
             }
 
-            return output.ToString();
+            return output.ToArray();
         }
     }
 

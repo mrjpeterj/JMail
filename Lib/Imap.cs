@@ -20,7 +20,7 @@ namespace JMail
 
     internal class ImapRequest
     {
-        internal delegate void ResponseHandler(ImapRequest request, IList<string> responseData, object data);
+        internal delegate void ResponseHandler(ImapRequest request, IList<string> responseData, IList<byte[]> resposeBytes, object data);
 
         string id_;
         string commandName_;
@@ -47,17 +47,23 @@ namespace JMail
             data_ = data;
         }
 
-        public void Process(IList<string> resultData, bool success)
+        public void Process(IList<byte[]> resultData, bool success)
         {
+            List<string> results = new List<string>();
+            foreach (var res in resultData)
+            {
+                results.Add(System.Text.Encoding.ASCII.GetString(res));
+            }
+
             if (success)
             {
-                response_(this, resultData, data_);
+                response_(this, results, resultData, data_);
             }
             else
             {
                 if (errorResponse_ != null)
                 {
-                    errorResponse_(this, resultData, data_);
+                    errorResponse_(this, results, resultData, data_);
                 }
             }
         }
@@ -76,7 +82,7 @@ namespace JMail
         private int cmdId_ = 0;
         private Queue<ImapRequest> pendingRequests_;
         private Dictionary<string, ImapRequest> pendingResponses_;
-        private List<string> currentCommand_;
+        private List<byte[]> currentCommand_;
         private bool lastTokenIsComplete_;
 
         private List<Folder> allFolders_;
@@ -98,7 +104,7 @@ namespace JMail
             pendingResponses_ = new Dictionary<string, ImapRequest>();
             pendingRequests_ = new Queue<ImapRequest>();
 
-            currentCommand_ = new List<string>();
+            currentCommand_ = new List<byte[]>();
             lastTokenIsComplete_ = true;
 
             allFolders_ = new List<Folder>();
@@ -154,12 +160,9 @@ namespace JMail
             {
                 int bytesRead = stream_.EndRead(res);
 
-
                 if (bytesRead > 0)
                 {
-                    string response = encoder_.GetString(incoming_, 0, bytesRead);
-
-                    ProcessResponse(response);
+                    ProcessResponse(bytesRead);
                 }
 
                 stream_.BeginRead(incoming_, 0, incoming_.Length, HandleRead, null);
@@ -187,36 +190,50 @@ namespace JMail
             }
         }
 
-        void ProcessResponse(string responseText)
+        void ProcessResponse(int bytesRead)
         {
-            System.Diagnostics.Debug.WriteLine(">>>>>>>> " + account_.Host + " <<<<<<<");
-            System.Diagnostics.Debug.Write(responseText);
-            System.Diagnostics.Debug.WriteLine("========");
+            {
+                string responseText = encoder_.GetString(incoming_, 0, bytesRead);
+            
+                System.Diagnostics.Debug.WriteLine(">>>>>>>> " + account_.Host + " <<<<<<<");
+                System.Diagnostics.Debug.Write(responseText);
+                System.Diagnostics.Debug.WriteLine("========");
+            }
+
+            byte[] currentResponse = null;
 
             if (!lastTokenIsComplete_)
             {
-                string lastToken = "";
+                byte[] lastToken = null;
 
                 if (currentCommand_.Any())
                 {
                     lastToken = currentCommand_.Last();
                     currentCommand_.RemoveAt(currentCommand_.Count - 1);
+
+                    currentResponse = new byte[bytesRead + lastToken.Length];
+                    Array.Copy(lastToken, 0, currentResponse, 0, lastToken.Length);
+                    Array.Copy(incoming_, 0, currentResponse, lastToken.Length, bytesRead);
                 }
 
                 lastTokenIsComplete_ = true;
-
-                responseText = lastToken + responseText;
             }
 
-            List<string> responses = new List<string>();
-            bool lastIsComplete = ImapData.SplitTokens(responseText, responses);
+            if (currentResponse == null)
+            {
+                currentResponse = new byte[bytesRead];
+                Array.Copy(incoming_, 0, currentResponse, 0, bytesRead);
+            }
+
+            List<byte[]> responses = new List<byte[]>();
+            bool lastIsComplete = ImapData.SplitTokens(currentResponse, responses);
 
             ImapRequest request = null;
             string result = null;
 
             for (int i = 0; i < responses.Count; ++i)
             {
-                string response = responses[i];
+                string response = encoder_.GetString(responses[i]);
 
                 if (request != null)
                 {
@@ -274,12 +291,12 @@ namespace JMail
                     }
                     else if (currentCommand_.Any() || response == "*")
                     {
-                        currentCommand_.Add(response);
+                        currentCommand_.Add(responses[i]);
                     }
                 }
                 else
                 {
-                    currentCommand_.Add(response);
+                    currentCommand_.Add(responses[i]);
                 }
             }
 
@@ -293,7 +310,12 @@ namespace JMail
             else if (idling_ && currentCommand_.Any())
             {
                 // IDLE doesn't have a completion command until it kicks you off the end.
-                UpdateStatus(null, currentCommand_, null);
+                List<string> udResponses = new List<string>();
+                foreach (var res in currentCommand_)
+                {
+                    udResponses.Add(encoder_.GetString(res));
+                }
+                UpdateStatus(null, udResponses, currentCommand_, null);
             }
 
             if (idling_ && pendingResponses_.Any())
@@ -389,21 +411,28 @@ namespace JMail
             SendRawResponse(cmd);
         }
 
-        void StartUp(IEnumerable<string> responseData)
+        void StartUp(IEnumerable<byte[]> responseData)
         {
             foreach (var resp in responseData)
             {
-                if (resp.StartsWith("[CAPABILITY "))
+                string respString = encoder_.GetString(resp);
+
+                if (respString.StartsWith("[CAPABILITY "))
                 {
+                    var tokens = ImapData.SplitToken(respString);
+
                     // Look to see if STARTTLS is supported before asking for caps
                     // as caps might be different after TLS.
 
-                    if (resp.Contains(" STARTTLS "))
+                    foreach (var token in tokens)
                     {
-                        StartTLS(Caps);
-                    }
+                        if (token == "STARTTLS")
+                        {
+                            StartTLS(Caps);
 
-                    return;
+                            return;
+                        }
+                    }
                 }
             }
 
@@ -415,7 +444,7 @@ namespace JMail
             SendCommand("CAPABILITY", "", HandleCaps, null, null);
         }
 
-        void HandleCaps(ImapRequest request, IEnumerable<string> resultData, object data)
+        void HandleCaps(ImapRequest request, IEnumerable<string> resultData, IEnumerable<byte[]> responseBytes, object data)
         {            
             // Looks like 
             // * CAPABILITY <cap1> <cap2> <cap3>
@@ -470,7 +499,7 @@ namespace JMail
             }
         }
 
-        void HandleTLS(ImapRequest request, IEnumerable<string> responseData, object data)
+        void HandleTLS(ImapRequest request, IEnumerable<string> responseData, IEnumerable<byte[]> responseBytes, object data)
         {
             var sslStream = new System.Net.Security.SslStream(client_.GetStream(), false,
                 new System.Net.Security.RemoteCertificateValidationCallback(GotRemoteCert));
@@ -521,18 +550,18 @@ namespace JMail
             SendCommand("LOGIN", account_.Username + " " + account_.GetPassword(), HandleLogin, AuthFailed, null);
         }
 
-        void HandleAuth(ImapRequest request, IEnumerable<string> resultData, object data)
+        void HandleAuth(ImapRequest request, IEnumerable<string> resultData, IEnumerable<byte[]> responseBytes, object data)
         {
             state_ = ImapState.LoggedIn;
             ListFolders();
         }
 
-        void AuthFailed(ImapRequest request, IEnumerable<string> resultData, object data)
+        void AuthFailed(ImapRequest request, IEnumerable<string> resultData, IEnumerable<byte[]> responseBytes, object data)
         {
             // TODO: Report to user
         }
 
-        void HandleLogin(ImapRequest request, IEnumerable<string> resultData, object data)
+        void HandleLogin(ImapRequest request, IEnumerable<string> resultData, IEnumerable<byte[]> responseBytes, object data)
         {
             state_ = ImapState.LoggedIn;
             ListFolders();
@@ -546,7 +575,7 @@ namespace JMail
             SendCommand("LSUB", "\"\" \"*\"", ListedFolder, null, null);
         }
 
-        void ListedFolder(ImapRequest request, IEnumerable<string> responseData, object data)
+        void ListedFolder(ImapRequest request, IEnumerable<string> responseData, IEnumerable<byte[]> responseBytes, object data)
         {
             Folder currentParent = null;
 
@@ -644,14 +673,14 @@ namespace JMail
             }
         }
 
-        void SelectedFolder(ImapRequest request, IEnumerable<string> responseData, object data)
+        void SelectedFolder(ImapRequest request, IEnumerable<string> responseData, IEnumerable<byte[]> responseBytes, object data)
         {
-            ListMessages(request, responseData, data as Folder);
+            ListMessages(request, responseData, responseBytes, data as Folder);
 
             SendCommand("UID SEARCH", "UNDELETED", AvailableMessages, null, null);
         }
 
-        void RenamedFolder(ImapRequest request, IEnumerable<string> responseData, object data)
+        void RenamedFolder(ImapRequest request, IEnumerable<string> responseData, IEnumerable<byte[]> responseBytes, object data)
         {
             var response = responseData.ToList();
             if (response[1] == "OK")
@@ -660,13 +689,13 @@ namespace JMail
             }
         }
 
-        void SubscribedFolder(ImapRequest request, IEnumerable<string> responseData, object data)
+        void SubscribedFolder(ImapRequest request, IEnumerable<string> responseData, IEnumerable<byte[]> responseBytes, object data)
         {
             ListFolders();
         }
 
         // Returns whether it thinks that the message list should be updated.
-        bool ListMessages(ImapRequest request, IEnumerable<string> responseData, Folder f)
+        bool ListMessages(ImapRequest request, IEnumerable<string> responseData, IEnumerable<byte[]> responseBytes, Folder f)
         {
             Folder folder = f;
             if (folder == null)
@@ -687,8 +716,13 @@ namespace JMail
 
                 bool refreshStatus = false;
 
-                foreach (var response in responseData)
+                var responseStringList = responseData.ToList();
+                var responseBytesList = responseBytes.ToList();
+
+                for (int i = 0; i < responseStringList.Count(); ++i)
                 {
+                    string response = responseStringList[i];
+
                     if (subProcessNext)
                     {
                         string[] responseInfo = ImapData.SplitToken(response);
@@ -697,7 +731,7 @@ namespace JMail
                     }
                     else if (msg != null)
                     {
-                        var res = ExtractValues(-1, null, response);
+                        var res = ExtractValues(-1, null, responseBytesList[i]);
                         if (res.IsNew && !refreshStatus)
                         {
                             refreshStatus = true;
@@ -761,7 +795,7 @@ namespace JMail
             SendCommand("STATUS", "\"" + f.FullName + "\"" + " (MESSAGES UNSEEN RECENT)", UnreadCount, StatusFailed, f);
         }
 
-        void UnreadCount(ImapRequest request, IList<string> responseData, object data)
+        void UnreadCount(ImapRequest request, IList<string> responseData, IEnumerable<byte[]> responseBytes, object data)
         {
             string folderName = ImapData.StripQuotes(responseData[2]);
 
@@ -823,7 +857,7 @@ namespace JMail
             }
         }
 
-        void StatusFailed(ImapRequest request, IList<string> responseData, object data)
+        void StatusFailed(ImapRequest request, IList<string> responseData, IEnumerable<byte[]> responseBytes, object data)
         {
             // This folder can't be polled for a status, so it probably doesn't really exist.
 
@@ -838,18 +872,18 @@ namespace JMail
             }
         }
 
-        void UpdateStatus(ImapRequest request, IEnumerable<string> responseData, object data)
+        void UpdateStatus(ImapRequest request, IEnumerable<string> responseData, IEnumerable<byte[]> responseBytes, object data)
         {
             if (responseData.Any())
             {
-                if (ListMessages(request, responseData, data as Folder))
+                if (ListMessages(request, responseData, responseBytes, data as Folder))
                 {
                     SendCommand("UID SEARCH", "UNDELETED", AvailableMessages, null, null);
                 }
             }
         }
 
-        void AvailableMessages(ImapRequest request, IEnumerable<string> responseData, object data)
+        void AvailableMessages(ImapRequest request, IEnumerable<string> responseData, IEnumerable<byte[]> responseBytes, object data)
         {
             // Each line is of the form:
             // * SEARCH <list of ids>
@@ -951,7 +985,7 @@ namespace JMail
             }
         }
 
-        void ProcessMessage(ImapRequest request, IEnumerable<string> responseData, object data)
+        void ProcessMessage(ImapRequest request, IEnumerable<string> responseData, IEnumerable<byte[]> responseBytes, object data)
         {
             // Format of this is:
             // * {id} FETCH (<field> <field data> <field> <field data> ......
@@ -965,8 +999,13 @@ namespace JMail
             Folder refreshFolder = null;
             List<MessageHeader> refreshMessages = new List<MessageHeader>();
 
-            foreach (var response in responseData)
+            var responseStringList = responseData.ToList();
+            var responseBytesList = responseBytes.ToList();
+
+            for (int i = 0; i < responseStringList.Count(); ++i)
             {
+                string response = responseStringList[i];
+
                 if (response == "*")
                 {
                     isId = true;
@@ -983,7 +1022,7 @@ namespace JMail
                 }
                 else if (isResponse)
                 {
-                    var res = ExtractValues(msgId, body, response);
+                    var res = ExtractValues(msgId, body, responseBytesList[i]);
                     if (refreshFolder == null)
                     {
                         if (res.IsNew)
@@ -1022,20 +1061,22 @@ namespace JMail
             }
         }
 
-        MessageHeaderProcessResult ExtractValues(int msgId, BodyPart body, string data)
+        MessageHeaderProcessResult ExtractValues(int msgId, BodyPart body, byte[] data)
         {
-            string[] values = ImapData.SplitToken(data);
-            Dictionary<string, string> dictValues = new Dictionary<string, string>();
-            for (int i = 0; i < values.Length; i = i + 2)
+            var values = ImapData.SplitToken(data);
+            Dictionary<string, byte[]> dictValues = new Dictionary<string, byte[]>();
+            for (int i = 0; i < values.Count(); i = i + 2)
             {
-                dictValues.Add(values[i], values[i + 1]);
+                string val1 = encoder_.GetString(values[i]);
+
+                dictValues.Add(val1, values[i + 1]);
             }
 
-            string uidStr;
+            byte[] uidStr;
             int uid = -1;
             if (dictValues.TryGetValue("UID", out uidStr))
             {
-                Int32.TryParse(uidStr, out uid);
+                Int32.TryParse(encoder_.GetString(uidStr), out uid);
             }
 
             MessageHeaderProcessResult res = new MessageHeaderProcessResult();
@@ -1062,7 +1103,7 @@ namespace JMail
             foreach (var val in dictValues)
             {
                 string key = val.Key;
-                string value = val.Value;
+                string value = encoder_.GetString(val.Value);
 
                 if (key == "FLAGS")
                 {
@@ -1073,7 +1114,7 @@ namespace JMail
                 }
                 else if (key.StartsWith("BODY["))
                 {
-                    ExtractBodyInfo(res.Message, body, value);
+                    ExtractBodyInfo(res.Message, body, val.Value);
                 }
                 else if (key == "INTERNALDATE")
                 {
@@ -1328,11 +1369,11 @@ namespace JMail
             msg.SetValue("Received", dateString.Substring(1, dateString.Length - 2));
         }
 
-        void ExtractBodyInfo(MessageHeader msg, BodyPart body, string data)
+        void ExtractBodyInfo(MessageHeader msg, BodyPart body, byte[] data)
         {
-            var bytes = encoder_.GetBytes(ImapData.StripQuotes(data));
+            // quotes should be stripped by the other side as it is easier for it to do that.
 
-            body.SetContent(bytes);
+            body.SetContent(data);
         }
 
         System.Net.Mail.MailAddress AddressBuilder(string[] addressParts)
@@ -1357,7 +1398,7 @@ namespace JMail
             }
         }
 
-        void IdleComplete(ImapRequest req, IEnumerable<string> data, object state)
+        void IdleComplete(ImapRequest req, IEnumerable<string> data, IEnumerable<byte[]> responseBytes, object state)
         {
             idling_ = false;
         }

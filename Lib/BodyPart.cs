@@ -66,6 +66,7 @@ namespace JMail
                 else if (Encoding == TextEncoding.Base64)
                 {
                     string base64Data = System.Text.Encoding.ASCII.GetString(content);
+                    base64Data = ImapData.StripQuotes(base64Data);
                     bytes = Convert.FromBase64String(base64Data);
                 }
                 else
