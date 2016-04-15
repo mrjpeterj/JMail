@@ -1059,6 +1059,14 @@ namespace JMail
                 {
                     isResponse = true;
                 }
+                else if (response == "EXPUNGE")
+                {
+                    refreshFolder = currentFolder_;
+                    refreshMessages.Clear();
+
+                    MessageHeader exMsg = refreshFolder.MessageByID(msgId);
+                    refreshFolder.Expunge(exMsg, msgId);
+                }
                 else if (isId)
                 {
                     msgId = Int32.Parse(response);
