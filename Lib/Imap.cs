@@ -776,7 +776,7 @@ namespace JMail
                     }
                     else if (msg != null)
                     {
-                        var res = ExtractValues(-1, null, responseBytesList[i]);
+                        var res = ExtractValues(msg.id, null, responseBytesList[i]);
                         if (res.IsNew && !refreshStatus)
                         {
                             refreshStatus = true;
