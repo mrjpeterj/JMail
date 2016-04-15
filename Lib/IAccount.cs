@@ -30,6 +30,11 @@ namespace JMail
         /// </summary>
         event EventHandler<MessagesChangedEventArgs> MessagesChanged;
 
+        /// <summary>
+        /// Reported when the authentication for the account has failed.
+        /// </summary>
+        event EventHandler AuthFailed;
+
         IEnumerable<Folder> FolderList { get; }
         IEnumerable<Folder> AllFolders { get; }
 
@@ -42,9 +47,10 @@ namespace JMail
         // Actions on the Current folder
         void FetchMessage(MessageHeader m, BodyPart p);
         void SetFlag(MessageHeader m, MessageFlags flags, bool isSet);
-        void ExpungeFolder();        
+        void ExpungeFolder();
 
         // General server actions
+        void Connect();
         void PollFolders();
         void Shutdown();
     }

@@ -91,6 +91,11 @@ namespace JMail
         IMAP4
     }
 
+    public class AccountInfoEventArgs: EventArgs
+    {
+        public AccountInfo Account { get; set; }
+    }
+
     public class AccountInfo
     {
         private Protocol proto_;
@@ -172,6 +177,8 @@ namespace JMail
         {
             Protocol = Protocol.IMAP4;
             Port = 143;
+
+            Connection = new Imap(this);
         }
        
         public string GetPassword()
@@ -203,7 +210,7 @@ namespace JMail
 
         public void Connect()
         {
-            Connection = new Imap(this);
+            Connection.Connect();
         }
     }
 }

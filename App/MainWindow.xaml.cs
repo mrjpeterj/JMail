@@ -28,7 +28,7 @@ namespace JMail
         private MailView mailView_;
 
         public static System.Windows.Threading.Dispatcher MainDispatcher;
-        
+
         public MainWindow()
         {
             if (Properties.Settings.Default.Accounts == null)
@@ -37,6 +37,11 @@ namespace JMail
             }
 
             mailView_ = new MailView(Properties.Settings.Default.Accounts);
+
+            foreach (var srv in mailView_.Servers)
+            {
+                srv.AuthFailed += OnAuthFailed;
+            }
 
             MainDispatcher = Dispatcher;
 
@@ -75,7 +80,7 @@ namespace JMail
         }
 
         void OnClosed(object sender, EventArgs e)
-        {            
+        {
             // Unselect the folder, so that we clean up 
             mailView_.Select(null);
 
@@ -178,7 +183,7 @@ namespace JMail
                 {
                     return null;
                 }
-                else 
+                else
                 {
                     u_MessageList.SelectedIndex = pos - 1;
                 }
@@ -211,7 +216,8 @@ namespace JMail
             dialog.Owner = this;
             if (dialog.ShowDialog() == true)
             {
-                mailView_.Servers.Add(dialog.Account);
+                var srv = mailView_.Servers.Add(dialog.Account);
+                srv.AuthFailed += OnAuthFailed;
 
                 Properties.Settings.Default.Save();
             }
@@ -466,9 +472,41 @@ namespace JMail
 
                 //if (reqWidth > subjectColumn.ActualWidth)
                 //{
-                    subjectColumn.Width = reqWidth;
+                subjectColumn.Width = reqWidth;
                 //}
             }
+        }
+
+        private void OnAuthFailed(object sender, AccountInfoEventArgs e)
+        {
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                MessageBox.Show("Authentication failed for " + e.Account.Name);
+
+                AccountProps props = new AccountProps(e.Account);
+                if (props.ShowDialog() == true)
+                {
+                    ServerView srv = null;
+
+                    foreach (var acnt in mailView_.Servers)
+                    {
+                        if (acnt.Info == e.Account)
+                        {
+                            srv = acnt;
+
+                            break;
+                        }
+                    }
+
+                    mailView_.Servers.Remove(srv);
+                    mailView_.Servers.Add(srv);
+
+                    Properties.Settings.Default.Save();
+
+                    srv.Reset();
+                }
+
+            }));
         }
     }
 

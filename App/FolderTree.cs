@@ -21,9 +21,13 @@ namespace JMail
             }
         }
 
-        public void Add(AccountInfo info)
+        public ServerView Add(AccountInfo info)
         {
-            Add(new ServerView(info));
+            ServerView srv = new ServerView(info);
+
+            Add(srv);
+
+            return srv;
         }
 
         public new void Add(ServerView srv)
@@ -43,8 +47,10 @@ namespace JMail
 
     public class ServerView: INotifyPropertyChanged
     {
-        AccountInfo server_;
-        IEnumerable<FolderView> folders_;
+        public event EventHandler<AccountInfoEventArgs> AuthFailed;
+
+        private AccountInfo server_;
+        private IEnumerable<FolderView> folders_;
 
         public AccountInfo Info { get { return server_; } }
 
@@ -66,9 +72,10 @@ namespace JMail
 
             if (server_.Enabled)
             {
-                server_.Connect();
-
                 server_.Connection.FoldersChanged += UpdateFolderList;
+                server_.Connection.AuthFailed += OnAuthFailed;
+
+                server_.Connect();
             }
         }
 
@@ -80,6 +87,14 @@ namespace JMail
             if (PropertyChanged != null)
             {
                 PropertyChanged(this, new PropertyChangedEventArgs("Folders"));
+            }
+        }
+
+        void OnAuthFailed(object sender, EventArgs e)
+        {
+            if (AuthFailed != null)
+            {
+                AuthFailed(this, new AccountInfoEventArgs { Account = Info });
             }
         }
 

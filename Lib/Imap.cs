@@ -134,11 +134,9 @@ namespace JMail
             folderCheckTimer_.Elapsed += CheckCurrent;
 
             incoming_ = new byte[8 * 1024];
-
-            Connect();
         }
 
-        void Connect()
+        public void Connect()
         {
             // On reconnect, we might have requests in the pending queue that prevent the connect from happen.
             // We need to find a solution for this.
@@ -265,6 +263,7 @@ namespace JMail
                         }
                         else if (result == "NO")
                         {
+                            int a = 0;
                         }
                         else if (result == "BAD")
                         {
@@ -571,7 +570,7 @@ namespace JMail
 
         void DoAuthPlain()
         {
-            SendCommand("AUTHENTICATE", "PLAIN", HandleAuth, AuthFailed, null);
+            SendCommand("AUTHENTICATE", "PLAIN", HandleAuth, HandleAuthFailed, null);
 
             string response = '\0' + account_.Username + '\0' + account_.GetPassword();
 
@@ -582,7 +581,7 @@ namespace JMail
 
         void DoLogin()
         {
-            SendCommand("LOGIN", account_.Username + " " + account_.GetPassword(), HandleLogin, AuthFailed, null);
+            SendCommand("LOGIN", account_.Username + " " + account_.GetPassword(), HandleLogin, HandleAuthFailed, null);
         }
 
         void HandleAuth(ImapRequest request, IEnumerable<string> resultData, IEnumerable<byte[]> responseBytes, object data)
@@ -591,9 +590,12 @@ namespace JMail
             ListFolders();
         }
 
-        void AuthFailed(ImapRequest request, IEnumerable<string> resultData, IEnumerable<byte[]> responseBytes, object data)
+        void HandleAuthFailed(ImapRequest request, IEnumerable<string> resultData, IEnumerable<byte[]> responseBytes, object data)
         {
-            // TODO: Report to user
+            if (AuthFailed != null)
+            {
+                AuthFailed(this, new EventArgs());
+            }
         }
 
         void HandleLogin(ImapRequest request, IEnumerable<string> resultData, IEnumerable<byte[]> responseBytes, object data)
@@ -1472,6 +1474,7 @@ namespace JMail
 
         public event EventHandler FoldersChanged;
         public event EventHandler<MessagesChangedEventArgs> MessagesChanged;
+        public event EventHandler AuthFailed;
 
         public IEnumerable<Folder> FolderList
         {
