@@ -7,15 +7,28 @@ namespace JMail
 {
     public static class ImapData
     {
-        public static string StripQuotes(string data)
+        public static string StripQuotes(string data, bool stripWhitespace)
         {
             if (data.StartsWith("\"") && data.EndsWith("\""))
             {
-                return data.Substring(1, data.Length - 2);
+                string res = data.Substring(1, data.Length - 2);
+
+                if (stripWhitespace)
+                {
+                    return res.Trim();
+                }
+                else
+                {
+                    return res;
+                }
             }
             else if (data == "NIL")
             {
                 return "";
+            }
+            else if (stripWhitespace)
+            {
+                return data.Trim();
             }
             else
             {

@@ -66,7 +66,7 @@ namespace JMail
                 else if (Encoding == TextEncoding.Base64)
                 {
                     string base64Data = System.Text.Encoding.ASCII.GetString(content);
-                    base64Data = ImapData.StripQuotes(base64Data);
+                    base64Data = ImapData.StripQuotes(base64Data, false);
                     bytes = Convert.FromBase64String(base64Data);
                 }
                 else
@@ -92,7 +92,7 @@ namespace JMail
 
                 string text = encoder.GetString(bytes);
 
-                text_ = ImapData.StripQuotes(text);
+                text_ = ImapData.StripQuotes(text, false);
             }
             else
             {
@@ -234,9 +234,9 @@ namespace JMail
         public ImapBodyPart(MessageHeader owner, string[] partDesc)
             : base(owner)
         {
-            string content = ImapData.StripQuotes(partDesc[0]).ToLower() + "/" + ImapData.StripQuotes(partDesc[1]).ToLower();
+            string content = ImapData.StripQuotes(partDesc[0], true).ToLower() + "/" + ImapData.StripQuotes(partDesc[1], true).ToLower();
             ContentType = new ContentType(content);
-            Id = ImapData.StripQuotes(partDesc[3]);
+            Id = ImapData.StripQuotes(partDesc[3], true);
 
             int extensionStart = 7;
             if (content.StartsWith("text"))
@@ -256,19 +256,19 @@ namespace JMail
                 int charsPos = paramList.IndexOf("\"CHARSET\"");
                 if (charsPos >= 0)
                 {
-                    ContentType.CharSet = ImapData.StripQuotes(partParams[charsPos + 1]);
+                    ContentType.CharSet = ImapData.StripQuotes(partParams[charsPos + 1], true);
                 }
 
                 int namePos = paramList.IndexOf("\"NAME\"");
                 if (namePos >= 0)
                 {
-                    ContentType.Name = ImapData.StripQuotes(partParams[namePos + 1]);
+                    ContentType.Name = ImapData.StripQuotes(partParams[namePos + 1], true);
                 }
             }
 
             Disposition.Size = Int32.Parse(partDesc[6]);
 
-            string encoding = ImapData.StripQuotes(partDesc[5]);
+            string encoding = ImapData.StripQuotes(partDesc[5], true);
             if (encoding.Length > 0)
             {
                 Encoding = EncodedText.BuildEncoding(encoding);
@@ -293,7 +293,7 @@ namespace JMail
                         int filePos = dispParamList.IndexOf("\"FILENAME\"");
                         if (filePos >= 0)
                         {
-                            Disposition.FileName = ImapData.StripQuotes(dispParams[filePos + 1]);
+                            Disposition.FileName = ImapData.StripQuotes(dispParams[filePos + 1], true);
                         }
                     }
                 }

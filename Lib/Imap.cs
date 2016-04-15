@@ -643,8 +643,8 @@ namespace JMail
                     realFolder = false;
                 }
 
-                string nameSpace = ImapData.StripQuotes(responseLine[3]);
-                string folderName = ImapData.StripQuotes(responseLine[4]);
+                string nameSpace = ImapData.StripQuotes(responseLine[3], false);
+                string folderName = ImapData.StripQuotes(responseLine[4], false);
                 string folderShortName = folderName;
 
                 while (currentParent != null)
@@ -832,7 +832,7 @@ namespace JMail
 
         void UnreadCount(ImapRequest request, IList<string> responseData, IEnumerable<byte[]> responseBytes, object data)
         {
-            string folderName = ImapData.StripQuotes(responseData[2]);
+            string folderName = ImapData.StripQuotes(responseData[2], false);
 
             Folder folder = (from f in AllFolders
                              where f.FullName == folderName
@@ -1177,10 +1177,10 @@ namespace JMail
             string[] envItems = ImapData.SplitToken(envData);
 
             // Basic string fields
-            string dataStr = ImapData.StripQuotes(envItems[0]);
-            string subject = ImapData.StripQuotes(envItems[1]);
-            string inReplyTo = ImapData.StripQuotes(envItems[8]);
-            string msgId = ImapData.StripQuotes(envItems[9]);
+            string dataStr = ImapData.StripQuotes(envItems[0], true);
+            string subject = ImapData.StripQuotes(envItems[1], false);
+            string inReplyTo = ImapData.StripQuotes(envItems[8], false);
+            string msgId = ImapData.StripQuotes(envItems[9], false);
 
             msg.SetValue("Date", dataStr);
             msg.SetValue("Subject", EncodedText.DecodeWord(subject));
@@ -1256,7 +1256,7 @@ namespace JMail
                 }
 
                 // Analyze multi-part type                
-                string multiType = ImapData.StripQuotes(dataPieces[typePos]);
+                string multiType = ImapData.StripQuotes(dataPieces[typePos], false);
                 string[] paramSet = ImapData.SplitToken(dataPieces[typePos + 1]);
                 List<string> paramList = null;
                 if (paramSet != null)
@@ -1264,7 +1264,7 @@ namespace JMail
                     paramList = paramSet.ToList();
                     for (int i = 0; i < paramList.Count; ++i)
                     {
-                        paramList[i] = ImapData.StripQuotes(paramList[i]);
+                        paramList[i] = ImapData.StripQuotes(paramList[i], false);
                     }
                 }
 
@@ -1333,9 +1333,9 @@ namespace JMail
                 ImapBodyPart bodyPart = new ImapBodyPart(msg, dataPieces);
                 bodyPart.PartNumber = loc;
 
-                if (ImapData.StripQuotes(dataPieces[0]) == "TEXT")
+                if (ImapData.StripQuotes(dataPieces[0], true) == "TEXT")
                 {
-                    string textType = ImapData.StripQuotes(dataPieces[1]);
+                    string textType = ImapData.StripQuotes(dataPieces[1], true);
 
                     if (textType.Equals("HTML", StringComparison.InvariantCultureIgnoreCase))
                     {
@@ -1413,8 +1413,8 @@ namespace JMail
 
         System.Net.Mail.MailAddress AddressBuilder(string[] addressParts)
         {
-            string address = ImapData.StripQuotes(addressParts[2]) + "@" + ImapData.StripQuotes(addressParts[3]);
-            string displayName = EncodedText.DecodeWord(ImapData.StripQuotes(addressParts[0]));
+            string address = ImapData.StripQuotes(addressParts[2], false) + "@" + ImapData.StripQuotes(addressParts[3], false);
+            string displayName = EncodedText.DecodeWord(ImapData.StripQuotes(addressParts[0], false));
 
             try
             {
