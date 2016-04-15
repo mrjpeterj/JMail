@@ -143,10 +143,18 @@ namespace JMail
 
             System.Diagnostics.Debug.WriteLine("Attempting connect to " + account_.Host);
 
+            client_ = new TcpClient();
+
+            client_.BeginConnect(account_.Host, account_.Port, ConnectComplete, null);
+        }
+
+        private void ConnectComplete(IAsyncResult aRes)
+        {
             try
             {
-                client_ = new TcpClient(account_.Host, account_.Port);
-            } catch (SocketException e)
+                client_.EndConnect(aRes);
+            }
+            catch (SocketException e)
             {
                 return;
             }
