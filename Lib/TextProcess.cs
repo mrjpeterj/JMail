@@ -448,7 +448,32 @@ namespace JMail
                     {
                         try
                         {
-                            int charVal = Convert.ToInt32(new string(encodeVal), 16);
+                            // We know that he encoding of the input is ANSi, so we can do normal char maths here.
+                            // Using the Convert.ToInt32 is far too slow.
+
+                            int c1 = 0;
+                            if (Char.IsNumber(encodeVal[0]))
+                            {
+                                c1 = encodeVal[0] - '0';
+                            }
+                            else if (Char.IsLetter(encodeVal[0]))
+                            {
+                                c1 = 10 + (encodeVal[0] - 'A');
+                            }
+
+                            int c2 = 0;
+                            if (Char.IsNumber(encodeVal[1]))
+                            {
+                                c2 = encodeVal[1] - '0';
+                            }
+                            else if (Char.IsLetter(encodeVal[1]))
+                            {
+                                c2 = 10 + (encodeVal[1] - 'A');
+                            }
+
+
+                            int charVal = c1 * 16 + c2;
+
                             res.Add((byte)charVal);
                         }
                         catch
