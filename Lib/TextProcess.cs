@@ -474,7 +474,10 @@ namespace JMail
 
                             int charVal = c1 * 16 + c2;
 
-                            res.Add((byte)charVal);
+                            if (charVal > 0)
+                            {
+                                res.Add((byte)charVal);
+                            }
                         }
                         catch
                         {
