@@ -219,8 +219,24 @@ namespace JMail
                         var item = imgPart.First();
                         item.Save((bp) =>
                         {
-                            img.SetAttribute("src", item.CacheFile);                            
+                            img.SetAttribute("src", item.CacheFile);
                         });
+                    }
+                    else if (CurrentMessage.HasAttachments)
+                    {
+                        // See if it was listed as an attachement
+                        imgPart = from r in CurrentMessage.Attachments
+                                  where r.Id == refId
+                                  select r;
+
+                        if (imgPart.Any())
+                        {
+                            var item = imgPart.First();
+                            item.Save((bp) =>
+                            {
+                                img.SetAttribute("src", item.CacheFile);
+                            });
+                        }
                     }
                 }
             }
