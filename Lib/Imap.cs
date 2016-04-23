@@ -1610,8 +1610,17 @@ namespace JMail
                 {
                     try
                     {
-                        stream_.Close();
-                        client_.Close();
+                        if (stream_ != null)
+                        {
+                            stream_.Close();
+                            stream_ = null;
+                        }
+
+                        if (client_ != null)
+                        {
+                            client_.Close();
+                            client_ = null;
+                        }
                     }
                     catch (Exception)
                     {
