@@ -1520,6 +1520,10 @@ namespace JMail
                 {
                     selected.Add(msg);
                 }
+                else
+                {
+                    int a = 0;
+                }
             }
 
             currentFolder_.ViewMessages = selected;
@@ -1635,7 +1639,7 @@ namespace JMail
 
         public void SearchFolder(string searchText)
         {
-            SendCommand("SEARCH", "TEXT " + searchText, SearchResponse, null, currentFolder_);
+            SendCommand("SEARCH", "NOT DELETED TEXT " + searchText, SearchResponse, null, currentFolder_);
         }
 
         public void SearchEnd()
