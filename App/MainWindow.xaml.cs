@@ -92,6 +92,9 @@ namespace JMail
             var item = e.OriginalSource as TreeViewItem;
             var folder = item.DataContext as FolderView;
 
+            // Clear the search text on folder change.
+            u_search.Text = "";
+
             if (mailView_.CurrentFolder != null)
             {
                 mailView_.CurrentFolder.Messages.CollectionChanged -= UpdateSorting;
