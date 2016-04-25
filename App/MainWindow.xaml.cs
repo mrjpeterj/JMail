@@ -508,6 +508,20 @@ namespace JMail
 
             }));
         }
+
+        private void ClearSearch(object sender, RoutedEventArgs e)
+        {
+            u_search.Text = "";
+            mailView_.CurrentFolder.Folder.Server.SearchEnd();
+        }
+
+        private void UpdateSearch(object sender, TextChangedEventArgs e)
+        {
+            if (!string.IsNullOrWhiteSpace(u_search.Text))
+            {
+                mailView_.CurrentFolder.Folder.Server.SearchFolder(u_search.Text);
+            }
+        }
     }
 
     public class IsVisible: System.Windows.Data.IValueConverter

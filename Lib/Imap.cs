@@ -1486,6 +1486,50 @@ namespace JMail
             }
         }
 
+        void SearchResponse(ImapRequest req, IEnumerable<string> responseData, IEnumerable<byte[]> responseBytes, object state)
+        {
+            // Response looks like:
+            // * SEARCH <list of ids>
+
+            if (state != currentFolder_)
+            {
+                return;
+            }
+
+            List<int> msgIds = new List<int>();
+
+            foreach (var msg in responseData)
+            {
+                int msgId = -1;
+                if (Int32.TryParse(msg, out msgId))
+                {
+                    msgIds.Add(msgId);
+                }
+            }
+
+            var currentIds = (from m in currentFolder_.Messages
+                              select m.id).ToList();
+
+            List<MessageHeader> selected = new List<MessageHeader>();
+
+            foreach (var id in msgIds)
+            {
+                var msg = currentFolder_.MessageByID(id);
+
+                if (msg != null)
+                {
+                    selected.Add(msg);
+                }
+            }
+
+            currentFolder_.ViewMessages = selected;
+
+            if (MessagesChanged != null)
+            {
+                MessagesChanged(this, new MessagesChangedEventArgs(currentFolder_, null));
+            }
+        }
+
         #region IAccount Members
 
         public event EventHandler FoldersChanged;
@@ -1587,6 +1631,21 @@ namespace JMail
         public void ExpungeFolder()
         {
             SendCommand("EXPUNGE", "", UpdateStatus, null, currentFolder_);
+        }
+
+        public void SearchFolder(string searchText)
+        {
+            SendCommand("SEARCH", "TEXT " + searchText, SearchResponse, null, currentFolder_);
+        }
+
+        public void SearchEnd()
+        {
+            currentFolder_.ViewMessages = currentFolder_.Messages;
+
+            if (MessagesChanged != null)
+            {
+                MessagesChanged(this, new MessagesChangedEventArgs(currentFolder_, null));
+            }
         }
 
         public void PollFolders()

@@ -48,6 +48,8 @@ namespace JMail
         void FetchMessage(MessageHeader m, BodyPart p);
         void SetFlag(MessageHeader m, MessageFlags flags, bool isSet);
         void ExpungeFolder();
+        void SearchFolder(string searchText);
+        void SearchEnd();
 
         // General server actions
         void Connect();

@@ -22,7 +22,7 @@ namespace JMail
             {
                 Clear();
 
-                foreach (var msg in folder_.Messages)
+                foreach (var msg in folder_.ViewMessages)
                 {
                     Add(new MessageHeaderView(msg));
                 }

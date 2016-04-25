@@ -39,6 +39,7 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
@@ -50,7 +51,14 @@
                 <MenuItem Header="Create" Click="Account_Create"/>
             </MenuItem>
         </Menu>
-        <TreeView Grid.Column="0" Grid.Row="1" Name="u_FolderList"
+
+        <DockPanel Grid.Column="1" Grid.Row="1">
+            <TextBlock>Search</TextBlock>
+            <Button DockPanel.Dock="Right" Click="ClearSearch">X</Button>
+            <TextBox Name="u_search" TextChanged="UpdateSearch" />
+        </DockPanel>
+
+        <TreeView Grid.Column="0" Grid.Row="2" Name="u_FolderList"
                   ItemsSource="{Binding Servers}"
                   TreeViewItem.Selected="SelectFolder">
             <TreeView.ItemContainerStyle>
@@ -60,7 +68,7 @@
             </TreeView.ItemContainerStyle>
         </TreeView>
 
-        <ListView Grid.Column="1" Grid.Row="1" Name="u_MessageList" Foreground="Black"
+        <ListView Grid.Column="1" Grid.Row="2" Name="u_MessageList" Foreground="Black"
                   ItemsSource="{Binding Path=CurrentFolder.Messages}" Selector.SelectionChanged="SelectMessage"
                   SizeChanged="MessageListResized" KeyUp="KeyboardMessageControl">
             <ListView.ItemContainerStyle>

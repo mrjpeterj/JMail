@@ -72,6 +72,7 @@ namespace JMail
         public IAccount Server { get { return server_; } }
         public IList<Folder> Children { get { return subFolders_; } }
         public IList<MessageHeader> Messages { get { return messages_; } }
+        public IList<MessageHeader> ViewMessages { get; internal set; }
 
         public Folder(IAccount server, string name, string shortName, string separator, bool hasChildren, bool canHaveMessages)
         {
@@ -89,6 +90,8 @@ namespace JMail
             if (canHaveMessages)
             {
                 messages_ = new List<MessageHeader>();
+
+                ViewMessages = Messages;
             }
         }
 
