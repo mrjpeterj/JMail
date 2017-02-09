@@ -1212,10 +1212,14 @@ namespace JMail
             string[] cc = ImapData.SplitToken(envItems[6]);
             string[] bcc = ImapData.SplitToken(envItems[7]);
 
-            var senderAddr = AddressBuilder(ImapData.SplitToken(sender[0]));
+            //var senderAddr = AddressBuilder(ImapData.SplitToken(sender[0]));
 
             msg.From = AddressBuilder(ImapData.SplitToken(from[0]));
-            msg.ReplyTo = AddressBuilder(ImapData.SplitToken(replyTo[0]));
+
+            if (replyTo != null)
+            {
+                msg.ReplyTo = AddressBuilder(ImapData.SplitToken(replyTo[0]));
+            }
 
             if (to != null)
             {
@@ -1351,11 +1355,9 @@ namespace JMail
                 ImapBodyPart bodyPart = new ImapBodyPart(msg, dataPieces);
                 bodyPart.PartNumber = loc;
 
-                if (ImapData.StripQuotes(dataPieces[0], true) == "TEXT")
+                if (bodyPart.ContentType.MediaType.StartsWith("text"))
                 {
-                    string textType = ImapData.StripQuotes(dataPieces[1], true);
-
-                    if (textType.Equals("HTML", StringComparison.InvariantCultureIgnoreCase))
+                    if (bodyPart.ContentType.MediaType.EndsWith("/html"))
                     {
                         msg.Body = bodyPart;
                     }
