@@ -186,12 +186,12 @@ namespace JMail
             }
             else if (field.Equals("date", StringComparison.CurrentCultureIgnoreCase))
             {
-                Sent = ParseDate(value);
+                Sent = ImapData.ParseDate(value);
                 field = "sent";
             }
             else if (field.Equals("received", StringComparison.CurrentCultureIgnoreCase))
             {
-                Date = ParseDate(value);
+                Date = ImapData.ParseDate(value);
                 field = "date";
             }
             else if (field.Equals("uid", StringComparison.CurrentCultureIgnoreCase))
@@ -251,36 +251,6 @@ namespace JMail
             {
                 flags_.Add(MessageFlags.Seen);
             }
-        }
-
-        DateTime ParseDate(string value)
-        {
-            try
-            {
-                return DateTime.Parse(value);
-            }
-            catch (Exception)
-            {
-            }
-
-            if (value.EndsWith(")"))
-            {
-                // strip off this trailing tz annotation.
-                int newEndPos = value.LastIndexOf("(");
-                value = value.Substring(0, newEndPos);
-
-                try
-                {
-                    return DateTime.Parse(value);
-                }
-                catch (Exception)
-                {
-                }
-            }
-
-            DateTime invalid = new DateTime();
-
-            return invalid;
         }
 
         public void AddAttachment(BodyPart b)

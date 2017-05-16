@@ -7,6 +7,36 @@ namespace JMail
 {
     public static class ImapData
     {
+        public static DateTime ParseDate(string value)
+        {
+            try
+            {
+                return DateTime.Parse(value);
+            }
+            catch (Exception)
+            {
+            }
+
+            if (value.EndsWith(")"))
+            {
+                // strip off this trailing tz annotation.
+                int newEndPos = value.LastIndexOf("(");
+                value = value.Substring(0, newEndPos);
+
+                try
+                {
+                    return DateTime.Parse(value);
+                }
+                catch (Exception)
+                {
+                }
+            }
+
+            DateTime invalid = new DateTime();
+
+            return invalid;
+        }
+
         public static string StripQuotes(string data, bool stripWhitespace)
         {
             if (data.StartsWith("\"") && data.EndsWith("\""))
@@ -512,17 +542,6 @@ namespace JMail
             }
 
             return res.ToArray();
-        }
-    }
-
-    public static class TextProcessing
-    {
-        public static string CamelCase(string label)
-        {
-            string lower = label.Substring(1).ToLower();
-            string first = label[0].ToString().ToUpper();
-
-            return first + lower;
         }
     }
 }

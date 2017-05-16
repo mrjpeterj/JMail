@@ -248,21 +248,21 @@ namespace JMail
                 extensionStart += 3;
             }
 
-            string[] partParams = ImapData.SplitToken(partDesc[2].ToUpper());
+            string[] partParams = ImapData.SplitToken(partDesc[2]);
             if (partParams != null)
             {
-                List<string> paramList = partParams.ToList();
-
-                int charsPos = paramList.IndexOf("\"CHARSET\"");
-                if (charsPos >= 0)
+                // Final item can't be a match since there must always be a following one
+                // with the value in it.
+                for (int i = 0; i < partParams.Length - 1; ++i)
                 {
-                    ContentType.CharSet = ImapData.StripQuotes(partParams[charsPos + 1], true);
-                }
-
-                int namePos = paramList.IndexOf("\"NAME\"");
-                if (namePos >= 0)
-                {
-                    ContentType.Name = ImapData.StripQuotes(partParams[namePos + 1], true);
+                    if (partParams[i].Equals("\"CHARSET\"", StringComparison.OrdinalIgnoreCase))
+                    {
+                        ContentType.CharSet = ImapData.StripQuotes(partParams[i + 1], true).ToUpper();
+                    }
+                    else if (partParams[i].Equals("\"NAME\"", StringComparison.OrdinalIgnoreCase))
+                    {
+                        ContentType.Name = ImapData.StripQuotes(partParams[i + 1], true);
+                    }
                 }
             }
 
@@ -281,7 +281,7 @@ namespace JMail
                 string[] dispData = ImapData.SplitToken(dispose);
                 if (dispData != null)
                 {
-                    if (dispData[0] == "\"ATTACHMENT\"")
+                    if (dispData[0].Equals("\"ATTACHMENT\"", StringComparison.OrdinalIgnoreCase))
                     {
                         Disposition.Inline = false;
                     }
@@ -289,11 +289,26 @@ namespace JMail
                     string[] dispParams = ImapData.SplitToken(dispData[1]);
                     if (dispParams != null)
                     {
-                        List<string> dispParamList = dispParams.ToList();
-                        int filePos = dispParamList.IndexOf("\"FILENAME\"");
-                        if (filePos >= 0)
+                        // Don't look at the final item as that can't be valid.
+                        // Since there always needs to be another entry after 'FILENAME'
+                        for (int i = 0; i < dispParams.Length - 1; ++i)
                         {
-                            Disposition.FileName = ImapData.StripQuotes(dispParams[filePos + 1], true);
+                            if (dispParams[i].Equals("\"FILENAME\"", StringComparison.OrdinalIgnoreCase))
+                            {
+                                Disposition.FileName = ImapData.StripQuotes(dispParams[i + 1], true);
+                            }
+                            else if (dispParams[i].Equals("\"SIZE\"", StringComparison.OrdinalIgnoreCase))
+                            {
+                                Disposition.Size = Int32.Parse(ImapData.StripQuotes(dispParams[i + 1], true));
+                            }
+                            else if (dispParams[i].Equals("\"CREATION-DATE\"", StringComparison.OrdinalIgnoreCase))
+                            {
+                                Disposition.CreationDate = ImapData.ParseDate(ImapData.StripQuotes(dispParams[i + 1], true));
+                            }
+                            else if (dispParams[i].Equals("\"MODIFICATION-DATE\"", StringComparison.OrdinalIgnoreCase))
+                            {
+                                Disposition.ModificationDate = ImapData.ParseDate(ImapData.StripQuotes(dispParams[i + 1], true));
+                            }
                         }
                     }
                 }
