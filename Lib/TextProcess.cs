@@ -258,15 +258,24 @@ namespace JMail
                         break;
                 }
 
-                if (prevChar == '\\' && toMatch.Count == 1 && toMatch.First() == '"')
+                if (prevChar == '\\')
                 {
-                    // Handle backslashified char.
-                    // I think that there we are really only handling \" quoted pair and maybe \\
-                    // However, we don't want to do this substitution until we are at the last level 
-                    // of splitting, otherwise the next time that we come in here we won't have
-                    // backslashed quotes and they will be parsed wrongly.
-                    output.RemoveRange(output.Count() - 1, 1);
-                    prevChar = '\0';
+                    if (toMatch.Count == 1 && toMatch.First() == '"')
+                    {
+                        // Handle backslashified char.
+                        // I think that there we are really only handling \" quoted pair and maybe \\
+                        // However, we don't want to do this substitution until we are at the last level 
+                        // of splitting, otherwise the next time that we come in here we won't have
+                        // backslashed quotes and they will be parsed wrongly.
+                        output.RemoveRange(output.Count() - 1, 1);
+                        prevChar = '\0';
+                    }
+                    else
+                    {
+                        // Don't do any processing on this current char
+
+                        prevChar = current;
+                    }
                 }
                 else
                 {

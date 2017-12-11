@@ -1,11 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.24720.0
+# Visual Studio 15
+VisualStudioVersion = 15.0.27130.2003
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mail", "App\Mail.csproj", "{E9C46DCC-036E-4499-B8C1-CBEAE80EB850}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MrJ.Mail", "Lib\MrJ.Mail.csproj", "{1602B651-F544-4A45-8186-8F9133D2ADD7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Code\Tests.csproj", "{A560DCE0-33C4-4A95-AA96-1AF4C1DA6806}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -20,8 +22,15 @@ Global
 		{1602B651-F544-4A45-8186-8F9133D2ADD7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1602B651-F544-4A45-8186-8F9133D2ADD7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1602B651-F544-4A45-8186-8F9133D2ADD7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A560DCE0-33C4-4A95-AA96-1AF4C1DA6806}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A560DCE0-33C4-4A95-AA96-1AF4C1DA6806}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A560DCE0-33C4-4A95-AA96-1AF4C1DA6806}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A560DCE0-33C4-4A95-AA96-1AF4C1DA6806}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {4F7611BF-A9DB-4494-984B-22746838C130}
 	EndGlobalSection
 EndGlobal

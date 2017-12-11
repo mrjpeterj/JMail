@@ -136,6 +136,16 @@ namespace JMail
             incoming_ = new byte[8 * 1024];
         }
 
+        // Instead of calling Connect to initiate a network data stream,
+        // just call this to explicitly set as custom one.
+        public void SetStream(Stream s, ImapState newState)
+        {
+            stream_ = s;
+
+            state_ = newState;
+            stream_.BeginRead(incoming_, 0, incoming_.Length, HandleRead, null);
+        }
+
         public void Connect()
         {
             // On reconnect, we might have requests in the pending queue that prevent the connect from happen.
@@ -1212,12 +1222,12 @@ namespace JMail
             string[] envItems = ImapData.SplitToken(envData);
 
             // Basic string fields
-            string dataStr = ImapData.StripQuotes(envItems[0], true);
+            string dateStr = ImapData.StripQuotes(envItems[0], true);
             string subject = ImapData.StripQuotes(envItems[1], false);
             string inReplyTo = ImapData.StripQuotes(envItems[8], false);
             string msgId = ImapData.StripQuotes(envItems[9], false);
 
-            msg.SetValue("Date", dataStr);
+            msg.SetValue("Date", dateStr);
             msg.SetValue("Subject", EncodedText.DecodeWord(subject));
             msg.SetValue("In-Reply-To", inReplyTo);
             msg.SetValue("Message-Id", msgId);
@@ -1449,7 +1459,7 @@ namespace JMail
             body.SetContent(data);
         }
 
-        System.Net.Mail.MailAddress AddressBuilder(string[] addressParts)
+        static System.Net.Mail.MailAddress AddressBuilder(string[] addressParts)
         {
             string address = ImapData.StripQuotes(addressParts[2], false) + "@" + ImapData.StripQuotes(addressParts[3], false);
             string displayName = EncodedText.DecodeWord(ImapData.StripQuotes(addressParts[0], false));
