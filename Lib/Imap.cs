@@ -357,7 +357,7 @@ namespace JMail
                 {
                     udResponses.Add(encoder_.GetString(res));
                 }
-                UpdateStatus(null, udResponses, currentCommand_, null);
+                UpdateStatus(null, udResponses, currentCommand_, currentFolder_);
             }
 
             if (idling_ == IdleState.On && pendingResponses_.Any())
