@@ -49,7 +49,19 @@ namespace JMail
                 var responsesEle = action.Elements("response");
                 foreach (var responseEle in responsesEle)
                 {
-                    actionItem.response.Add(Encoding.UTF8.GetBytes(responseEle.Value.Replace("\n", "\r\n")));
+                    var datFile = responseEle.Attribute("filename");
+                    if (datFile != null && !string.IsNullOrEmpty(datFile.Value))
+                    {
+                        var localFile = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(fileName),
+                                                               datFile.Value);
+
+                        var data = System.IO.File.ReadAllBytes(localFile);
+                        actionItem.response.Add(data);
+                    }
+                    else
+                    {
+                        actionItem.response.Add(Encoding.UTF8.GetBytes(responseEle.Value.Replace("\n", "\r\n")));
+                    }
                 }
 
                 actions_.Add(actionItem);

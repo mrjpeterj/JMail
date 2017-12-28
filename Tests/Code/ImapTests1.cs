@@ -19,7 +19,7 @@ namespace JMail
         }
 
         [TestMethod]
-        public void TestMethod1()
+        public void Folder_List_1()
         {
             var s = new ScriptPlayer("../../../Data/test1.xml");
             bool complete = false;
@@ -41,7 +41,7 @@ namespace JMail
         }
 
         [TestMethod]
-        public void TestMethod2()
+        public void Folder_List_2()
         {
             var s = new ScriptPlayer("../../../Data/test2.xml");
             bool complete = false;
@@ -61,6 +61,41 @@ namespace JMail
 
             Assert.AreEqual(50, folder.Messages.Count);
             Assert.AreEqual(0, folder.Messages.Where(m => m.UnRead == true).Count());
+        }
+
+        [TestMethod]
+        public void Body_8Bit_UTF8()
+        {
+            var s = new ScriptPlayer("../../../Data/test3.xml");
+            bool complete = false;
+
+            server_.MessagesChanged += (sender, e) => { complete = true; };
+
+            server_.SetStream(s, ImapState.LoggedIn);
+
+            var folder = new Folder(server_, "INBOX.testContent", "testContent", ".", false, true);
+
+            server_.SelectFolder(folder);
+
+            while (!complete)
+            {
+                System.Threading.Thread.Sleep(1000);
+            }
+
+            bool contentReady = false;
+            var msg = folder.MessageByUID(86);
+            msg.Body.Updated += (sender, e) => { contentReady = true; };
+
+            msg.Fetch();
+
+            while (!contentReady)
+            {
+                System.Threading.Thread.Sleep(1000);
+            }
+
+            var bodyText = msg.Body.Text;
+
+            Assert.IsTrue(bodyText.Contains("£12.50"));
         }
     }
 }
