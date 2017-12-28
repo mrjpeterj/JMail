@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace JMail
@@ -37,6 +38,29 @@ namespace JMail
             }
 
             Assert.AreEqual(27, folder.Messages.Count);
+        }
+
+        [TestMethod]
+        public void TestMethod2()
+        {
+            var s = new ScriptPlayer("../../../Data/test2.xml");
+            bool complete = false;
+
+            server_.MessagesChanged += (sender, e) => { complete = true; };
+
+            server_.SetStream(s, ImapState.LoggedIn);
+
+            var folder = new Folder(server_, "INBOX", "INBOX", "/", false, true);
+
+            server_.SelectFolder(folder);
+
+            while (!complete)
+            {
+                System.Threading.Thread.Sleep(1000);
+            }
+
+            Assert.AreEqual(50, folder.Messages.Count);
+            Assert.AreEqual(0, folder.Messages.Where(m => m.UnRead == true).Count());
         }
     }
 }

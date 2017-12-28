@@ -125,7 +125,12 @@ namespace JMail
             System.Diagnostics.Debug.Assert(offset == 0);
             System.Diagnostics.Debug.Assert(count == buffer.Length);
 
-            var action = actions_.First();
+            var action = actions_.FirstOrDefault();
+
+            if (action == null)
+            {
+                return;
+            }
 
             lock (this)
             {
