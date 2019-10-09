@@ -29,7 +29,7 @@ namespace JMail
 
             server_.MessagesChanged += (sender, e) => { complete = true; };
 
-            server_.SetStream(s, ImapState.LoggedIn);
+            server_.SetStream(s);
 
             var folder = new Folder(server_, "Junk", "Junk", "/", false, true);
 
@@ -51,7 +51,7 @@ namespace JMail
 
             server_.MessagesChanged += (sender, e) => { complete = true; };
 
-            server_.SetStream(s, ImapState.LoggedIn);
+            server_.SetStream(s);
 
             var folder = new Folder(server_, "INBOX", "INBOX", "/", false, true);
 
@@ -74,7 +74,7 @@ namespace JMail
 
             server_.MessagesChanged += (sender, e) => { complete = true; };
 
-            server_.SetStream(s, ImapState.LoggedIn);
+            server_.SetStream(s);
 
             var folder = new Folder(server_, "INBOX.testContent", "testContent", ".", false, true);
 

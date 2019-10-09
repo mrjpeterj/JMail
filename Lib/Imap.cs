@@ -10,7 +10,7 @@ using System.Net.Sockets;
 
 namespace JMail.Core
 {
-    public enum ImapState
+    enum ImapState
     {
         None,
         Connected,
@@ -87,11 +87,11 @@ namespace JMail.Core
 
         // Instead of calling Connect to initiate a network data stream,
         // just call this to explicitly set as custom one.
-        public void SetStream(Stream s, ImapState newState)
+        public void SetStream(Stream s)
         {
             stream_ = s;
 
-            state_ = newState;
+            state_ = ImapState.LoggedIn;
             stream_.BeginRead(incoming_, 0, incoming_.Length, HandleRead, null);
         }
 
