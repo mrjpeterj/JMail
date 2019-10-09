@@ -4,6 +4,8 @@ using System.ComponentModel;
 using System.Linq;
 using System.Text;
 
+using JMail.Core;
+
 namespace JMail
 {
     public class MailView: INotifyPropertyChanged

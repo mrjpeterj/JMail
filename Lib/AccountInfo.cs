@@ -8,7 +8,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Xml.Serialization;
 
-namespace JMail
+namespace JMail.Core
 {
     /// <summary>
     /// Used for serializing the settings

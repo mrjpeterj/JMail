@@ -5,7 +5,7 @@ using System.Text;
 
 using System.ComponentModel;
 
-namespace JMail
+namespace JMail.Core
 {
     public class Folder
     {

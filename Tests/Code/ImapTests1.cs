@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Linq;
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+using JMail.Core;
 
 namespace JMail
 {

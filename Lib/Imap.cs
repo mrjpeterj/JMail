@@ -8,7 +8,7 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 
-namespace JMail
+namespace JMail.Core
 {
     public enum ImapState
     {

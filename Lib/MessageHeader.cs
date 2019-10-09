@@ -5,31 +5,8 @@ using System.Linq;
 using System.Net.Mail;
 using System.Text;
 
-namespace JMail
+namespace JMail.Core
 {
-    public enum MessageFlags
-    {
-        Seen,
-        Answered,
-        Flagged,
-        Deleted,
-        Draft,
-        Recent
-    }
-
-    internal class MessageHeaderProcessResult
-    {
-        public MessageHeader Message { get; set; }
-        public bool IsNew { get; set; }
-        public bool IsModified { get; set; }
-
-        public MessageHeaderProcessResult()
-        {
-            IsNew = false;
-            IsModified = false;
-        }
-    }
-
     public class MessageHeader
     {
         Folder folder_;

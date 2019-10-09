@@ -11,6 +11,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
+using JMail.Core;
+
 namespace JMail
 {
     /// <summary>

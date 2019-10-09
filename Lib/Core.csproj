@@ -2,6 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <RootNamespace>JMail.Core</RootNamespace>
+    <AssemblyName>JMail.Core</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>

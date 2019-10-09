@@ -25,9 +25,9 @@ namespace JMail.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        public global::JMail.AccountList Accounts {
+        public global::JMail.Core.AccountList Accounts {
             get {
-                return ((global::JMail.AccountList)(this["Accounts"]));
+                return ((global::JMail.Core.AccountList)(this["Accounts"]));
             }
             set {
                 this["Accounts"] = value;
