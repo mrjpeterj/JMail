@@ -18,7 +18,7 @@ namespace JMail.Core
         Selected
     }
 
-    public enum IdleState
+    enum ImapIdleState
     {
         // Not suppport
         None,
@@ -59,7 +59,7 @@ namespace JMail.Core
 
         private bool authPlain_;
 
-        private volatile IdleState idling_;
+        private volatile ImapIdleState idling_;
 
         private System.Timers.Timer folderCheckTimer_;
 
@@ -77,7 +77,7 @@ namespace JMail.Core
             folders_ = new List<Folder>();
 
             authPlain_ = false;
-            idling_ = IdleState.None;
+            idling_ = ImapIdleState.None;
 
             folderCheckTimer_ = new System.Timers.Timer(30 * 1000);
             folderCheckTimer_.Elapsed += CheckCurrent;
@@ -298,7 +298,7 @@ namespace JMail.Core
 
                 lastTokenIsComplete_ = lastIsComplete;
             }
-            else if (idling_ == IdleState.On && currentCommand_.Any())
+            else if (idling_ == ImapIdleState.On && currentCommand_.Any())
             {
                 // IDLE doesn't have a completion command until it kicks you off the end.
                 List<string> udResponses = new List<string>();
@@ -309,7 +309,7 @@ namespace JMail.Core
                 UpdateStatus(null, udResponses, currentCommand_, currentFolder_);
             }
 
-            if (idling_ == IdleState.On && pendingResponses_.Any())
+            if (idling_ == ImapIdleState.On && pendingResponses_.Any())
             {
                 // The IDLE command can end up expecting a response, when it doesn't get one.
                 int a = 0;
@@ -391,9 +391,9 @@ namespace JMail.Core
                 return;
             }
 
-            if (idling_ == IdleState.On)
+            if (idling_ == ImapIdleState.On)
             {
-                idling_ = IdleState.RequestStop;
+                idling_ = ImapIdleState.RequestStop;
 
                 // Need to terminate the idle first.
                 string endIdle = "DONE";
@@ -402,16 +402,16 @@ namespace JMail.Core
 
                 return;
             }
-            else if (idling_ == IdleState.ReqestedStart)
+            else if (idling_ == ImapIdleState.ReqestedStart)
             {
                 var requestPeek = pendingRequests_.Peek();
 
                 if (requestPeek.Command == "IDLE")
                 {
-                    idling_ = IdleState.On;
+                    idling_ = ImapIdleState.On;
                 }
             }
-            else if (idling_ == IdleState.RequestStop)
+            else if (idling_ == ImapIdleState.RequestStop)
             {
                 // Wait until it really has stopped.
                 return;
@@ -497,7 +497,7 @@ namespace JMail.Core
                 }
                 else if (cap == "IDLE")
                 {
-                    idling_ = IdleState.Off;
+                    idling_ = ImapIdleState.Off;
                 }
             }
 
@@ -1434,7 +1434,7 @@ namespace JMail.Core
         {
             System.Diagnostics.Debug.WriteLine("Stopped IDLE");
 
-            idling_ = IdleState.Off;
+            idling_ = ImapIdleState.Off;
 
             // Now send the message that we queued up while we waited for IDLE to complete.
             ProcessPending();
@@ -1444,9 +1444,9 @@ namespace JMail.Core
         {
             if (currentFolder_ != null)
             {
-                if (idling_ == IdleState.Off)
+                if (idling_ == ImapIdleState.Off)
                 {
-                    idling_ = IdleState.ReqestedStart;
+                    idling_ = ImapIdleState.ReqestedStart;
 
                     // Check the current status first before going into
                     // idle otherwise things that happened since the
@@ -1455,7 +1455,7 @@ namespace JMail.Core
 
                     SendCommand("IDLE", "", IdleComplete, null, currentFolder_);
                 }
-                else if (idling_ == IdleState.None)
+                else if (idling_ == ImapIdleState.None)
                 {
                     SendCommand("NOOP", "", UpdateStatus, null, currentFolder_);
 
