@@ -11,7 +11,6 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
-
 using JMail.Core;
 
 namespace JMail
@@ -27,7 +26,7 @@ namespace JMail
 
         MessageHeaderView currentMessage_;
         
-        public MessageHeaderView CurrentMessageView
+        public MessageHeaderView CurrentMessage
         {
             get
             {
@@ -39,14 +38,6 @@ namespace JMail
                 currentMessage_ = value;
 
                 DataContext = currentMessage_;
-            }
-        }
-
-        public MessageHeader CurrentMessage
-        {
-            get
-            {
-                return currentMessage_.Message;
             }
         }
 
@@ -225,7 +216,7 @@ namespace JMail
                     }
                     else if (CurrentMessage.HasAttachments)
                     {
-                        // See if it was listed as an attachement
+                        // See if it was listed as an attachment
                         imgPart = from r in CurrentMessage.Attachments
                                   where r.Id == refId
                                   select r;
@@ -293,7 +284,7 @@ namespace JMail
             }
             else
             {
-                e.CanExecute = !folder_.IsLast(owner_, CurrentMessageView);
+                e.CanExecute = !folder_.IsLast(owner_, CurrentMessage);
             }
         }
 
@@ -305,20 +296,20 @@ namespace JMail
             }
             else
             {
-                e.CanExecute = !folder_.IsFirst(owner_, CurrentMessageView);
+                e.CanExecute = !folder_.IsFirst(owner_, CurrentMessage);
             }
         }
 
         private void NextMessage(object sender, ExecutedRoutedEventArgs e)
         {
-            if (CurrentMessageView != null)
+            if (CurrentMessage != null)
             {
                 CurrentMessage.Body.Updated -= BodyUpdated;
             }
 
-            CurrentMessageView = folder_.Next(owner_, CurrentMessageView);
+            CurrentMessage = folder_.Next(owner_, CurrentMessage);
 
-            if (CurrentMessageView != null)
+            if (CurrentMessage != null)
             {
                 UpdateContent();
 
@@ -328,14 +319,14 @@ namespace JMail
 
         private void PreviousMessage(object sender, ExecutedRoutedEventArgs e)
         {
-            if (CurrentMessageView != null)
+            if (CurrentMessage != null)
             {
                 CurrentMessage.Body.Updated -= BodyUpdated;
             }
 
-            CurrentMessageView = folder_.Prev(owner_, CurrentMessageView);
+            CurrentMessage = folder_.Prev(owner_, CurrentMessage);
 
-            if (CurrentMessageView != null)
+            if (CurrentMessage != null)
             {
                 UpdateContent();
 
@@ -345,14 +336,14 @@ namespace JMail
 
         private void DeleteMessage(object sender, ExecutedRoutedEventArgs e)
         {
-            if (CurrentMessageView != null)
+            if (CurrentMessage != null)
             {
                 CurrentMessage.Deleted = true;
             }
 
             NextMessage(sender, null);
 
-            if (CurrentMessageView == null)
+            if (CurrentMessage == null)
             {
                 // Didn't have a next message.
 

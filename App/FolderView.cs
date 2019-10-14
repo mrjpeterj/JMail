@@ -16,9 +16,9 @@ namespace JMail
 
         public IEnumerable<FolderView> Folders { get; private set; }
 
-        public IEnumerable<MessageHeader> Messages { get; private set; }
+        public IEnumerable<MessageHeaderView> Messages { get; private set; }
 
-        public MessageHeader CurrentMessage { get; set; }
+        public MessageHeaderView CurrentMessage { get; set; }
 
         public bool IsMessage { get { return CurrentMessage != null; } }
         public bool IsUnread { get { return IsMessage && CurrentMessage.UnRead; } }
@@ -45,7 +45,11 @@ namespace JMail
             if (Folder.CanHaveMessages)
             {
                 Folder.ViewMessages
-                    .SubscribeTo<IEnumerable<MessageHeader>, FolderView>(this, x => x.Messages);
+                    .Select((msgs) =>
+                    {
+                        return msgs.Select(msg => new MessageHeaderView(msg));
+                    })
+                    .SubscribeTo(this, x => x.Messages);
             }
 
             Folder.Unseen.Select((val) =>
@@ -82,9 +86,9 @@ namespace JMail
             Folder.Rename(newName);
         }
 
-        public MessageHeader Next(MainWindow view, MessageHeader msg)
+        public MessageHeaderView Next(MainWindow view, MessageHeaderView msg)
         {
-            MessageHeader nextMsg = null;
+            MessageHeaderView nextMsg = null;
 
             if (view != null)
             {
@@ -104,9 +108,9 @@ namespace JMail
             return nextMsg;
         }
 
-        public MessageHeader Prev(MainWindow view, MessageHeader msg)
+        public MessageHeaderView Prev(MainWindow view, MessageHeaderView msg)
         {
-            MessageHeader nextMsg = null;
+            MessageHeaderView nextMsg = null;
 
             if (view != null)
             {
@@ -126,7 +130,7 @@ namespace JMail
             return nextMsg;
         }
 
-        public bool IsLast(MainWindow view, MessageHeader msg)
+        public bool IsLast(MainWindow view, MessageHeaderView msg)
         {
             if (view != null)
             {
@@ -138,7 +142,7 @@ namespace JMail
             }
         }
 
-        public bool IsFirst(MainWindow view, MessageHeader msg)
+        public bool IsFirst(MainWindow view, MessageHeaderView msg)
         {
             if (view != null)
             {

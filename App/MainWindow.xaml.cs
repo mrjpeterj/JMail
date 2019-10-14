@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
+using System.Reactive.Linq;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -15,8 +16,6 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-using JMail.Core;
-
 namespace JMail
 {
     /// <summary>
@@ -27,6 +26,7 @@ namespace JMail
         private System.Windows.Threading.DispatcherTimer poller_;
 
         private MailView mailView_;
+        private IDisposable currentFolderSub_;
 
         public static System.Windows.Threading.Dispatcher MainDispatcher;
 
@@ -34,7 +34,7 @@ namespace JMail
         {
             if (Properties.Settings.Default.Accounts == null)
             {
-                Properties.Settings.Default.Accounts = new AccountList();
+                Properties.Settings.Default.Accounts = new Core.AccountList();
             }
 
             mailView_ = new MailView(Properties.Settings.Default.Accounts);
@@ -96,34 +96,29 @@ namespace JMail
             // Clear the search text on folder change.
             u_search.Text = "";
 
-            if (mailView_.CurrentFolder != null)
+            if (currentFolderSub_ != null)
             {
-                mailView_.CurrentFolder.Messages.CollectionChanged -= UpdateSorting;
+                currentFolderSub_.Dispose();
+                currentFolderSub_ = null;
             }
 
             mailView_.Select(folder);
 
             if (folder != null)
             {
-                folder.Messages.CollectionChanged += UpdateSorting;
-            }
-        }
-
-        private void UpdateSorting(object sender, NotifyCollectionChangedEventArgs e)
-        {
-            Dispatcher.BeginInvoke(new Action(() =>
+                currentFolderSub_ = folder.Folder.Messages.ObserveOn(Dispatcher).Subscribe((msgs) =>
                 {
                     SortMessageList();
-                }
-            ));
+                });
+            }
         }
 
         private void SortMessageList()
         {
             // Make sure it updates the sorting of the list
             u_MessageList.Items.SortDescriptions.Clear();
-            u_MessageList.Items.SortDescriptions.Add(new SortDescription("Message.Sent", ListSortDirection.Ascending));
-            u_MessageList.Items.SortDescriptions.Add(new SortDescription("Message.id", ListSortDirection.Ascending));
+            u_MessageList.Items.SortDescriptions.Add(new SortDescription("Sent", ListSortDirection.Ascending));
+            u_MessageList.Items.SortDescriptions.Add(new SortDescription("id", ListSortDirection.Ascending));
 
             if (u_MessageList.Items.Count == mailView_.CurrentFolder.Messages.Count())
             {
@@ -139,7 +134,7 @@ namespace JMail
 
         public MessageHeaderView NextMessage(MessageHeaderView current)
         {
-            if (current.Message.Folder == mailView_.CurrentFolder.Folder)
+            if (current.Folder == mailView_.CurrentFolder.Folder)
             {
                 int pos = u_MessageList.Items.IndexOf(current);
 
@@ -164,7 +159,7 @@ namespace JMail
 
         public bool IsLastMessage(MessageHeaderView current)
         {
-            if (current.Message.Folder == mailView_.CurrentFolder.Folder)
+            if (current.Folder == mailView_.CurrentFolder.Folder)
             {
                 int pos = u_MessageList.Items.IndexOf(current);
 
@@ -178,7 +173,7 @@ namespace JMail
 
         public MessageHeaderView PrevMessage(MessageHeaderView current)
         {
-            if (current.Message.Folder == mailView_.CurrentFolder.Folder)
+            if (current.Folder == mailView_.CurrentFolder.Folder)
             {
                 int pos = u_MessageList.Items.IndexOf(current);
 
@@ -202,7 +197,7 @@ namespace JMail
 
         public bool IsFirstMessage(MessageHeaderView current)
         {
-            if (current.Message.Folder == mailView_.CurrentFolder.Folder)
+            if (current.Folder == mailView_.CurrentFolder.Folder)
             {
                 int pos = u_MessageList.Items.IndexOf(current);
 
@@ -290,7 +285,7 @@ namespace JMail
             msg.Body.Fetch();
 
             Message m = new Message(mailView_.CurrentFolder, this);
-            m.CurrentMessageView = msg;
+            m.CurrentMessage = msg;
 
             m.Show();
             m.Focus();
@@ -310,13 +305,13 @@ namespace JMail
 
                 if (e.Key == Key.Delete)
                 {
-                    msg.Message.Deleted = true;
+                    msg.Deleted = true;
 
                     e.Handled = true;
                 }
                 if (e.Key == Key.Q && Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
                 {
-                    msg.Message.UnRead = !msg.Message.UnRead;
+                    msg.UnRead = !msg.UnRead;
                 }
             }
         }
@@ -337,7 +332,7 @@ namespace JMail
                     continue;
                 }
 
-                msg.Message.UnRead = false;
+                msg.UnRead = false;
             }
         }
 
@@ -357,7 +352,7 @@ namespace JMail
                     continue;
                 }
 
-                msg.Message.UnRead = true;
+                msg.UnRead = true;
             }
         }
 
@@ -377,7 +372,7 @@ namespace JMail
                     continue;
                 }
 
-                msg.Message.Deleted = true;
+                msg.Deleted = true;
             }
         }
 
@@ -397,7 +392,7 @@ namespace JMail
                     continue;
                 }
 
-                msg.Message.Deleted = false;
+                msg.Deleted = false;
             }
         }
 
@@ -406,7 +401,7 @@ namespace JMail
             MessageHeaderView msg = mailView_.CurrentFolder.CurrentMessage;
             msg.FullMessage.Fetch();
 
-            MessageProps props = new MessageProps(msg.Message, this);
+            MessageProps props = new MessageProps(msg, this);
             props.Show();
         }
 
@@ -481,7 +476,7 @@ namespace JMail
             }
         }
 
-        private void OnAuthFailed(object sender, AccountInfoEventArgs e)
+        private void OnAuthFailed(object sender, Core.AccountInfoEventArgs e)
         {
             Dispatcher.BeginInvoke(new Action(() =>
             {

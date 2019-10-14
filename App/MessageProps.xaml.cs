@@ -11,8 +11,6 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
-using JMail.Core;
-
 namespace JMail
 {
     /// <summary>
@@ -20,9 +18,9 @@ namespace JMail
     /// </summary>
     public partial class MessageProps: Window
     {
-        MessageHeader msg_;
+        MessageHeaderView msg_;
 
-        public MessageProps(MessageHeader msg, Window owner)
+        public MessageProps(MessageHeaderView msg, Window owner)
         {
             msg_ = msg;
             Owner = owner;
