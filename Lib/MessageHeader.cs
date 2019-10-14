@@ -139,6 +139,10 @@ namespace JMail.Core
 
             To = new MailAddressCollection();
             Cc = new MailAddressCollection();
+
+            // Build the BodyPart required to pull the whole message.
+            FullMessage = new BodyPart(this, "text/plain");
+            FullMessage.PartNumber = "";
         }
 
         public override string ToString()
@@ -270,26 +274,6 @@ namespace JMail.Core
             }
 
             related_.Add(b);
-        }
-
-        public void Fetch()
-        {
-            if (Body.Text == null)
-            {
-                folder_.Server.FetchMessage(this, Body);
-            }
-        }
-
-        public void FetchWhole()
-        {
-            if (FullMessage == null)
-            {
-                // Build the BodyPart required to pull the whole message.
-                FullMessage = new BodyPart(this, "text/plain");
-                FullMessage.PartNumber = "";
-
-                folder_.Server.FetchMessage(this, FullMessage);
-            }
         }
     }
 }

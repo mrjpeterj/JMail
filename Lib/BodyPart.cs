@@ -111,6 +111,11 @@ namespace JMail.Core
             }
         }
 
+        public void Fetch()
+        {
+            owner_.Folder.Server.FetchMessage(owner_, this);
+        }
+
         public void Save(Action<BodyPart> saveComplete, string location = "")
         {
             if (location.Length == 0)
@@ -174,7 +179,7 @@ namespace JMail.Core
             {
                 saveCompletion_ = saveComplete;
 
-                owner_.Folder.Server.FetchMessage(owner_, this);
+                Fetch();
                 
                 // This will return into SetContent and then if saveLocation_ != null, SaveFile gets called to complete
                 // the task.

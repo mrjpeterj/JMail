@@ -98,7 +98,7 @@ namespace JMail
 
             if (nextMsg != null)
             {
-                nextMsg.Fetch();
+                nextMsg.Body.Fetch();
             }
 
             return nextMsg;
@@ -120,7 +120,7 @@ namespace JMail
             
             if (nextMsg != null)
             {
-                nextMsg.Fetch();
+                nextMsg.Body.Fetch();
             }
 
             return nextMsg;

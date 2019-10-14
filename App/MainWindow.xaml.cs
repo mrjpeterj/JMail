@@ -287,7 +287,7 @@ namespace JMail
         {
             MessageHeaderView msg = mailView_.CurrentFolder.CurrentMessage;
 
-            msg.Message.Fetch();
+            msg.Body.Fetch();
 
             Message m = new Message(mailView_.CurrentFolder, this);
             m.CurrentMessageView = msg;
@@ -404,7 +404,7 @@ namespace JMail
         private void MessageProps(object sender, RoutedEventArgs e)
         {
             MessageHeaderView msg = mailView_.CurrentFolder.CurrentMessage;
-            msg.Message.FetchWhole();
+            msg.FullMessage.Fetch();
 
             MessageProps props = new MessageProps(msg.Message, this);
             props.Show();
