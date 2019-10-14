@@ -8,23 +8,12 @@ namespace JMail.Core
     public interface IAccount
     {
         /// <summary>
-        /// Triggered when the list of folders that the server reports has changed.
-        /// This might just happen because the list loads asynchronously at startup.
-        /// </summary>
-        event EventHandler FoldersChanged;
-
-        /// <summary>
-        /// The status of the messages in a folder has changed.
-        /// </summary>
-        event EventHandler<MessagesChangedEventArgs> MessagesChanged;
-
-        /// <summary>
         /// Reported when the authentication for the account has failed.
         /// </summary>
         event EventHandler AuthFailed;
 
-        IEnumerable<Folder> FolderList { get; }
-        IEnumerable<Folder> AllFolders { get; }
+        IObservable<IEnumerable<Folder>> FolderList { get; }
+        IObservable<IEnumerable<Folder>> AllFolders { get; }
 
         // Actions on folders
         void SelectFolder(Folder f);

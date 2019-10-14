@@ -7,6 +7,7 @@ using System.IO;
 
 using System.Net;
 using System.Net.Sockets;
+using System.Reactive.Subjects;
 
 namespace JMail.Core
 {
@@ -52,8 +53,8 @@ namespace JMail.Core
         private List<byte[]> currentCommand_;
         private bool lastTokenIsComplete_;
 
-        private List<Folder> allFolders_;
-        private List<Folder> folders_;
+        private BehaviorSubject<IEnumerable<Folder>> allFolders_;
+        private BehaviorSubject<IEnumerable<Folder>> folders_;
 
         private Folder currentFolder_;
 
@@ -73,8 +74,8 @@ namespace JMail.Core
             currentCommand_ = new List<byte[]>();
             lastTokenIsComplete_ = true;
 
-            allFolders_ = new List<Folder>();
-            folders_ = new List<Folder>();
+            allFolders_ = new BehaviorSubject<IEnumerable<Folder>>(new Folder[] { });
+            folders_ = new BehaviorSubject<IEnumerable<Folder>>(new Folder[] { });
 
             authPlain_ = false;
             idling_ = ImapIdleState.None;
@@ -125,8 +126,7 @@ namespace JMail.Core
 
                 if (account_.Encrypt)
                 {
-                    var sslStream = new System.Net.Security.SslStream(client_.GetStream(), false,
-                        new System.Net.Security.RemoteCertificateValidationCallback(GotRemoteCert));
+                    var sslStream = new System.Net.Security.SslStream(client_.GetStream(), false, GotRemoteCert);
                     sslStream.AuthenticateAsClient(account_.Host);
 
                     stream_ = sslStream;
@@ -513,7 +513,9 @@ namespace JMail.Core
 
         void StartTLS(Action continuation)
         {
-            if (stream_ is System.Net.Security.SslStream)
+            // XXX Current disable StartTLS to enable local testing where it doesn't seem to like
+            // the certs on 'fire'
+            if (true || stream_ is System.Net.Security.SslStream)
             {
                 // TLS already started
                 continuation();
@@ -526,11 +528,18 @@ namespace JMail.Core
 
         void HandleTLS(ImapRequest request, IEnumerable<string> responseData, IEnumerable<byte[]> responseBytes, object data)
         {
-            var sslStream = new System.Net.Security.SslStream(client_.GetStream(), false,
-                new System.Net.Security.RemoteCertificateValidationCallback(GotRemoteCert));
-            sslStream.AuthenticateAsClient(account_.Host);
+            try
+            {
+                var sslStream = new System.Net.Security.SslStream(client_.GetStream(), false, GotRemoteCert);
+                sslStream.AuthenticateAsClient(account_.Host);
 
-            stream_ = sslStream;
+                stream_ = sslStream;
+            }
+            catch
+            {
+                // If it doesn't work then stay unencrypted, since we were only trying to use it because it looked
+                // available.
+            }
 
             // Data should be the follow function
             Action continuation = data as Action;
@@ -597,8 +606,8 @@ namespace JMail.Core
 
         void ListFolders()
         {
-            allFolders_.Clear();
-            folders_.Clear();
+            allFolders_.OnNext(new Folder[] { });
+            folders_.OnNext(new Folder[] { });
 
             SendCommand("LSUB", "\"\" \"*\"", ListedFolder, null, null);
         }
@@ -606,6 +615,8 @@ namespace JMail.Core
         void ListedFolder(ImapRequest request, IEnumerable<string> responseData, IEnumerable<byte[]> responseBytes, object data)
         {
             Folder currentParent = null;
+            List<Folder> topFolders = new List<Folder>();
+            List<Folder> allFolders = new List<Folder>();
 
             // each line looks like:
             // * LSUB (<flags>) "<namespace>" "<folder name>"
@@ -645,8 +656,8 @@ namespace JMail.Core
                     if (!folderName.Contains(currentParent.FullName))
                     {
                         // No longer a parent of current parent, look for a new one.
-                        currentParent = (from f in allFolders_
-                                         where f.Children != null && f.Children.Contains(currentParent)
+                        currentParent = (from f in allFolders
+                                         where f.Children != null && f.ChildList.Contains(currentParent)
                                          select f).FirstOrDefault();
                     }
                     else
@@ -664,22 +675,22 @@ namespace JMail.Core
 
                 if (currentParent != null)
                 {
-                    currentParent.Children.Add(folder);
+                    currentParent.AddChild(folder);
                 }
                 else
                 {
                     // Inbox should always be first
                     if (folderName.Equals("Inbox", StringComparison.OrdinalIgnoreCase))
                     {
-                        folders_.Insert(0, folder);
+                        topFolders.Insert(0, folder);
                     }
                     else
                     {
-                        folders_.Add(folder);
+                        topFolders.Add(folder);
                     }
                 }
 
-                allFolders_.Add(folder);
+                allFolders.Add(folder);
 
                 if (hasChildren)
                 {
@@ -691,14 +702,11 @@ namespace JMail.Core
                     CheckUnseen(folder);
                 }
 
-
                 responseLine.Clear();
             }
 
-            if (FoldersChanged != null)
-            {
-                FoldersChanged(this, null);
-            }
+            folders_.OnNext(topFolders);
+            allFolders_.OnNext(allFolders);
         }
 
         void SelectedFolder(ImapRequest request, IEnumerable<string> responseData, IEnumerable<byte[]> responseBytes, object data)
@@ -733,8 +741,8 @@ namespace JMail.Core
             bool subProcessNext = false;
             MessageHeader msg = null;
 
-            int prevExists = folder.Exists;
-            folder.Recent = 0;
+            int prevExists = folder.ExistsValue;
+            folder.RecentValue = 0;
 
             bool refreshStatus = false;
 
@@ -753,22 +761,18 @@ namespace JMail.Core
                 }
                 else if (msg != null)
                 {
-                    var res = ExtractValues(msg.id, null, responseBytesList[i], folder);
-                    if (res.IsNew && !refreshStatus)
-                    {
-                        refreshStatus = true;
-                    }
+                    ExtractValues(msg.id, null, responseBytesList[i], folder);
 
                     msg = null;
                 }
 
                 if (response == "EXISTS")
                 {
-                    folder.Exists = Int32.Parse(lastValue);
+                    folder.ExistsValue = Int32.Parse(lastValue);
                 }
                 else if (response == "RECENT")
                 {
-                    folder.Recent = Int32.Parse(lastValue);
+                    folder.RecentValue = Int32.Parse(lastValue);
                 }
                 else if (response == "EXPUNGE")
                 {
@@ -796,14 +800,9 @@ namespace JMail.Core
             if (refreshStatus)
             {
                 CheckUnseen(folder);
-
-                if (MessagesChanged != null)
-                {
-                    MessagesChanged(this, new MessagesChangedEventArgs(folder, null));
-                }
             }
 
-            if (folder.Exists != prevExists || folder.Recent > 0)
+            if (folder.ExistsValue != prevExists || folder.RecentValue > 0)
             {
                 updated = true;
             }
@@ -820,7 +819,7 @@ namespace JMail.Core
         {
             string folderName = ImapData.StripQuotes(responseData[2], false);
 
-            Folder folder = (from f in AllFolders
+            Folder folder = (from f in allFolders_.Value
                              where f.FullName == folderName
                              select f).FirstOrDefault();
 
@@ -828,8 +827,6 @@ namespace JMail.Core
             {
                 string info = responseData[3];
                 var infoData = ImapData.SplitToken(info);
-
-                bool changed = false;
 
                 for (int i = 0; i < infoData.Length; i = i + 2)
                 {
@@ -842,38 +839,18 @@ namespace JMail.Core
 
                         if (key == "UNSEEN")
                         {
-                            if (folder.Unseen != value)
-                            {
-                                changed = true;
-                            }
-
-                            folder.Unseen = value;
+                            folder.UnseenValue = value;
                         }
                         else if (key == "MESSAGES")
                         {
-                            if (folder.Exists != value)
-                            {
-                                changed = true;
-                            }
-
-                            folder.Exists = value;
+                            folder.ExistsValue = value;
                         }
                         else if (key == "RECENT")
                         {
-                            if (folder.Recent != value)
-                            {
-                                changed = true;
-                            }
-
-                            folder.Recent = value;
+                            folder.RecentValue = value;
                         }
                     }
                     catch (FormatException) { }
-                }
-
-                if (changed && MessagesChanged != null)
-                {
-                    MessagesChanged(this, new MessagesChangedEventArgs(folder, null));
                 }
             }
         }
@@ -884,13 +861,16 @@ namespace JMail.Core
 
             Folder f = data as Folder;
 
-            folders_.Remove(f);
-            allFolders_.Remove(f);
+            var topFolders = folders_.Value.ToList();
+            var allFolders = allFolders_.Value.ToList();
 
-            if (FoldersChanged != null)
+            if (topFolders.Remove(f))
             {
-                FoldersChanged(this, null);
+                folders_.OnNext(topFolders);
             }
+
+            allFolders.Remove(f);
+            allFolders_.OnNext(allFolders);
         }
 
         void UpdateStatus(ImapRequest request, IEnumerable<string> responseData, IEnumerable<byte[]> responseBytes, object data)
@@ -922,7 +902,7 @@ namespace JMail.Core
                 }
             }
 
-            var currentIds = (from m in folder.Messages
+            var currentIds = (from m in folder.MessageList
                               select m.Uid).ToList();
             List<int> newIds = new List<int>();
             List<int> existingIds = new List<int>();
@@ -943,7 +923,7 @@ namespace JMail.Core
             foreach (var uid in currentIds)
             {
                 // These are no longer in the folder
-                folder.Messages.Remove(folder.MessageByUID(uid));
+                folder.RemoveMessageByUID(uid);
             }
 
             if (newIds.Any())
@@ -954,11 +934,6 @@ namespace JMail.Core
             if (existingIds.Any())
             {
                 FetchMessage(existingIds, true, folder);
-            }
-
-            if (MessagesChanged != null)
-            {
-                MessagesChanged(this, new MessagesChangedEventArgs(folder, null));
             }
         }
 
@@ -1017,9 +992,6 @@ namespace JMail.Core
                 folder = currentFolder_;
             }
 
-            Folder refreshFolder = null;
-            List<MessageHeader> refreshMessages = new List<MessageHeader>();
-
             var responseStringList = responseData.ToList();
             var responseBytesList = responseBytes.ToList();
 
@@ -1037,11 +1009,8 @@ namespace JMail.Core
                 }
                 else if (response == "EXPUNGE")
                 {
-                    refreshFolder = currentFolder_;
-                    refreshMessages.Clear();
-
-                    MessageHeader exMsg = refreshFolder.MessageByID(msgId);
-                    refreshFolder.Expunge(exMsg, msgId);
+                    MessageHeader exMsg = currentFolder_.MessageByID(msgId);
+                    currentFolder_.Expunge(exMsg, msgId);
                 }
                 else if (isId)
                 {
@@ -1051,46 +1020,14 @@ namespace JMail.Core
                 }
                 else if (isResponse)
                 {
-                    var res = ExtractValues(msgId, body, responseBytesList[i], folder);
-                    if (refreshFolder == null)
-                    {
-                        if (res.IsNew)
-                        {
-                            refreshFolder = res.Message.Folder;
-
-                            if (refreshMessages.Any())
-                            {
-                                // The whole folder needs a refresh anyway
-                                refreshMessages.Clear();
-                            }
-                        }
-                        else if (res.IsModified)
-                        {
-                            refreshMessages.Add(res.Message);
-                        }
-                    }
+                    ExtractValues(msgId, body, responseBytesList[i], folder);
 
                     isResponse = false;
                 }
             }
-
-            if (refreshFolder != null || refreshMessages.Any())
-            {
-                if (refreshFolder == null)
-                {
-                    // If we just have a list of messages, then we didn't want to indicate a full 
-                    // folder update, but now we need to know what the folder is.
-                    refreshFolder = refreshMessages.First().Folder;
-                }
-
-                if (MessagesChanged != null)
-                {
-                    MessagesChanged(this, new MessagesChangedEventArgs(refreshFolder, refreshMessages));
-                }
-            }
         }
 
-        MessageHeaderProcessResult ExtractValues(int msgId, BodyPart body, byte[] data, Folder folder)
+        void ExtractValues(int msgId, BodyPart body, byte[] data, Folder folder)
         {
             var values = ImapData.SplitToken(data);
             Dictionary<string, byte[]> dictValues = new Dictionary<string, byte[]>();
@@ -1108,25 +1045,27 @@ namespace JMail.Core
                 Int32.TryParse(encoder_.GetString(uidStr), out uid);
             }
 
-            MessageHeaderProcessResult res = new MessageHeaderProcessResult();
+            MessageHeader msg = null;
+            bool isNew = false;
 
             if (uid >= 0)
             {
-                res.Message = folder.MessageByUID(uid);
+                msg = folder.MessageByUID(uid);
             }
             else if (msgId >= 0)
             {
-                res.Message = folder.MessageByID(msgId);
+                msg = folder.MessageByID(msgId);
             }
 
-            if (res.Message == null)
+            if (msg == null)
             {
-                res.Message = new MessageHeader(uid, folder);
-                folder.Messages.Add(res.Message);
+                msg = new MessageHeader(uid, folder);
 
-                res.Message.id = msgId;
+                msg.id = msgId;
 
-                res.IsNew = true;
+                // Message needs adding to the folder, but don't do it yet, until we have filled
+                // in the rest of its values.
+                isNew = true;
             }
 
             foreach (var val in dictValues)
@@ -1136,34 +1075,34 @@ namespace JMail.Core
 
                 if (key == "FLAGS")
                 {
-                    ExtractFlags(res, value);
-
-                    // This message needs to be marked as updated for the UI.
-                    res.IsModified = true;
+                    ExtractFlags(msg, value);
                 }
                 else if (key.StartsWith("BODY["))
                 {
-                    ExtractBodyInfo(res.Message, body, val.Value);
+                    ExtractBodyInfo(msg, body, val.Value);
                 }
                 else if (key == "INTERNALDATE")
                 {
-                    ExtractDate(res.Message, value);
+                    ExtractDate(msg, value);
                 }
                 else if (key == "RFC822.SIZE")
                 {
-                    ExtractSingle(res.Message, value, "SIZE");
+                    ExtractSingle(msg, value, "SIZE");
                 }
                 else if (key == "ENVELOPE")
                 {
-                    ParseEnvelope(res.Message, value);
+                    ParseEnvelope(msg, value);
                 }
                 else if (key == "BODYSTRUCTURE")
                 {
-                    ParseBodyStructure(res.Message, value, "");
+                    ParseBodyStructure(msg, value, "");
                 }
             }
 
-            return res;
+            if (isNew)
+            {
+                folder.AddMessage(msg);
+            }
         }
 
         void ParseEnvelope(MessageHeader msg, string envData)
@@ -1353,11 +1292,9 @@ namespace JMail.Core
             msg.SetValue(key, value);
         }
 
-        void ExtractFlags(MessageHeaderProcessResult res, string flagString)
+        void ExtractFlags(MessageHeader msg, string flagString)
         {
             // Process flags here
-            var msg = res.Message;
-
             // To avoid always having to update the folder list, we try and manage the UnRead count.
 
             bool wasRead = !msg.UnRead;
@@ -1379,19 +1316,13 @@ namespace JMail.Core
 
             if (isRead != wasRead)
             {
-                if (res.IsNew)
+                if (isRead)
                 {
+                    --msg.Folder.UnseenValue;
                 }
                 else
                 {
-                    if (isRead)
-                    {
-                        --msg.Folder.Unseen;
-                    }
-                    else
-                    {
-                        ++msg.Folder.Unseen;
-                    }
+                    ++msg.Folder.UnseenValue;
                 }
             }
         }
@@ -1486,45 +1417,19 @@ namespace JMail.Core
                 }
             }
 
-            var currentIds = (from m in currentFolder_.Messages
-                              select m.id).ToList();
-
-            List<MessageHeader> selected = new List<MessageHeader>();
-
-            foreach (var id in msgIds)
-            {
-                var msg = currentFolder_.MessageByID(id);
-
-                if (msg != null)
-                {
-                    selected.Add(msg);
-                }
-                else
-                {
-                    int a = 0;
-                }
-            }
-
-            currentFolder_.ViewMessages = selected;
-
-            if (MessagesChanged != null)
-            {
-                MessagesChanged(this, new MessagesChangedEventArgs(currentFolder_, null));
-            }
+            currentFolder_.SetFilterMsgIds(msgIds);
         }
 
         #region IAccount Members
 
-        public event EventHandler FoldersChanged;
-        public event EventHandler<MessagesChangedEventArgs> MessagesChanged;
         public event EventHandler AuthFailed;
 
-        public IEnumerable<Folder> FolderList
+        public IObservable<IEnumerable<Folder>> FolderList
         {
             get { return folders_; }
         }
 
-        public IEnumerable<Folder> AllFolders
+        public IObservable<IEnumerable<Folder>> AllFolders
         {
             get { return allFolders_; }
         }
@@ -1624,17 +1529,12 @@ namespace JMail.Core
 
         public void SearchEnd()
         {
-            currentFolder_.ViewMessages = currentFolder_.Messages;
-
-            if (MessagesChanged != null)
-            {
-                MessagesChanged(this, new MessagesChangedEventArgs(currentFolder_, null));
-            }
+            currentFolder_.SetFilterMsgIds(null);
         }
 
         public void PollFolders()
         {
-            foreach (var folder in AllFolders)
+            foreach (var folder in allFolders_.Value)
             {
                 if (folder.CanHaveMessages)
                 {

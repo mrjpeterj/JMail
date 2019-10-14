@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 
 using System.ComponentModel;
+using System.Reactive.Linq;
+using System.Reactive.Subjects;
 
 namespace JMail.Core
 {
@@ -14,14 +16,17 @@ namespace JMail.Core
         string shortName_;
         string separator_;
 
-        List<Folder> subFolders_;
-        List<MessageHeader> messages_;
+        BehaviorSubject<IEnumerable<Folder>> subFolders_;
+
+        BehaviorSubject<IEnumerable<MessageHeader>> messages_;
+
+        BehaviorSubject<IEnumerable<int>> filterIds_;
 
         bool canHaveMessages_;
 
-        int exists_;
-        int recent_;
-        int unseen_;
+        BehaviorSubject<int> exists_;
+        BehaviorSubject<int> recent_;
+        BehaviorSubject<int> unseen_;
 
         public string FullName
         {
@@ -39,40 +44,107 @@ namespace JMail.Core
             }            
         }
 
-        public int Exists
+        public IObservable<int> Exists
         {
-            get { return exists_; }
-            set
+            get
             {
-                exists_ = value;
+                return exists_;
             }
         }
 
-        public int Recent
+        public IObservable<int> Recent
         {
-            get { return recent_; }
-            set { recent_ = value; }
+            get
+            {
+                return recent_;
+            }
         }
 
-        public int Unseen
+        public IObservable<int> Unseen
         {
             get
             {
                 return unseen_;
             }
+        }
 
+        internal int ExistsValue
+        {
+            get
+            {
+                return exists_.Value;
+            }
             set
             {
-                unseen_ = value;
+                exists_.OnNext(value);
+            }
+        }
+        internal int RecentValue
+        {
+            get
+            {
+                return recent_.Value;
+            }
+            set
+            {
+                recent_.OnNext(value);
+            }
+        }
+        internal int UnseenValue
+        {
+            get
+            {
+                return unseen_.Value;
+            }
+            set
+            {
+                unseen_.OnNext(value);
             }
         }
 
         public bool CanHaveMessages { get { return canHaveMessages_; } }
 
         public IAccount Server { get { return server_; } }
-        public IList<Folder> Children { get { return subFolders_; } }
-        public IList<MessageHeader> Messages { get { return messages_; } }
-        public IList<MessageHeader> ViewMessages { get; internal set; }
+
+        // Any subfolders of this folder
+        public IObservable<IEnumerable<Folder>> Children
+        {
+            get
+            {
+                return subFolders_;
+            }
+        }
+
+        internal IEnumerable<Folder> ChildList
+        {
+            get
+            {
+                return subFolders_.Value;
+            }
+        }
+
+        // All the messages in the folder
+        public IObservable<IEnumerable<MessageHeader>> Messages
+        {
+            get
+            {
+                return messages_;
+            }
+        }
+
+        // The current subset of messages in the folder that are being viewed
+        public IObservable<IEnumerable<MessageHeader>> ViewMessages
+        {
+            get; private set;
+        }
+
+        internal IEnumerable<MessageHeader> MessageList
+        {
+            get
+            {
+                return messages_.Value;
+            }
+        }
 
         public Folder(IAccount server, string name, string shortName, string separator, bool hasChildren, bool canHaveMessages)
         {
@@ -83,16 +155,22 @@ namespace JMail.Core
 
             if (hasChildren)
             {
-                subFolders_ = new List<Folder>();
+                subFolders_ = new BehaviorSubject<IEnumerable<Folder>>(new Folder[] { });
             }
 
             canHaveMessages_ = canHaveMessages;
             if (canHaveMessages)
             {
-                messages_ = new List<MessageHeader>();
+                filterIds_ = new BehaviorSubject<IEnumerable<int>>(null);
 
-                ViewMessages = Messages;
+                messages_ = new BehaviorSubject<IEnumerable<MessageHeader>>(new MessageHeader[] { });
+
+                ViewMessages = Observable.CombineLatest(messages_, filterIds_, FilterMessages);
             }
+
+            exists_ = new BehaviorSubject<int>(0);
+            recent_ = new BehaviorSubject<int>(0);
+            unseen_ = new BehaviorSubject<int>(0);
         }
 
         public override string ToString()
@@ -102,7 +180,7 @@ namespace JMail.Core
 
         public MessageHeader MessageByID(int id)
         {
-            var matches = from m in Messages
+            var matches = from m in MessageList
                           where m.id == id
                           select m;
 
@@ -111,7 +189,7 @@ namespace JMail.Core
 
         public MessageHeader MessageByUID(int id)
         {
-            var matches = from m in Messages
+            var matches = from m in MessageList
                           where m.Uid == id
                           select m;
 
@@ -148,9 +226,9 @@ namespace JMail.Core
         }        
 
         // Called by the server to report that a message has been removed.
-        public void Expunge(MessageHeader msg, int msgId)
+        internal void Expunge(MessageHeader msg, int msgId)
         {
-            var msgLst = from m in messages_
+            var msgLst = from m in MessageList
                          where m.id > msgId
                          select m;
 
@@ -161,8 +239,73 @@ namespace JMail.Core
 
             if (msg != null)
             {
-                messages_.Remove(msg);
+                RemoveMessage(msg);
             }
+        }
+
+        public void AddMessage(MessageHeader msg)
+        {
+            var messages = messages_.Value.ToList();
+            messages.Add(msg);
+
+            messages_.OnNext(messages);
+        }
+
+        public void RemoveMessage(MessageHeader msg)
+        {
+            var messages = messages_.Value.ToList();
+            messages.Remove(msg);
+
+            messages_.OnNext(messages);
+        }
+
+        public void RemoveMessageByUID(int id)
+        {
+            var msg = MessageByUID(id);
+            if (msg != null)
+            {
+                RemoveMessage(msg);
+            }
+        }
+
+        public void SetFilterMsgIds(IEnumerable<int> msgIds)
+        {
+            filterIds_.OnNext(msgIds);
+        }
+
+        private IEnumerable<MessageHeader> FilterMessages(IEnumerable<MessageHeader> folderMessages, IEnumerable<int> filterIds)
+        {
+            if (filterIds == null)
+            {
+                return folderMessages;
+            }
+            else
+            {
+                List<MessageHeader> selected = new List<MessageHeader>();
+
+                foreach (var id in filterIds)
+                {
+                    var msg = MessageByID(id);
+
+                    if (msg != null)
+                    {
+                        selected.Add(msg);
+                    }
+                    else
+                    {
+                        int a = 0;
+                    }
+                }
+
+                return selected;
+            }
+        }
+
+        public void AddChild(Folder subFolder)
+        {
+            var children = subFolders_.Value.ToList();
+            children.Add(subFolder);
+            subFolders_.OnNext(children);
         }
     }
 }
