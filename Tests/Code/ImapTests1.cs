@@ -26,12 +26,19 @@ namespace JMail
         {
             var s = new ScriptPlayer("../../../Data/test1.xml");
             bool complete = false;
-
-            server_.MessagesChanged += (sender, e) => { complete = true; };
+            int msgCount = -1;
+            int unRead = -1;
 
             server_.SetStream(s);
 
             var folder = new Folder(server_, "Junk", "Junk", "/", false, true);
+
+            folder.Messages.Subscribe((msgs) =>
+            {
+                msgCount = msgs.Count();
+                unRead = msgs.Where(m => m.UnRead == true).Count();
+                complete = msgCount > 0;
+            });
 
             server_.SelectFolder(folder);
 
@@ -40,20 +47,28 @@ namespace JMail
                 System.Threading.Thread.Sleep(1000);
             }
 
-            Assert.AreEqual(27, folder.Messages.Count);
+            Assert.AreEqual(27, msgCount);
         }
 
         [TestMethod]
         public void Folder_List_2()
         {
             var s = new ScriptPlayer("../../../Data/test2.xml");
-            bool complete = false;
 
-            server_.MessagesChanged += (sender, e) => { complete = true; };
+            bool complete = false;
+            int msgCount = -1;
+            int unRead = -1;
 
             server_.SetStream(s);
 
             var folder = new Folder(server_, "INBOX", "INBOX", "/", false, true);
+
+            folder.Messages.Subscribe((msgs) =>
+            {
+                msgCount = msgs.Count();
+                unRead = msgs.Where(m => m.UnRead == true).Count();
+                complete = msgCount > 0;
+            });
 
             server_.SelectFolder(folder);
 
@@ -62,17 +77,14 @@ namespace JMail
                 System.Threading.Thread.Sleep(1000);
             }
 
-            Assert.AreEqual(50, folder.Messages.Count);
-            Assert.AreEqual(0, folder.Messages.Where(m => m.UnRead == true).Count());
+            Assert.AreEqual(50, msgCount);
+            Assert.AreEqual(0, unRead);
         }
 
         [TestMethod]
         public void Body_8Bit_UTF8()
         {
             var s = new ScriptPlayer("../../../Data/test3.xml");
-            bool complete = false;
-
-            server_.MessagesChanged += (sender, e) => { complete = true; };
 
             server_.SetStream(s);
 
@@ -80,23 +92,29 @@ namespace JMail
 
             server_.SelectFolder(folder);
 
-            while (!complete)
-            {
-                System.Threading.Thread.Sleep(1000);
-            }
-
             bool contentReady = false;
-            var msg = folder.MessageByUID(86);
-            msg.Body.Updated += (sender, e) => { contentReady = true; };
+            string bodyText = "";
 
-            msg.Fetch();
+            folder.Messages.Subscribe((msgs) =>
+            {
+                var msg = folder.MessageByUID(86);
+
+                if (msg != null)
+                {
+                    msg.Body.Updated += (sender, e) => {
+                        bodyText = msg.Body.Text;
+
+                        contentReady = true;
+                    };
+
+                    msg.Fetch();
+                }
+            });
 
             while (!contentReady)
             {
                 System.Threading.Thread.Sleep(1000);
             }
-
-            var bodyText = msg.Body.Text;
 
             Assert.IsTrue(bodyText.Contains("£12.50"));
         }
