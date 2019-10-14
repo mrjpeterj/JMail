@@ -79,7 +79,7 @@ namespace JMail
                     {
                         return from f in folders select new FolderView(f);
                     })
-                    .SubscribeTo<IEnumerable<FolderView>, ServerView>(this, x => x.Folders);
+                    .SubscribeTo(this, x => x.Folders);
 
                 server_.Connect();
             }

@@ -39,7 +39,7 @@ namespace JMail
                 Folder.Children.Select((folders) =>
                 {
                     return from kid in folders select new FolderView(kid);
-                }).SubscribeTo<IEnumerable<FolderView>, FolderView>(this, x => x.Folders);
+                }).SubscribeTo(this, x => x.Folders);
             }
 
             if (Folder.CanHaveMessages)
@@ -59,7 +59,7 @@ namespace JMail
                     return "(" + val + ")";
                 }
             }).
-            SubscribeTo<string, FolderView>(this, x => x.UnseenText);
+            SubscribeTo(this, x => x.UnseenText);
         }
 
         public void Select()
