@@ -19,6 +19,10 @@ namespace JMail.Core
         void SelectFolder(Folder f);
         void UnselectFolder(Folder f);
         void RenameFolder(string oldName, string newName);
+        /// <summary>
+        /// Add the given folder name to the list of folders that the server keeps us informed about.
+        /// </summary>
+        /// <param name="folderName"></param>
         void SubscribeFolder(string folderName);
         
         // Actions on the Current folder
