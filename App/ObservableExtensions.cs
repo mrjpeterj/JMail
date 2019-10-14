@@ -16,7 +16,7 @@ namespace JMail
 
     static class ObservableExtensions
     {
-        public static void SubscribeTo<T, Obj>(this IObservable<T> source, Obj holder, Expression<Func<Obj, T>> propertyExpression)
+        public static IDisposable SubscribeTo<T, Obj>(this IObservable<T> source, Obj holder, Expression<Func<Obj, T>> propertyExpression)
             where Obj : class, IChangingProperty
         {
             System.Reflection.PropertyInfo member = null;
@@ -40,14 +40,18 @@ namespace JMail
 
             if (member != null)
             {
-                source.
+                return source.
                     ObserveOn(new System.Reactive.Concurrency.DispatcherScheduler(System.Windows.Threading.Dispatcher.CurrentDispatcher)).
                     Subscribe((val) =>
                     {
                         member.SetValue(holder, val);
 
                         holder.OnPropertyChanged(member.Name);
-                });
+                    });
+            }
+            else
+            {
+                return null;
             }
         }
     }
