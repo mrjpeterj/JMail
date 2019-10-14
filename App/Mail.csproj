@@ -96,6 +96,7 @@
     <Compile Include="MessageProps.xaml.cs">
       <DependentUpon>MessageProps.xaml</DependentUpon>
     </Compile>
+    <Compile Include="ObservableExtensions.cs" />
     <Compile Include="Rename.xaml.cs">
       <DependentUpon>Rename.xaml</DependentUpon>
     </Compile>

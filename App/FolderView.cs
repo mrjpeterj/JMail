@@ -3,140 +3,72 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
+using System.Reactive.Linq;
 using System.Text;
 
 using JMail.Core;
 
 namespace JMail
 {
-    public class MessageList: ThreadedList<MessageHeaderView>
+    public class FolderView: IChangingProperty
     {
-        Folder folder_;
-
-        internal MessageList(Folder f)
-        {
-            folder_ = f;
-        }
-
-        public void Refresh(IEnumerable<MessageHeader> changedMessages)
-        {
-            if (changedMessages == null || !changedMessages.Any())
-            {
-                Clear();
-
-                foreach (var msg in folder_.ViewMessages)
-                {
-                    Add(new MessageHeaderView(msg));
-                }
-            }
-            else
-            {
-                // Don't need to rebuild the list, just update the specific messages.
-                // But we have to find them in the list
-
-                int noFound = 0;
-                
-                foreach (var msg in this)
-                {
-                    if (changedMessages.Contains(msg.Message))
-                    {
-                        msg.Dirty();
-
-                        ++noFound;
-                    }
-
-                    if (noFound == changedMessages.Count())
-                    {
-                        break;
-                    }
-                }                
-            }
-        }
-    }
-
-    public class FolderView: INotifyPropertyChanged
-    {
-        private bool selected_;
-
-        private MessageList messages_;
-        private MessageHeaderView currentMessage_;
-
         public Folder Folder { get; private set; }
 
         public IEnumerable<FolderView> Folders { get; private set; }
 
-        public MessageList Messages
-        {
-            get
-            {
-                return messages_;
-            }
-        }
+        public IEnumerable<MessageHeader> Messages { get; private set; }
 
-        public MessageHeaderView CurrentMessage
-        {
-            get
-            {
-                return currentMessage_;
-            }
-
-            set
-            {
-                currentMessage_ = value;
-
-                ReportChange();
-            }
-        }
+        public MessageHeader CurrentMessage { get; set; }
 
         public bool IsMessage { get { return CurrentMessage != null; } }
-        public bool IsUnread { get { return IsMessage && CurrentMessage.Message.UnRead; } }
-        public bool IsRead { get { return IsMessage && !CurrentMessage.Message.UnRead; } }
-        public bool IsNotDeleted { get { return IsMessage && !CurrentMessage.Message.Deleted; } }
-        public bool IsDeleted { get { return IsMessage && CurrentMessage.Message.Deleted; } }
+        public bool IsUnread { get { return IsMessage && CurrentMessage.UnRead; } }
+        public bool IsRead { get { return IsMessage && !CurrentMessage.UnRead; } }
+        public bool IsNotDeleted { get { return IsMessage && !CurrentMessage.Deleted; } }
+        public bool IsDeleted { get { return IsMessage && CurrentMessage.Deleted; } }
 
         public string Name { get { return Folder.Name; } }
 
-        public string UnseenText
-        {
-            get
-            {
-                if (Folder.Unseen == 0)
-                {
-                    return string.Empty;
-                }
-                else
-                {
-                    return "(" + Folder.Unseen + ")";
-                }
-            }
-        }
+        public string UnseenText { get; set; }      
         
         public FolderView(Folder f)
         {
             Folder = f;
 
-            if (f.Children != null)
+            if (Folder.Children != null)
             {
-                Folders = from kid in f.Children
-                          select new FolderView(kid);
+                Folder.Children.Select((folders) =>
+                {
+                    return from kid in folders select new FolderView(kid);
+                }).SubscribeTo<IEnumerable<FolderView>, FolderView>(this, x => x.Folders);
             }
 
-            messages_ = new MessageList(f);
+            if (Folder.CanHaveMessages)
+            {
+                Folder.ViewMessages
+                    .SubscribeTo<IEnumerable<MessageHeader>, FolderView>(this, x => x.Messages);
+            }
 
-            f.Server.MessagesChanged += Refresh;
+            Folder.Unseen.Select((val) =>
+            {
+                if (val == 0)
+                {
+                    return string.Empty;
+                }
+                else
+                {
+                    return "(" + val + ")";
+                }
+            }).
+            SubscribeTo<string, FolderView>(this, x => x.UnseenText);
         }
 
         public void Select()
         {
-            selected_ = true;
-
             Folder.Select();
         }
 
         public void Unselect()
         {
-            selected_ = false;
-
             Folder.Unselect();
         }
 
@@ -145,29 +77,14 @@ namespace JMail
             Folder.Expunge();
         }
 
-        public void Refresh(object sender, MessagesChangedEventArgs e)
-        {
-            if (e.Folder != Folder)
-            {
-                return;
-            }
-
-            if (selected_)
-            {
-                messages_.Refresh(e.Messages);
-            }
-
-            ReportChange();
-        }
-
         public void Rename(string newName)
         {
             Folder.Rename(newName);
         }
 
-        public MessageHeaderView Next(MainWindow view, MessageHeaderView msg)
+        public MessageHeader Next(MainWindow view, MessageHeader msg)
         {
-            MessageHeaderView nextMsg = null;
+            MessageHeader nextMsg = null;
 
             if (view != null)
             {
@@ -181,15 +98,15 @@ namespace JMail
 
             if (nextMsg != null)
             {
-                nextMsg.Message.Fetch();
+                nextMsg.Fetch();
             }
 
             return nextMsg;
         }
 
-        public MessageHeaderView Prev(MainWindow view, MessageHeaderView msg)
+        public MessageHeader Prev(MainWindow view, MessageHeader msg)
         {
-            MessageHeaderView nextMsg = null;
+            MessageHeader nextMsg = null;
 
             if (view != null)
             {
@@ -203,13 +120,13 @@ namespace JMail
             
             if (nextMsg != null)
             {
-                nextMsg.Message.Fetch();
+                nextMsg.Fetch();
             }
 
             return nextMsg;
         }
 
-        public bool IsLast(MainWindow view, MessageHeaderView msg)
+        public bool IsLast(MainWindow view, MessageHeader msg)
         {
             if (view != null)
             {
@@ -221,7 +138,7 @@ namespace JMail
             }
         }
 
-        public bool IsFirst(MainWindow view, MessageHeaderView msg)
+        public bool IsFirst(MainWindow view, MessageHeader msg)
         {
             if (view != null)
             {
@@ -233,32 +150,14 @@ namespace JMail
             }
         }
 
-        private void MessageChanged(object sender, PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName == "UnRead" || e.PropertyName == "Deleted")
-            {
-                ReportChange();
-            }
-        }
-
-        private void ReportChange()
-        {
-            if (PropertyChanged != null)
-            {
-                PropertyChanged(this, new PropertyChangedEventArgs("CurrentMessage"));
-                PropertyChanged(this, new PropertyChangedEventArgs("IsMessage"));
-                PropertyChanged(this, new PropertyChangedEventArgs("IsUnread"));
-                PropertyChanged(this, new PropertyChangedEventArgs("IsRead"));
-                PropertyChanged(this, new PropertyChangedEventArgs("IsNotDeleted"));
-                PropertyChanged(this, new PropertyChangedEventArgs("IsDeleted"));
-
-                PropertyChanged(this, new PropertyChangedEventArgs("UnseenText"));
-            }
-        }
-
-        #region INotifyPropertyChanged Members
+        #region IChangingProperty Members
 
         public event PropertyChangedEventHandler PropertyChanged;
+
+        public void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
 
         #endregion
     }

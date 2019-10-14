@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
+using System.Reactive.Linq;
 using System.Text;
 
 using JMail.Core;
@@ -47,19 +48,18 @@ namespace JMail
         }
     }
 
-    public class ServerView: INotifyPropertyChanged
+    public class ServerView: IChangingProperty
     {
         public event EventHandler<AccountInfoEventArgs> AuthFailed;
 
         private AccountInfo server_;
-        private IEnumerable<FolderView> folders_;
 
         public AccountInfo Info { get { return server_; } }
 
         public IAccount Server { get { return server_.Connection; } }
         public string Name { get { return server_.Name; } }
 
-        public IEnumerable<FolderView> Folders { get { return folders_; } }
+        public IEnumerable<FolderView> Folders { get; set; }
 
         public ServerView(AccountInfo server)
         {
@@ -70,25 +70,18 @@ namespace JMail
 
         public void Reset()
         {
-            folders_ = null;
-
             if (server_.Enabled)
             {
-                server_.Connection.FoldersChanged += UpdateFolderList;
                 server_.Connection.AuthFailed += OnAuthFailed;
 
+                server_.Connection.FolderList
+                    .Select((folders) =>
+                    {
+                        return from f in folders select new FolderView(f);
+                    })
+                    .SubscribeTo<IEnumerable<FolderView>, ServerView>(this, x => x.Folders);
+
                 server_.Connect();
-            }
-        }
-
-        void UpdateFolderList(object sender, EventArgs e)
-        {
-            folders_ = from f in server_.Connection.FolderList
-                       select new FolderView(f);
-
-            if (PropertyChanged != null)
-            {
-                PropertyChanged(this, new PropertyChangedEventArgs("Folders"));
             }
         }
 
@@ -100,9 +93,14 @@ namespace JMail
             }
         }
 
-        #region INotifyPropertyChanged Members
+        #region IChangingProperty Members
 
         public event PropertyChangedEventHandler PropertyChanged;
+
+        public void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
 
         #endregion
     }
