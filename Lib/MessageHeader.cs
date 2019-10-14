@@ -73,6 +73,9 @@ namespace JMail.Core
 
         public IObservable<bool> Flagged { get; private set; }
 
+        public bool IsUnRead { get; private set; }
+        public bool IsDeleted { get; private set; }
+
         public bool TrustedSender { get; private set; }
 
         public MessageHeader(int uid, Folder f)
@@ -89,6 +92,9 @@ namespace JMail.Core
             UnRead = flags_.Select((flags) => flags.HasFlag(MessageFlags.Seen) == false);
             Deleted = flags_.Select((flags) => flags.HasFlag(MessageFlags.Deleted));
             Flagged = flags_.Select((flags) => flags.HasFlag(MessageFlags.Flagged));
+
+            UnRead.Subscribe(val => IsUnRead = val);
+            Deleted.Subscribe(val => IsDeleted = val);
 
             attachments_ = new List<BodyPart>();
             related_ = new List<BodyPart>();
