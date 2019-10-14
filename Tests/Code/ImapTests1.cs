@@ -27,6 +27,7 @@ namespace JMail
             var s = new ScriptPlayer("../../../Data/test1.xml");
             bool complete = false;
             int msgCount = -1;
+            int folderExists = -1;
             int unRead = -1;
 
             server_.SetStream(s);
@@ -36,8 +37,15 @@ namespace JMail
             folder.Messages.Subscribe((msgs) =>
             {
                 msgCount = msgs.Count();
-                unRead = msgs.Where(m => m.UnRead == true).Count();
                 complete = msgCount > 0;
+            });
+            folder.Exists.Subscribe((val) =>
+            {
+                folderExists = val;
+            });
+            folder.Unseen.Subscribe((val) =>
+            {
+                unRead = val;
             });
 
             server_.SelectFolder(folder);
@@ -48,6 +56,8 @@ namespace JMail
             }
 
             Assert.AreEqual(27, msgCount);
+            Assert.AreEqual(msgCount, folderExists);
+            Assert.AreEqual(27, unRead);
         }
 
         [TestMethod]
@@ -57,6 +67,7 @@ namespace JMail
 
             bool complete = false;
             int msgCount = -1;
+            int folderExists = -1;
             int unRead = -1;
 
             server_.SetStream(s);
@@ -66,8 +77,15 @@ namespace JMail
             folder.Messages.Subscribe((msgs) =>
             {
                 msgCount = msgs.Count();
-                unRead = msgs.Where(m => m.UnRead == true).Count();
                 complete = msgCount > 0;
+            });
+            folder.Exists.Subscribe((val) =>
+            {
+                folderExists = val;
+            });
+            folder.Unseen.Subscribe((val) =>
+            {
+                unRead = val;
             });
 
             server_.SelectFolder(folder);
@@ -78,6 +96,7 @@ namespace JMail
             }
 
             Assert.AreEqual(50, msgCount);
+            Assert.AreEqual(msgCount, folderExists);
             Assert.AreEqual(0, unRead);
         }
 
@@ -107,7 +126,7 @@ namespace JMail
                         contentReady = true;
                     };
 
-                    msg.Fetch();
+                    msg.Body.Fetch();
                 }
             });
 
