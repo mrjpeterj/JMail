@@ -152,7 +152,7 @@ namespace JMail.Core
             flags_.OnNext(MessageFlags.None);
         }
 
-        void SetFlag(MessageFlags flag, bool isSet)
+        public void SetFlag(MessageFlags flag, bool isSet)
         {
             if (isSet && flags_.Value.HasFlag(flag) == false)
             {
