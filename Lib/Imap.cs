@@ -1297,8 +1297,6 @@ namespace JMail.Core
             // Process flags here
             // To avoid always having to update the folder list, we try and manage the UnRead count.
 
-            bool wasRead = !msg.UnRead;
-
             msg.ClearFlags();
 
             string[] flags = ImapData.SplitToken(flagString);
@@ -1309,20 +1307,6 @@ namespace JMail.Core
                 {
                     // Standard flag
                     msg.SetFlag(flag.Substring(1));
-                }
-            }
-
-            bool isRead = !msg.UnRead;
-
-            if (isRead != wasRead)
-            {
-                if (isRead)
-                {
-                    --msg.Folder.UnseenValue;
-                }
-                else
-                {
-                    ++msg.Folder.UnseenValue;
                 }
             }
         }
