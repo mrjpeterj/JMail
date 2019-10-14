@@ -4,13 +4,15 @@ using System.Text;
 
 namespace JMail.Core
 {
+    [Flags]
     public enum MessageFlags
     {
-        Seen,
-        Answered,
-        Flagged,
-        Deleted,
-        Draft,
-        Recent
+        None = 0,
+        Seen = 1,
+        Answered = 2,
+        Flagged = 4,
+        Deleted = 8,
+        Draft = 16,
+        Recent = 32
     }
 }

@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Net.Mail;
+using System.Reactive.Linq;
+using System.Reactive.Subjects;
 using System.Text;
 
 namespace JMail.Core
@@ -11,7 +13,8 @@ namespace JMail.Core
     {
         Folder folder_;
     
-        List<MessageFlags> flags_;
+        BehaviorSubject<MessageFlags> flags_;
+
         List<BodyPart> attachments_;
         List<BodyPart> related_;
 
@@ -19,8 +22,8 @@ namespace JMail.Core
         DateTime sent_;
 
         public Folder Folder { get { return folder_; } }
-        public BodyPart Body { get; set; }
-        public BodyPart FullMessage { get; set; }
+        public BodyPart Body { get; internal set; }
+        public BodyPart FullMessage { get; private set; }
         public IEnumerable<BodyPart> Attachments { get { return attachments_; } }
         public IEnumerable<BodyPart> Related { get { return related_; } }
 
@@ -30,12 +33,12 @@ namespace JMail.Core
             {
                 return from_;
             }
-            set
+            internal set
             {
                 from_ = value;
             }
         }
-        public MailAddress ReplyTo { get; set; }
+        public MailAddress ReplyTo { get; internal set; }
         public MailAddressCollection To { get; private set; }
         public MailAddressCollection Cc { get; private set; }
 
@@ -60,67 +63,15 @@ namespace JMail.Core
         }
         public DateTime Date { get; private set; }
         public int Uid { get; private set; }
-        public int id { get; set; }
+        public int id { get; internal set; }
         public string MessageId { get; private set; }
         public int Size { get; private set; }
-        public bool HasAttachments
-        {
-            get
-            {
-                return attachments_.Any();
-            }
-        }
 
-        public bool UnRead
-        {
-            get
-            {
-                return !flags_.Contains(MessageFlags.Seen);
-            }
-            set
-            {
-                bool current = !flags_.Contains(MessageFlags.Seen);
+        public IObservable<bool> UnRead { get; private set; }
 
-                if (value != current)
-                {
-                    Folder.Server.SetFlag(this, MessageFlags.Seen, !value);
-                }
-            }
-        }
+        public IObservable<bool> Deleted { get; private set; }
 
-        public bool Deleted
-        {
-            get
-            {
-                return flags_.Contains(MessageFlags.Deleted);
-            }
-            set
-            {
-                bool current = flags_.Contains(MessageFlags.Deleted);
-
-                if (value != current)
-                {
-                    Folder.Server.SetFlag(this, MessageFlags.Deleted, value);
-                }
-            }
-        }
-
-        public bool Flagged
-        {
-            get
-            {
-                return flags_.Contains(MessageFlags.Flagged);
-            }
-            set
-            {
-                bool current = flags_.Contains(MessageFlags.Flagged);
-
-                if (value != current)
-                {
-                    Folder.Server.SetFlag(this, MessageFlags.Flagged, value);
-                }
-            }
-        }
+        public IObservable<bool> Flagged { get; private set; }
 
         public bool TrustedSender { get; private set; }
 
@@ -133,7 +84,12 @@ namespace JMail.Core
 
             folder_ = f;
             Uid = uid;
-            flags_ = new List<MessageFlags>();
+            flags_ = new BehaviorSubject<MessageFlags>(MessageFlags.None);
+
+            UnRead = flags_.Select((flags) => flags.HasFlag(MessageFlags.Seen) == false);
+            Deleted = flags_.Select((flags) => flags.HasFlag(MessageFlags.Deleted));
+            Flagged = flags_.Select((flags) => flags.HasFlag(MessageFlags.Flagged));
+
             attachments_ = new List<BodyPart>();
             related_ = new List<BodyPart>();
 
@@ -187,18 +143,20 @@ namespace JMail.Core
 
         public void ClearFlags()
         {
-            flags_.Clear();
+            flags_.OnNext(MessageFlags.None);
         }
 
         void SetFlag(MessageFlags flag, bool isSet)
         {
-            if (isSet && !flags_.Contains(flag))
+            if (isSet && flags_.Value.HasFlag(flag) == false)
             {
-                flags_.Add(flag);
+                // Add Flag
+                flags_.OnNext(flags_.Value | flag);
             }
-            else if (!isSet)
+            else if (!isSet && flags_.Value.HasFlag(flag) == true)
             {
-                flags_.Remove(flag);
+                // Remove Flag
+                flags_.OnNext(flags_.Value & ~flag);
             }
         }
 
@@ -206,27 +164,27 @@ namespace JMail.Core
         {
             if (flag.Equals(MessageFlags.Answered.ToString(), StringComparison.CurrentCultureIgnoreCase))
             {
-                flags_.Add(MessageFlags.Answered);
+                SetFlag(MessageFlags.Answered, true);
             }
             else if (flag.Equals(MessageFlags.Deleted.ToString(), StringComparison.CurrentCultureIgnoreCase))
             {
-                flags_.Add(MessageFlags.Deleted);
+                SetFlag(MessageFlags.Deleted, true);
             }
             else if (flag.Equals(MessageFlags.Draft.ToString(), StringComparison.CurrentCultureIgnoreCase))
             {
-                flags_.Add(MessageFlags.Draft);
+                SetFlag(MessageFlags.Draft, true);
             }
             else if (flag.Equals(MessageFlags.Flagged.ToString(), StringComparison.CurrentCultureIgnoreCase))
             {
-                flags_.Add(MessageFlags.Flagged);
+                SetFlag(MessageFlags.Flagged, true);
             }
             else if (flag.Equals(MessageFlags.Recent.ToString(), StringComparison.CurrentCultureIgnoreCase))
             {
-                flags_.Add(MessageFlags.Recent);
+                SetFlag(MessageFlags.Recent, true);
             }
             else if (flag.Equals(MessageFlags.Seen.ToString(), StringComparison.CurrentCultureIgnoreCase))
             {
-                flags_.Add(MessageFlags.Seen);
+                SetFlag(MessageFlags.Seen, true);
             }
         }
 
