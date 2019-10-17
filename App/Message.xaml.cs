@@ -155,7 +155,7 @@ namespace JMail
                 }
 
                 // Now mark the message as read
-                CurrentMessage.UnRead = false;
+                CurrentMessage.SetRead(true);
             }
             else
             {
@@ -338,7 +338,7 @@ namespace JMail
         {
             if (CurrentMessage != null)
             {
-                CurrentMessage.Deleted = true;
+                CurrentMessage.SetDeleted(true);
             }
 
             NextMessage(sender, null);

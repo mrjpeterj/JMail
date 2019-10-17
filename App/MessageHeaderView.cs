@@ -83,6 +83,16 @@ namespace JMail
             subscriptions_.Add(msg.UnRead.SubscribeTo(this, x => x.UnRead));
         }
 
+        public void SetDeleted(bool val)
+        {
+            message_.Folder.Server.SetFlag(message_, Core.MessageFlags.Deleted, val);
+        }
+
+        public void SetRead(bool val)
+        {
+            message_.Folder.Server.SetFlag(message_, Core.MessageFlags.Seen, val);
+        }
+
         #region IChangingProperty compliance
         public void OnPropertyChanged(string propertyName)
         {

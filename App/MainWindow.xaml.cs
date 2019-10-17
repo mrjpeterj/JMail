@@ -305,13 +305,13 @@ namespace JMail
 
                 if (e.Key == Key.Delete)
                 {
-                    msg.Deleted = true;
+                    msg.SetDeleted(true);
 
                     e.Handled = true;
                 }
                 if (e.Key == Key.Q && Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
                 {
-                    msg.UnRead = !msg.UnRead;
+                    msg.SetRead(msg.UnRead);
                 }
             }
         }
@@ -332,7 +332,7 @@ namespace JMail
                     continue;
                 }
 
-                msg.UnRead = false;
+                msg.SetRead(true);
             }
         }
 
@@ -352,7 +352,7 @@ namespace JMail
                     continue;
                 }
 
-                msg.UnRead = true;
+                msg.SetRead(false);
             }
         }
 
@@ -372,7 +372,7 @@ namespace JMail
                     continue;
                 }
 
-                msg.Deleted = true;
+                msg.SetDeleted(true);
             }
         }
 
@@ -392,7 +392,7 @@ namespace JMail
                     continue;
                 }
 
-                msg.Deleted = false;
+                msg.SetDeleted(false);
             }
         }
 
