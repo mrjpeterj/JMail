@@ -106,10 +106,13 @@ namespace JMail
 
             if (folder != null)
             {
-                currentFolderSub_ = folder.Folder.Messages.ObserveOn(Dispatcher).Subscribe((msgs) =>
-                {
-                    SortMessageList();
-                });
+                currentFolderSub_ = folder.Folder.ViewMessages
+                    .Throttle(TimeSpan.FromSeconds(1))
+                    .ObserveOn(Dispatcher)
+                    .Subscribe((msgs) =>
+                    {                
+                        SortMessageList();
+                    });
             }
         }
 
