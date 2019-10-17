@@ -31,6 +31,30 @@ namespace JMail
         }
 
         [TestMethod]
+        public void FolderHasChildrenAndMessages()
+        {
+            var f = new Folder(server_, "INBOX", "INBOX", ".", true, true);
+
+            Assert.IsNotNull(f);
+        }
+
+        [TestMethod]
+        public void FolderHasChildren()
+        {
+            var f = new Folder(server_, "INBOX", "INBOX", ".", true, false);
+
+            Assert.IsNotNull(f);
+        }
+
+        [TestMethod]
+        public void FolderHasMessages()
+        {
+            var f = new Folder(server_, "INBOX", "INBOX", ".", false, true);
+
+            Assert.IsNotNull(f);
+        }
+
+        [TestMethod]
         public void MessagesArrive()
         {
             int folderMsgCount = -1;

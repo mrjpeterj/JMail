@@ -162,36 +162,36 @@ namespace JMail.Core
                 messages_ = new BehaviorSubject<IEnumerable<MessageHeader>>(new MessageHeader[] { });
 
                 ViewMessages = Observable.CombineLatest(messages_, filterIds_, FilterMessages);
+
+                exists_ = new BehaviorSubject<int>(0);
+                recent_ = new BehaviorSubject<int>(0);
+                unseen_ = new BehaviorSubject<int>(0);
+
+                var msgCount = messages_.Select(msgs => msgs.Count());
+
+                // Take the value as either the number of messages in the list or
+                // just what the server has set for the folder.
+                Exists = exists_.Merge(msgCount);
+
+
+                var msgsUnRead = messages_.
+                    Select((msgs) =>
+                    {
+                        // Build an observable list of all of the unread values.
+
+                        return Observable.CombineLatest(msgs.Select(msg => msg.UnRead));
+                    }).Switch(). // .. and only listen to the newest one.
+                    Select(unreads =>
+                    {
+                        // .. then count up the unread values in it.
+
+                        return unreads.Where(unread => unread == true).Count();
+                    });
+
+                // Take the value as either the number of messages with Unread set 
+                // or just what the server has set for the folder.
+                Unseen = unseen_.Merge(msgsUnRead);
             }
-
-            exists_ = new BehaviorSubject<int>(0);
-            recent_ = new BehaviorSubject<int>(0);
-            unseen_ = new BehaviorSubject<int>(0);
-
-            var msgCount = messages_.Select(msgs => msgs.Count());
-
-            // Take the value as either the number of messages in the list or
-            // just what the server has set for the folder.
-            Exists = exists_.Merge(msgCount);
-
-
-            var msgsUnRead = messages_.
-                Select((msgs) =>
-                {
-                    // Build an observable list of all of the unread values.
-
-                    return Observable.CombineLatest(msgs.Select(msg => msg.UnRead));
-                }).Switch(). // .. and only listen to the newest one.
-                Select(unreads =>
-                {
-                    // .. then count up the unread values in it.
-
-                    return unreads.Where(unread => unread == true).Count();
-                });
-
-            // Take the value as either the number of messages with Unread set 
-            // or just what the server has set for the folder.
-            Unseen = unseen_.Merge(msgsUnRead);
         }
 
         public override string ToString()
