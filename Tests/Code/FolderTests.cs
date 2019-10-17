@@ -126,6 +126,13 @@ namespace JMail
             Assert.AreEqual(1, folderMsgCount);
             Assert.AreEqual(0, folderUnreadCount);
             Assert.AreEqual(1, msgCount);
+
+            // Mark the first as unread again
+            server_.SetFlag(msg1, MessageFlags.Seen, false);
+
+            Assert.AreEqual(1, folderMsgCount);
+            Assert.AreEqual(1, folderUnreadCount);
+            Assert.AreEqual(1, msgCount);
         }
     }
 }
