@@ -45,7 +45,6 @@ namespace JMail
             if (Folder.CanHaveMessages)
             {
                 Folder.ViewMessages
-                    .Throttle(TimeSpan.FromSeconds(1))
                     .Select((msgs) =>
                     {
                         return msgs.Select(msg => new MessageHeaderView(msg));

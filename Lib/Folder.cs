@@ -161,7 +161,7 @@ namespace JMail.Core
 
                 messages_ = new BehaviorSubject<IEnumerable<MessageHeader>>(new MessageHeader[] { });
 
-                ViewMessages = Observable.CombineLatest(messages_, filterIds_, FilterMessages);
+                ViewMessages = Observable.CombineLatest(messages_, filterIds_, FilterMessages).Throttle(TimeSpan.FromSeconds(1));
 
                 exists_ = new BehaviorSubject<int>(0);
                 recent_ = new BehaviorSubject<int>(0);

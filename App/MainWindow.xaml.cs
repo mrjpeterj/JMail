@@ -107,7 +107,6 @@ namespace JMail
             if (folder != null)
             {
                 currentFolderSub_ = folder.Folder.ViewMessages
-                    .Throttle(TimeSpan.FromSeconds(1))
                     .ObserveOn(Dispatcher)
                     .Subscribe((msgs) =>
                     {                
