@@ -513,9 +513,7 @@ namespace JMail.Core
 
         void StartTLS(Action continuation)
         {
-            // XXX Current disable StartTLS to enable local testing where it doesn't seem to like
-            // the certs on 'fire'
-            if (true || stream_ is System.Net.Security.SslStream)
+            if (stream_ is System.Net.Security.SslStream)
             {
                 // TLS already started
                 continuation();
