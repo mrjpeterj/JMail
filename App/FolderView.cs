@@ -50,20 +50,20 @@ namespace JMail
                         return msgs.Select(msg => new MessageHeaderView(msg));
                     })
                     .SubscribeTo(this, x => x.Messages);
-            }
 
-            Folder.Unseen.Select((val) =>
-            {
-                if (val == 0)
+                Folder.Unseen.Select((val) =>
                 {
-                    return string.Empty;
-                }
-                else
-                {
-                    return "(" + val + ")";
-                }
-            }).
-            SubscribeTo(this, x => x.UnseenText);
+                    if (val == 0)
+                    {
+                        return string.Empty;
+                    }
+                    else
+                    {
+                        return "(" + val + ")";
+                    }
+                }).
+                SubscribeTo(this, x => x.UnseenText);
+            }
         }
 
         public void Select()

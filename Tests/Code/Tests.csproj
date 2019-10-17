@@ -72,11 +72,16 @@
     <Compile Include="ImapDataTests.cs" />
     <Compile Include="TestAccount.cs" />
     <Compile Include="FolderTests.cs" />
+    <Compile Include="FolderViewTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\App\Mail.csproj">
+      <Project>{e9c46dcc-036e-4499-b8c1-cbeae80eb850}</Project>
+      <Name>Mail</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Lib\Core.csproj">
       <Project>{74a1e9db-10fd-4b6f-bea4-bcb05c550ef9}</Project>
       <Name>Core</Name>
