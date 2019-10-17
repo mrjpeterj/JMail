@@ -2,7 +2,7 @@
 <SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="JMail.Properties" GeneratedClassName="Settings">
   <Profiles />
   <Settings>
-    <Setting Name="Accounts" Type="JMail.AccountList" Scope="User">
+    <Setting Name="Accounts" Type="JMail.Core.AccountList" Scope="User">
       <Value Profile="(Default)" />
     </Setting>
     <Setting Name="MainWinPos" Type="System.String" Scope="User">
