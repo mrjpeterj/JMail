@@ -72,6 +72,8 @@ namespace JMail
 
         public int Size { get { return message_.Size; } }
 
+        public int id { get { return message_.id; } }
+
         public MessageHeaderView(Core.MessageHeader msg)
         {
             message_ = msg;
