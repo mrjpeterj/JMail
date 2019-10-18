@@ -122,10 +122,7 @@ namespace JMail.Core
         // All the messages in the folder
         public IObservable<IEnumerable<MessageHeader>> Messages
         {
-            get
-            {
-                return messages_;
-            }
+            get; private set; 
         }
 
         // The current subset of messages in the folder that are being viewed
@@ -161,20 +158,21 @@ namespace JMail.Core
 
                 messages_ = new BehaviorSubject<IEnumerable<MessageHeader>>(new MessageHeader[] { });
 
-                ViewMessages = Observable.CombineLatest(messages_, filterIds_, FilterMessages).Throttle(TimeSpan.FromSeconds(1));
+                Messages = messages_.Throttle(TimeSpan.FromMilliseconds(100), Dependencies.TimeScheduler);
+                ViewMessages = Observable.CombineLatest(Messages, filterIds_, FilterMessages);
 
                 exists_ = new BehaviorSubject<int>(0);
                 recent_ = new BehaviorSubject<int>(0);
                 unseen_ = new BehaviorSubject<int>(0);
 
-                var msgCount = messages_.Select(msgs => msgs.Count());
+                var msgCount = Messages.Select(msgs => msgs.Count());
 
                 // Take the value as either the number of messages in the list or
                 // just what the server has set for the folder.
                 Exists = exists_.Merge(msgCount);
 
 
-                var msgsUnRead = messages_.
+                var msgsUnRead = Messages.
                     Select((msgs) =>
                     {
                         // Build an observable list of all of the unread values.
