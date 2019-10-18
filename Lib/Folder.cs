@@ -311,11 +311,7 @@ namespace JMail.Core
                     if (msg != null)
                     {
                         selected.Add(msg);
-                    }
-                    else
-                    {
-                        int a = 0;
-                    }
+                    }                   
                 }
 
                 return selected;

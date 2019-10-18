@@ -2,9 +2,9 @@
 using System.Linq;
 using System.Reactive.Linq;
 
-using JMail.Core;
-
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+using JMail.Core;
 
 namespace JMail
 {
@@ -133,6 +133,82 @@ namespace JMail
             Assert.AreEqual(1, folderMsgCount);
             Assert.AreEqual(1, folderUnreadCount);
             Assert.AreEqual(1, msgCount);
+        }
+
+        [TestMethod]
+        public void MessagesFiltered()
+        {
+            int visibleMessages = -1;
+
+            // Wait for the inbox to appear
+            var findInbox = server_.AllFolders.Select((folders) =>
+            {
+                return folders.Where(folder => folder.FullName == "INBOX").FirstOrDefault();
+            })
+                .Where(folder => folder != null)
+                .Take(1)
+                .Subscribe(folder =>
+                {
+                    // Now subscribe to interesting parts of the inbox
+
+                    server_.SelectFolder(folder);
+
+                    folder.ViewMessages.Select(msgs =>
+                        {
+                            return msgs.Count();
+                        }).Subscribe(msgCount => {
+                            visibleMessages = msgCount;
+                        });
+                });
+
+            // Now start feeding the server with fake data.
+
+            // Get the Inbox to appear
+            var inbox = new Folder(server_, "INBOX", "INBOX", ".", false, true);
+            testServer_.AddFolder(inbox);
+
+            // Add a message to it.
+            var msg1 = new MessageHeader(1, inbox);
+            msg1.SetValue("subject", "Subject A");
+
+            inbox.AddMessage(msg1);
+
+            // Add another message to it.
+            var msg2 = new MessageHeader(2, inbox);
+            msg2.SetValue("subject", "Subject B");
+
+            inbox.AddMessage(msg2);
+
+            System.Threading.Thread.Sleep(1500);
+            Assert.AreEqual(2, visibleMessages);
+
+
+            // Now filter the messages
+            inbox.SetFilterMsgIds(new int[] { 2 });
+
+            System.Threading.Thread.Sleep(1500);
+            Assert.AreEqual(1, visibleMessages);
+
+
+            inbox.SetFilterMsgIds(new int[] { 1 });
+
+            System.Threading.Thread.Sleep(1500);
+            Assert.AreEqual(1, visibleMessages);
+
+            inbox.SetFilterMsgIds(new int[] { 1, 2 });
+
+            System.Threading.Thread.Sleep(1500);
+            Assert.AreEqual(2, visibleMessages);
+
+            inbox.SetFilterMsgIds(new int[] { });
+
+            System.Threading.Thread.Sleep(1500);
+            Assert.AreEqual(0, visibleMessages);
+
+            inbox.SetFilterMsgIds(null);
+
+            System.Threading.Thread.Sleep(1500);
+            Assert.AreEqual(2, visibleMessages);
         }
     }
 }

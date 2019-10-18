@@ -87,6 +87,8 @@ namespace JMail.Core
 
             folder_ = f;
             Uid = uid;
+            id = uid; // Set this as a default, but the server might update it.
+
             flags_ = new BehaviorSubject<MessageFlags>(MessageFlags.None);
 
             UnRead = flags_.Select((flags) => flags.HasFlag(MessageFlags.Seen) == false);
