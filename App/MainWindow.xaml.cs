@@ -26,8 +26,6 @@ namespace JMail
         private System.Windows.Threading.DispatcherTimer poller_;
 
         private MailView mailView_;
-        private IDisposable currentFolderSub_;
-
 
         public MainWindow()
         {
@@ -67,6 +65,7 @@ namespace JMail
 
         void OnLoaded(object sender, RoutedEventArgs e)
         {
+            u_MessageList.Items.CurrentChanged += (_s, _e) => { SortMessageList(); };
         }
 
         void OnClosing(object sender, CancelEventArgs e)
@@ -93,23 +92,7 @@ namespace JMail
             // Clear the search text on folder change.
             u_search.Text = "";
 
-            if (currentFolderSub_ != null)
-            {
-                currentFolderSub_.Dispose();
-                currentFolderSub_ = null;
-            }
-
             mailView_.Select(folder);
-
-            if (folder != null)
-            {
-                currentFolderSub_ = folder.Folder.ViewMessages
-                    .ObserveOn(Dispatcher)
-                    .Subscribe((msgs) =>
-                    {                
-                        SortMessageList();
-                    });
-            }
         }
 
         private void SortMessageList()
