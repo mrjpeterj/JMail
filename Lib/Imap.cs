@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
 using System.IO;
-
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using System.Text;
 
 namespace JMail.Core
 {
@@ -63,7 +62,8 @@ namespace JMail.Core
 
         private volatile ImapIdleState idling_;
 
-        private System.Timers.Timer folderCheckTimer_;
+        private IObservable<long> folderCheckTimer_;
+        private IDisposable runningFolderCheckTimer_;
 
         public Imap(AccountInfo account)
         {
@@ -83,8 +83,7 @@ namespace JMail.Core
 
             idling_ = ImapIdleState.None;
 
-            folderCheckTimer_ = new System.Timers.Timer(30 * 1000);
-            folderCheckTimer_.Elapsed += CheckCurrent;
+            folderCheckTimer_ = Observable.Interval(TimeSpan.FromSeconds(30), Dependencies.TimeScheduler);
 
             incoming_ = new byte[8 * 1024];
         }
@@ -338,10 +337,12 @@ namespace JMail.Core
                 int a = 0;
             }
 
-            if (!pendingRequests_.Any() && !pendingResponses_.Any() &&
-                !folderCheckTimer_.Enabled && currentFolder_ != null)
+            if (!pendingRequests_.Any() && !pendingResponses_.Any() && runningFolderCheckTimer_ == null && currentFolder_ != null)
             {
-                CheckCurrent(this, null);
+                // We have a selected folder, with no pending stuff and we aren't currently running periodic checks.
+                // So manually check.
+
+                CheckCurrent(0);
             }
         }
 
@@ -359,10 +360,11 @@ namespace JMail.Core
 
         void SendCommand(string command, string args, ImapRequest.ResponseHandler handler, ImapRequest.ResponseHandler errorHandler, object data)
         {
-            if (folderCheckTimer_.Enabled)
+            if (runningFolderCheckTimer_ != null)
             {
                 // We are off to do some other requests, so don't run the folder updater.
-                folderCheckTimer_.Stop();
+                runningFolderCheckTimer_.Dispose();
+                runningFolderCheckTimer_ = null;
             }
 
             string commandId = NextCommand();
@@ -1376,12 +1378,19 @@ namespace JMail.Core
             ProcessPending();
         }
 
-        void CheckCurrent(object state, EventArgs e)
+        void CheckCurrent(long tickCount)
         {
             if (currentFolder_ != null)
             {
                 if (idling_ == ImapIdleState.Off)
                 {
+                    // Moving to IDLE, so stop timer
+                    if (runningFolderCheckTimer_ != null)
+                    {
+                        runningFolderCheckTimer_.Dispose();
+                        runningFolderCheckTimer_ = null;
+                    }
+
                     idling_ = ImapIdleState.ReqestedStart;
 
                     // Check the current status first before going into
@@ -1395,8 +1404,11 @@ namespace JMail.Core
                 {
                     SendCommand("NOOP", "", UpdateStatus, null, currentFolder_);
 
-                    // We have to poll in this case, so start the timer again.
-                    folderCheckTimer_.Start();
+                    if (runningFolderCheckTimer_ != null)
+                    {
+                        // We have to poll in this case, so start the timer again.
+                        runningFolderCheckTimer_ = folderCheckTimer_.Subscribe(CheckCurrent);
+                    }
                 }
             }
         }
@@ -1450,7 +1462,11 @@ namespace JMail.Core
             {
                 currentFolder_ = null;
 
-                folderCheckTimer_.Stop();
+                if (runningFolderCheckTimer_ != null)
+                {
+                    runningFolderCheckTimer_.Dispose();
+                    runningFolderCheckTimer_ = null;
+                }
             }
         }
 
