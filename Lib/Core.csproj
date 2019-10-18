@@ -59,6 +59,7 @@
   <ItemGroup>
     <Compile Include="AccountInfo.cs" />
     <Compile Include="BodyPart.cs" />
+    <Compile Include="Dependencies.cs" />
     <Compile Include="Folder.cs" />
     <Compile Include="IAccount.cs" />
     <Compile Include="Imap.cs" />
