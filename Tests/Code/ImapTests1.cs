@@ -1,20 +1,25 @@
 ﻿using System;
 using System.Linq;
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-
 using JMail.Core;
+
+using Microsoft.Reactive.Testing;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace JMail
 {
     [TestClass]
     public class ImapTests1
     {
+        TestScheduler scheduler_;
         Imap server_;
 
         [TestInitialize]
         public void Init()
         {
+            scheduler_ = new TestScheduler();
+            Core.Dependencies.TimeScheduler = scheduler_;
+
             var account = new AccountInfo();
             account.Name = "Mail_Test";
 
@@ -25,7 +30,6 @@ namespace JMail
         public void Folder_List_1()
         {
             var s = new ScriptPlayer("../../../Data/test1.xml");
-            bool complete = false;
             int msgCount = -1;
             int folderExists = -1;
             int unRead = -1;
@@ -37,7 +41,6 @@ namespace JMail
             folder.Messages.Subscribe((msgs) =>
             {
                 msgCount = msgs.Count();
-                complete = msgCount > 0;
             });
             folder.Exists.Subscribe((val) =>
             {
@@ -50,10 +53,9 @@ namespace JMail
 
             server_.SelectFolder(folder);
 
-            while (!complete)
-            {
-                System.Threading.Thread.Sleep(1000);
-            }
+            System.Threading.Thread.Sleep(1000);
+
+            scheduler_.AdvanceBy(TimeSpan.FromSeconds(10).Ticks);
 
             Assert.AreEqual(27, msgCount);
             Assert.AreEqual(msgCount, folderExists);
@@ -65,7 +67,6 @@ namespace JMail
         {
             var s = new ScriptPlayer("../../../Data/test2.xml");
 
-            bool complete = false;
             int msgCount = -1;
             int folderExists = -1;
             int unRead = -1;
@@ -77,7 +78,6 @@ namespace JMail
             folder.Messages.Subscribe((msgs) =>
             {
                 msgCount = msgs.Count();
-                complete = msgCount > 0;
             });
             folder.Exists.Subscribe((val) =>
             {
@@ -90,10 +90,9 @@ namespace JMail
 
             server_.SelectFolder(folder);
 
-            while (!complete)
-            {
-                System.Threading.Thread.Sleep(1000);
-            }
+            System.Threading.Thread.Sleep(1000);
+
+            scheduler_.AdvanceBy(TimeSpan.FromSeconds(10).Ticks);
 
             Assert.AreEqual(50, msgCount);
             Assert.AreEqual(msgCount, folderExists);
@@ -111,7 +110,6 @@ namespace JMail
 
             server_.SelectFolder(folder);
 
-            bool contentReady = false;
             string bodyText = "";
 
             folder.Messages.Subscribe((msgs) =>
@@ -122,18 +120,19 @@ namespace JMail
                 {
                     msg.Body.Updated += (sender, e) => {
                         bodyText = msg.Body.Text;
-
-                        contentReady = true;
                     };
 
                     msg.Body.Fetch();
                 }
             });
 
-            while (!contentReady)
-            {
-                System.Threading.Thread.Sleep(1000);
-            }
+            scheduler_.AdvanceBy(TimeSpan.FromSeconds(1).Ticks);
+
+            System.Threading.Thread.Sleep(1000);
+
+            scheduler_.AdvanceBy(TimeSpan.FromSeconds(1).Ticks);
+
+            System.Threading.Thread.Sleep(1000);
 
             Assert.IsTrue(bodyText.Contains("£12.50"));
         }

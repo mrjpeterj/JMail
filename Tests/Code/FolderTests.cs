@@ -2,9 +2,10 @@
 using System.Linq;
 using System.Reactive.Linq;
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-
 using JMail.Core;
+
+using Microsoft.Reactive.Testing;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace JMail
 {
@@ -57,6 +58,9 @@ namespace JMail
         [TestMethod]
         public void MessagesArrive()
         {
+            var scheduler = new TestScheduler();
+            Core.Dependencies.TimeScheduler = scheduler;
+
             int folderMsgCount = -1;
             int folderUnreadCount = -1;
 
@@ -94,6 +98,7 @@ namespace JMail
             var msg1 = new MessageHeader(1, inbox);
             inbox.AddMessage(msg1);
 
+            scheduler.AdvanceBy(TimeSpan.FromSeconds(1).Ticks);
             Assert.AreEqual(1, folderMsgCount);
             Assert.AreEqual(1, folderUnreadCount);
             Assert.AreEqual(1, msgCount);
@@ -102,6 +107,7 @@ namespace JMail
             var msg2 = new MessageHeader(2, inbox);
             inbox.AddMessage(msg2);
 
+            scheduler.AdvanceBy(TimeSpan.FromSeconds(1).Ticks); 
             Assert.AreEqual(2, folderMsgCount);
             Assert.AreEqual(2, folderUnreadCount);
             Assert.AreEqual(2, msgCount);
@@ -109,6 +115,7 @@ namespace JMail
             // Mark the first message as read
             server_.SetFlag(msg1, MessageFlags.Seen, true);
 
+            scheduler.AdvanceBy(TimeSpan.FromSeconds(1).Ticks);
             Assert.AreEqual(2, folderMsgCount);
             Assert.AreEqual(1, folderUnreadCount);
             Assert.AreEqual(2, msgCount);
@@ -116,6 +123,7 @@ namespace JMail
             // Delete the 2nd message
             server_.SetFlag(msg2, MessageFlags.Deleted, true);
 
+            scheduler.AdvanceBy(TimeSpan.FromSeconds(1).Ticks);
             Assert.AreEqual(2, folderMsgCount);
             Assert.AreEqual(1, folderUnreadCount);
             Assert.AreEqual(2, msgCount);
@@ -123,13 +131,15 @@ namespace JMail
             // Expunge the folder
             server_.ExpungeFolder();
 
+            scheduler.AdvanceBy(TimeSpan.FromSeconds(1).Ticks);
             Assert.AreEqual(1, folderMsgCount);
             Assert.AreEqual(0, folderUnreadCount);
             Assert.AreEqual(1, msgCount);
 
             // Mark the first as unread again
             server_.SetFlag(msg1, MessageFlags.Seen, false);
-
+            
+            scheduler.AdvanceBy(TimeSpan.FromSeconds(1).Ticks);
             Assert.AreEqual(1, folderMsgCount);
             Assert.AreEqual(1, folderUnreadCount);
             Assert.AreEqual(1, msgCount);
@@ -138,6 +148,9 @@ namespace JMail
         [TestMethod]
         public void MessagesFiltered()
         {
+            var scheduler = new TestScheduler();
+            Core.Dependencies.TimeScheduler = scheduler;
+
             int visibleMessages = -1;
 
             // Wait for the inbox to appear
@@ -179,35 +192,35 @@ namespace JMail
 
             inbox.AddMessage(msg2);
 
-            System.Threading.Thread.Sleep(1500);
+            scheduler.AdvanceBy(TimeSpan.FromSeconds(1).Ticks);
             Assert.AreEqual(2, visibleMessages);
 
 
             // Now filter the messages
             inbox.SetFilterMsgIds(new int[] { 2 });
 
-            System.Threading.Thread.Sleep(1500);
+            scheduler.AdvanceBy(TimeSpan.FromSeconds(1).Ticks);
             Assert.AreEqual(1, visibleMessages);
 
 
             inbox.SetFilterMsgIds(new int[] { 1 });
 
-            System.Threading.Thread.Sleep(1500);
+            scheduler.AdvanceBy(TimeSpan.FromSeconds(1).Ticks);
             Assert.AreEqual(1, visibleMessages);
 
             inbox.SetFilterMsgIds(new int[] { 1, 2 });
 
-            System.Threading.Thread.Sleep(1500);
+            scheduler.AdvanceBy(TimeSpan.FromSeconds(1).Ticks);
             Assert.AreEqual(2, visibleMessages);
 
             inbox.SetFilterMsgIds(new int[] { });
 
-            System.Threading.Thread.Sleep(1500);
+            scheduler.AdvanceBy(TimeSpan.FromSeconds(1).Ticks);
             Assert.AreEqual(0, visibleMessages);
 
             inbox.SetFilterMsgIds(null);
 
-            System.Threading.Thread.Sleep(1500);
+            scheduler.AdvanceBy(TimeSpan.FromSeconds(1).Ticks);
             Assert.AreEqual(2, visibleMessages);
         }
     }
