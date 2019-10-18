@@ -87,7 +87,7 @@ namespace JMail
         {
             while (nextResponse_ == null)
             {
-                System.Threading.Thread.Sleep(100);
+                System.Threading.Thread.Sleep(1);
             }
 
             lock (this)
