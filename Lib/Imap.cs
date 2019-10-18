@@ -1277,7 +1277,14 @@ namespace JMail.Core
                         var part = ParseBodyStructure(msg, dataPieces[i], subLoc);
                         if (part != null)
                         {
-                            msg.AddAttachment(part);
+                            if (part.Disposition.DispositionType == System.Net.Mime.DispositionTypeNames.Attachment)
+                            {
+                                msg.AddAttachment(part);
+                            }
+                            else
+                            {
+                                msg.AddRelated(part);
+                            }
                         }
                     }
                 }
