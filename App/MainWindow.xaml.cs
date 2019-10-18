@@ -28,7 +28,6 @@ namespace JMail
         private MailView mailView_;
         private IDisposable currentFolderSub_;
 
-        public static System.Windows.Threading.Dispatcher MainDispatcher;
 
         public MainWindow()
         {
@@ -43,8 +42,6 @@ namespace JMail
             {
                 srv.AuthFailed += OnAuthFailed;
             }
-
-            MainDispatcher = Dispatcher;
 
             DataContext = mailView_;
             InitializeComponent();
