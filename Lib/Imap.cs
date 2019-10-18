@@ -59,6 +59,7 @@ namespace JMail.Core
         private Folder currentFolder_;
 
         private bool authPlain_;
+        private bool tryTLS_;
 
         private volatile ImapIdleState idling_;
 
@@ -78,6 +79,8 @@ namespace JMail.Core
             folders_ = new BehaviorSubject<IEnumerable<Folder>>(new Folder[] { });
 
             authPlain_ = false;
+            tryTLS_ = true;
+
             idling_ = ImapIdleState.None;
 
             folderCheckTimer_ = new System.Timers.Timer(30 * 1000);
@@ -106,6 +109,27 @@ namespace JMail.Core
             client_ = new TcpClient();
 
             client_.BeginConnect(account_.Host, account_.Port, ConnectComplete, null);
+        }
+
+        private void ResetConnection()
+        {
+            // Reconnect.
+
+            if (stream_ != null)
+            {
+                stream_.Close();
+                stream_ = null;
+            }
+
+            if (client_ != null)
+            {
+                client_.Close();
+                client_ = null;
+            }
+
+            state_ = ImapState.None;
+
+            Connect();
         }
 
         private void ConnectComplete(IAsyncResult aRes)
@@ -155,19 +179,18 @@ namespace JMail.Core
                     ProcessResponse(bytesRead);
                 }
 
-                stream_.BeginRead(incoming_, 0, incoming_.Length, HandleRead, null);
+                if (stream_ != null)
+                {
+                    // ProcessResponse might have reset the connection
+
+                    stream_.BeginRead(incoming_, 0, incoming_.Length, HandleRead, null);
+                }
             }
             catch (System.IO.IOException)
             {
                 // Socket read failure.
-                // Reconnect.
+                ResetConnection();
 
-                stream_.Close();
-                client_.Close();
-
-                state_ = ImapState.None;
-
-                Connect();
                 return;
             }
             catch (System.ObjectDisposedException)
@@ -372,14 +395,8 @@ namespace JMail.Core
             catch (System.IO.IOException)
             {
                 // Socket write failure.
-                // Reconnect.
+                ResetConnection();
 
-                stream_.Close();
-                client_.Close();
-
-                state_ = ImapState.None;
-
-                Connect();
                 return;
             }
         }
@@ -446,12 +463,12 @@ namespace JMail.Core
                 {
                     var tokens = ImapData.SplitToken(respString);
 
-                    // Look to see if STARTTLS is supported before asking for caps
-                    // as caps might be different after TLS.
-
                     foreach (var token in tokens)
                     {
-                        if (token == "STARTTLS")
+                        // Look to see if STARTTLS is supported before asking for caps
+                        // as caps might be different after TLS.
+
+                        if (tryTLS_ && token == "STARTTLS")
                         {
                             StartTLS(Caps);
 
@@ -491,7 +508,7 @@ namespace JMail.Core
                         authPlain_ = true;
                     }
                 }
-                else if (cap == ("STARTTLS"))
+                else if (cap == "STARTTLS")
                 {
                     hasTLS = true;
                 }
@@ -501,7 +518,7 @@ namespace JMail.Core
                 }
             }
 
-            if (hasTLS)
+            if (hasTLS && tryTLS_)
             {
                 StartTLS(Login);
             }
@@ -535,8 +552,14 @@ namespace JMail.Core
             }
             catch
             {
-                // If it doesn't work then stay unencrypted, since we were only trying to use it because it looked
-                // available.
+                // If it doesn't work then we need to give up on the whole thing and come around again 
+                // forcibly not using it.
+
+                tryTLS_ = false;
+
+                ResetConnection();
+
+                return;
             }
 
             // Data should be the follow function
