@@ -502,6 +502,10 @@ namespace JMail
             {
                 mailView_.CurrentFolder.Folder.Server.SearchFolder(u_search.Text);
             }
+            else
+            {
+                mailView_.CurrentFolder.Folder.Server.SearchEnd();
+            }
         }
     }
 
