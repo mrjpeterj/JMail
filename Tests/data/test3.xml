@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test>
+	<action>
+		<request>
+	    <![CDATA[__Mail_Test__X_0001 SELECT "INBOX.testContent"
+]]>
+        </request>
+        <response>
+        <![CDATA[* FLAGS (\Answered \Flagged \Draft \Deleted \Seen)
+* OK [PERMANENTFLAGS (\Answered \Flagged \Draft \Deleted \Seen \*)]  
+* 3 EXISTS
+* 1 RECENT
+* OK [UIDVALIDITY 1338053521]  
+* OK [UIDNEXT 86]  
+* OK [NOMODSEQ] Sorry, modsequences have not been enabled on this mailbox
+* OK [URLMECH INTERNAL]
+__Mail_Test__X_0001 OK [READ-WRITE] Complete
+]]>
+        </response>
+    </action>
+    <action>
+        <request>
+        <![CDATA[__Mail_Test__X_0002 UID SEARCH UNDELETED
+]]>
+        </request>
+        <response>
+        <![CDATA[* SEARCH 84 85 86
+__Mail_Test__X_0002 OK Completed (3 msgs in 0.000 secs)
+]]>
+        </response>
+    </action>
+	<action>
+        <request>
+        <![CDATA[__Mail_Test__X_0003 UID FETCH 84,85,86 (FLAGS INTERNALDATE RFC822.SIZE ENVELOPE BODYSTRUCTURE)
+]]>
+        </request>
+		<response>
+	    <![CDATA[* 1 FETCH (FLAGS (\Seen) UID 84 INTERNALDATE "28-Mar-2016 21:45:18 +0100" RFC822.SIZE 98743 ENVELOPE ("Mon, 28 Mar 2016 21:45:17 +0100" "Fwd: Mount Kilimanjaro and the children who live there" (("Lllll Ssssssssss" NIL "lllll" "sssssssssss.eclipse.co.uk")) (("Lllll Ssssssssss" NIL "lllll" "sssssssssss.eclipse.co.uk")) (("Lllll Ssssssssss" NIL "lllll" "sssssssssss.eclipse.co.uk")) (("eeeeeeeeee@hotmail.com" NIL "eeeeeeeeee" "hotmail.com")("jjjjjjjjj@msn.com" NIL "jjjjjjjjj" "msn.com")("aaaa@ccccc.co.uk" NIL "aaaa" "ccccc.co.uk")("mmmm@sssssssssssss.freeserve.co.uk" NIL "mmmm" "sssssssssssss.freeserve.co.uk")("iiiiiiiiii@cgi.com" NIL "iiiiiiiiii" "cgi.com")("ppppppppppp@btinternet.com" NIL "ppppppppppp" "btinternet.com")("sssssssssssssss@btinternet.com" NIL "sssssssssssssss" "btinternet.com")("ppppppppp@trimite.com" NIL "ppppppppp" "trimite.com")("vvvvvvvvvvvvvvv@hotmail.com" NIL "vvvvvvvvvvvvvvv" "hotmail.com")("aaaaaa@imap100.example.com" NIL "aaaaaa" "imap100.example.com")("wwwwwwwww@hotmail.com" NIL "wwwwwwwww" "hotmail.com")("nnnnnnnn@bbbbbbbbb.co.uk" NIL "nnnnnnnn" "bbbbbbbbb.co.uk")("yyyyy@cas.org" NIL "yyyyy" "cas.org")("lllllll@me.com" NIL "lllllll" "me.com")("jjjjjjjj@gmail.com" NIL "jjjjjjjj" "gmail.com")("mmmmmmmmmmm@gmail.com" NIL "mmmmmmmmmmm" "gmail.com")("jjjjjjjjjj@gmail.com" NIL "jjjjjjjjjj" "gmail.com")("lllll@sssssssssss.eclipse.co.uk" NIL "lllll" "sssssssssss.eclipse.co.uk")("mmmm@ssssssssss.co." NIL "mmmm" "ssssssssss.co.uk")("mmmmmmmmmmmmmmm@gmail.com" NIL "mmmmmmmmmmmmmmm" "gmail.com")("mmmmmmmmmmmmmm@googlemail.com" NIL "mmmmmmmmmmmmmm" "googlemail.com")("ttttttttttt@yahoo.co.uk" NIL "ttttttttttt" "yahoo.co.uk")("cccccccccc@btinternet.com" NIL "cccccccccc" "btinternet.com")("ddddddddddddd@ffffff.co.uk" NIL "DDDDDDDDDDDDD" "ffffff.co.uk")("ssssssssssss@bt.com" NIL "ssssssssssss" "bt.com")("mmmmmmmmm@hotmail.com" NIL "mmmmmmmmm" "hotmail.com")("bbbbbbbbbbbbb@yahoo.co.uk" NIL "bbbbbbbbbbbbb" "yahoo.co.uk")("aaaaaaaaaaaaaaaaa@yahoo.co.uk" NIL "aaaaaaaaaaaaaaaaa" "yahoo.co.uk")("ssssssss@hotmail.co.uk" NIL "ssssssss" "hotmail.co.uk")("ddddddd eeeeee" NIL "dddddddddd" "gmail.com")("ddddd fffffff" NIL "ddddddddddddd" "outlook.com")) NIL NIL "<2d4976f320a7cd00ecd08f4af176c738bf4.20160324163749@mail17.suw13.rsgsv.net>" "<56F997DD.6090403@sssssssssss.eclipse.co.uk>") BODYSTRUCTURE (("TEXT" "PLAIN" ("CHARSET" "utf-8" "FORMAT" "flowed") NIL NIL "8BIT" 4919 124 NIL NIL NIL NIL)("TEXT" "HTML" ("CHARSET" "utf-8") NIL NIL "8BIT" 90382 1694 NIL NIL NIL NIL) "ALTERNATIVE" ("BOUNDARY" "------------040402050409090705040207") NIL NIL NIL))
+* 2 FETCH (FLAGS (\Seen) UID 85 INTERNALDATE "28-Mar-2016 21:51:02 +0100" RFC822.SIZE 27851 ENVELOPE ("Mon, 28 Mar 2016 21:51:02 +0100" "Fwd: You're invited: The Clubs & Huts Seminar 2016" (("Lllll Ssssssssss" NIL "lllll" "sssssssssss.eclipse.co.uk")) (("Lllll Ssssssssss" NIL "lllll" "sssssssssss.eclipse.co.uk")) (("Lllll Ssssssssss" NIL "lllll" "sssssssssss.eclipse.co.uk")) (("eeeeeeeeee@hotmail.com" NIL "eeeeeeeeee" "hotmail.com")("jjjjjjjjj@msn.com" NIL "jjjjjjjjj" "msn.com")("aaaa@ccccc.co.uk" NIL "aaaa" "ccccc.co.uk")("mmmm@sssssssssssss.freeserve.co.uk" NIL "mmmm" "sssssssssssss.freeserve.co.uk")("iiiiiiiiii@cgi.com" NIL "iiiiiiiiii" "cgi.com")("ppppppppppp@btinternet.com" NIL "ppppppppppp" "btinternet.com")("sssssssssssssss@btinternet.com" NIL "sssssssssssssss" "btinternet.com")("ppppppppp@trimite.com" NIL "ppppppppp" "trimite.com")("vvvvvvvvvvvvvvv@hotmail.com" NIL "vvvvvvvvvvvvvvv" "hotmail.com")("aaaaaa@imap100.example.com" NIL "aaaaaa" "imap100.exmaple.com")("wwwwwwwww@hotmail.com" NIL "wwwwwwwww" "hotmail.com")("nnnnnnnn@bbbbbbbbb.co.uk" NIL "nnnnnnnn" "bbbbbbbbb.co.uk")("yyyyy@cas.org" NIL "yyyyy" "cas.org")("lllllll@me.com" NIL "lllllll" "me.com")("jjjjjjjj@gmail.com" NIL "jjjjjjjj" "gmail.com")("mmmmmmmmmmm@gmail.com" NIL "mmmmmmmmmmm" "gmail.com")("jjjjjjjjjj@gmail.com" NIL "jjjjjjjjjj" "gmail.com")("lllll@sssssssssss.eclipse.co.uk" NIL "lllll" "sssssssssss.eclipse.co.uk")("mmmm@ssssssssss.co." NIL "mmmm" "ssssssssss.co.uk")("mmmmmmmmmmmmmmm@gmail.com" NIL "mmmmmmmmmm]]>
+        </response>
+        <response>
+        <![CDATA[mmmmm" "gmail.com")("mmmmmmmmmmmmmm@googlemail.com" NIL "mmmmmmmmmmmmmm" "googlemail.com")("ttttttttttt@yahoo.co.uk" NIL "ttttttttttt" "yahoo.co.uk")("cccccccccc@btinternet.com" NIL "cccccccccc" "btinternet.com")("ddddddddddddd@ffffff.co.uk" NIL "DDDDDDDDDDDDD" "ffffff.co.uk")("ssssssssssss@bt.com" NIL "ssssssssssss" "bt.com")("mmmmmmmmm@hotmail.com" NIL "mmmmmmmmm" "hotmail.com")("bbbbbbbbbbbbb@yahoo.co.uk" NIL "bbbbbbbbbbbbb" "yahoo.co.uk")("aaaaaaaaaaaaaaaaa@yahoo.co.uk" NIL "aaaaaaaaaaaaaaaaa" "yahoo.co.uk")("ssssssss@hotmail.co.uk" NIL "ssssssss" "hotmail.co.uk")("ddddddd eeeeee" NIL "dddddddddd" "gmail.com")("ddddd fffffff" NIL "ddddddddddddd" "outlook.com")) NIL NIL "<46067228c24d4be503edd263a132030be8e.20160327090032@mail4.suw13.rsgsv.net>" "<56F99936.8050104@sssssssssss.eclipse.co.uk>") BODYSTRUCTURE (("TEXT" "PLAIN" ("CHARSET" "utf-8" "FORMAT" "flowed") NIL NIL "8BIT" 3784 92 NIL NIL NIL NIL)("TEXT" "HTML" ("CHARSET" "utf-8") NIL NIL "8BIT" 20631 358 NIL NIL NIL NIL) "ALTERNATIVE" ("BOUNDARY" "------------060109020801050905060301") NIL NIL NIL))
+* 3 FETCH (FLAGS (\Recent \Seen) UID 86 INTERNALDATE "16-Jan-2017 14:05:27 +0000" RFC822.SIZE 4061 ENVELOPE ("Mon, 16 Jan 2017 14:04:38 +0000" "ZZZ Membership 2017 & February KKKKK QQQQQ Meet" (("Lllll Ssssssssss" NIL "lllll" "sssssssssss.eclipse.co.uk")) (("Lllll Ssssssssss" NIL "lllll" "sssssssssss.eclipse.co.uk")) (("Lllll Ssssssssss" NIL "lllll" "sssssssssss.eclipse.co.uk")) (("eeeeeeeeee@hotmail.com" NIL "eeeeeeeeee" "hotmail.com")("jjjjjjjjj@msn.com" NIL "jjjjjjjjj" "msn.com")("aaaa@ccccc.co.uk" NIL "aaaa" "ccccc.co.uk")("mmmm@sssssssssssss.freeserve.co.uk" NIL "mmmm" "sssssssssssss.freeserve.co.uk")("iiiiiiiiii@cgi.com" NIL "iiiiiiiiii" "cgi.com")("ppppppppppp@btinternet.com" NIL "ppppppppppp" "btinternet.com")("sssssssssssssss@btinternet.com" NIL "sssssssssssssss" "btinternet.com")("ppppppppp@trimite.com" NIL "ppppppppp" "trimite.com")("vvvvvvvvvvvvvvv@hotmail.com" NIL "vvvvvvvvvvvvvvv" "hotmail.com")("aaaaaa@imap100.example.com" NIL "aaaaaa" "imap100.example.com")("wwwwwwwww@hotmail.com" NIL "wwwwwwwww" "hotmail.com")("nnnnnnnn@bbbbbbbbb.co.uk" NIL "nnnnnnnn" "bbbbbbbbb.co.uk")("yyyyy@cas.org" NIL "yyyyy" "cas.org")("lllllll@me.com" NIL "lllllll" "me.com")("jjjjjjjj@gmail.com" NIL "jjjjjjjj" "gmail.com")("mmmmjmmmmmm@gmail.com" NIL "mmmmmmmmmmm" "gmail.com")("jjjjjjjjjj@gmail.com" NIL "jjjjjjjjjj" "gmail.com")("lllll@sssssssssss.eclipse.co.uk" NIL "lllll" "sssssssssss.eclipse.co.uk")("mmmm@ssssssssss.co." NIL "mmmm" "ssssssssss.co.uk")("mmmmmmmmmmmmmmm@gmail.com" NIL "mmmmmmmmmmmmmmm" "gmail.com")("mmmmmmmmmmmmmm@googlemail.com" NIL "mmmmmmmmmmmmmm" "googlemail.com")("ttttttttttt@yahoo.co.uk" NIL "ttttttttttt" "yahoo.co.uk")("cccccccccc@btinternet.com" NIL "cccccccccc" "btinternet.com")("ddddddddddddd@ffffff.co.uk" NIL "DDDDDDDDDDDDD" "ffffff.co.uk")("ssssssssssss@bt.com" NIL "ssssssssssss" "bt.com")("bbbbbbbbbbbbb@yahoo.co.uk" NIL "bbbbbbbbbbbbb" "yahoo.co.uk")("aaaaaaaaaaaaaaaaa@yahoo.co.uk" NIL "aaaaaaaaaaaaaaaaa" "yahoo.co.uk")("ssssssss@hotmail.co.uk" NIL "ssssssss" "hotmail.co.uk")("ddddddd eeeeee" NIL "dddddddddd" "gmail.com")("ddddd fffffff" NIL "ddddddddddddd" "outlook.com")) NIL NIL NIL "<2899674a-9704-7423-1f3a-1f58a58d67f7@sssssssssss.eclipse.co.uk>") BODYSTRUCTURE ("TEXT" "PLAIN" ("CHARSET" "utf-8" "FORMAT" "flowed") NIL NIL "8BIT" 1279 36 NIL NIL NIL NIL))
+__Mail_Test__X_0003 OK Completed (0.000 sec)
+]]>
+        </response>
+    </action>
+	<action>
+		<request>
+	    <![CDATA[__Mail_Test__X_0005 UID FETCH 86 (FLAGS BODY.PEEK[1])
+]]>
+        </request>
+        <response filename="response3.dat" />
+    </action>
+</test>
